@@ -1,9 +1,9 @@
 use crate::error::{AppError, Result};
 use crate::events::EventBus;
-use crate::services::AuthService;
+use crate::services::{AuthService, DEFAULT_ADMIN_USERNAME};
 use axum::{
     middleware,
-    routing::{get, post, delete},
+    routing::{get, post},
     Extension, Router,
 };
 use sqlx::SqlitePool;
@@ -24,6 +24,8 @@ pub struct WebUiServer {
     shutdown_tx: Option<oneshot::Sender<()>>,
     port: u16,
     remote: bool,
+    admin_username: String,
+    initial_password: Option<String>,
 }
 
 /// WebUI 服务器信息（返回给前端）
@@ -32,6 +34,8 @@ pub struct WebUiInfo {
     pub port: u16,
     pub remote: bool,
     pub url: String,
+    pub admin_username: String,
+    pub initial_password: Option<String>,
 }
 
 /// WebUI 服务器状态
@@ -40,9 +44,19 @@ pub struct WebUiStatus {
     pub running: bool,
     pub port: Option<u16>,
     pub remote: bool,
+    pub admin_username: String,
+    pub initial_password: Option<String>,
 }
 
 impl WebUiServer {
+    pub fn clear_initial_password(&mut self) {
+        self.initial_password = None;
+    }
+
+    pub fn set_initial_password(&mut self, password: String) {
+        self.initial_password = Some(password);
+    }
+
     /// 启动 WebUI 服务器
     pub async fn start(
         port: u16,
@@ -55,7 +69,11 @@ impl WebUiServer {
         let pool_arc = Arc::new(pool);
 
         // 确保至少有一个管理员用户
-        auth_service.ensure_admin().await?;
+        let initial_admin = auth_service.ensure_admin().await?;
+        let (admin_username, initial_password) = match initial_admin {
+            Some((username, password)) => (username, Some(password)),
+            None => (DEFAULT_ADMIN_USERNAME.to_string(), None),
+        };
 
         // 公开路由（无需认证）
         let public_routes = Router::new()
@@ -133,6 +151,8 @@ impl WebUiServer {
             shutdown_tx: Some(shutdown_tx),
             port,
             remote,
+            admin_username,
+            initial_password,
         })
     }
 
@@ -155,6 +175,8 @@ impl WebUiServer {
             port: self.port,
             remote: self.remote,
             url: format!("http://{}:{}", host, self.port),
+            admin_username: self.admin_username.clone(),
+            initial_password: self.initial_password.clone(),
         }
     }
 
@@ -164,6 +186,8 @@ impl WebUiServer {
             running: self.handle.is_some(),
             port: if self.handle.is_some() { Some(self.port) } else { None },
             remote: self.remote,
+            admin_username: self.admin_username.clone(),
+            initial_password: self.initial_password.clone(),
         }
     }
 }

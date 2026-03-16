@@ -153,6 +153,31 @@ impl ChannelDao {
         Ok(sessions)
     }
 
+    pub async fn bind_session_to_chat(&self, session_id: &str, chat_id: &str) -> Result<()> {
+        let now = chrono::Utc::now().timestamp();
+
+        sqlx::query(
+            "UPDATE channel_sessions
+             SET chat_id = ?, updated_at = ?
+             WHERE id = ?"
+        )
+        .bind(chat_id)
+        .bind(now)
+        .bind(session_id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_session(&self, id: &str) -> Result<bool> {
+        let result = sqlx::query("DELETE FROM channel_sessions WHERE id = ?")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
     // --- Pairing Code ---
 
     pub async fn insert_pairing_code(

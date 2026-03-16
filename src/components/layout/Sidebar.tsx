@@ -1,13 +1,6 @@
 import { Tooltip } from '@arco-design/web-react';
 import { IconMoonFill, IconSunFill } from '@arco-design/web-react/icon';
-import {
-  ArrowCircleLeft,
-  Calendar,
-  Experiment,
-  ListCheckbox,
-  Plus,
-  SettingTwo,
-} from '@icon-park/react';
+import { ArrowCircleLeft, Calendar, Experiment, ListCheckbox, Plus, SettingTwo } from '@icon-park/react';
 import classNames from 'classnames';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -29,17 +22,6 @@ const AppMark = () => (
     </svg>
   </div>
 );
-
-const settingsEntries = [
-  { path: '/settings/gemini', label: 'Gemini' },
-  { path: '/settings/model', label: 'Model' },
-  { path: '/settings/agent', label: 'Agent' },
-  { path: '/settings/tools', label: 'Tools' },
-  { path: '/settings/display', label: 'Display' },
-  { path: '/settings/webui', label: 'WebUI' },
-  { path: '/settings/system', label: 'System' },
-  { path: '/settings/about', label: 'About' },
-];
 
 export function Sidebar({ onSessionClick, collapsed = false }: SidebarProps) {
   const { isMobile } = useLayoutContext();
@@ -90,31 +72,15 @@ export function Sidebar({ onSessionClick, collapsed = false }: SidebarProps) {
 
       <div className="flex-1 min-h-0 overflow-hidden px-8px pb-8px">
         {isSettings ? (
-          <div className={classNames('settings-sider flex h-full flex-col gap-2px overflow-y-auto overflow-x-hidden', collapsed && 'settings-sider--collapsed')}>
-            {settingsEntries.map((item) => (
-              <Tooltip
-                key={item.path}
-                disabled={!tooltipEnabled}
-                content={item.label}
-                position="right"
-              >
-                <div
-                  className={classNames(
-                    'settings-sider__item px-12px py-8px rd-8px flex items-center gap-10px cursor-pointer hover:bg-aou-1',
-                    pathname === item.path && '!bg-aou-2'
-                  )}
-                  onClick={() => {
-                    navigate(item.path);
-                    onSessionClick?.();
-                  }}
-                >
-                  <SettingTwo theme="outline" size="20" className="flex shrink-0" />
-                  <span className="settings-sider__item-label collapsed-hidden text-14px text-t-primary">
-                    {item.label}
-                  </span>
-                </div>
-              </Tooltip>
-            ))}
+          <div className="size-full flex flex-col justify-end">
+            <div className="px-12px py-8px">
+              <div className="text-12px uppercase tracking-[0.24em] text-t-tertiary collapsed-hidden">
+                Settings
+              </div>
+              <div className="mt-8px text-14px text-t-secondary collapsed-hidden leading-22px">
+                设置页内部导航由内容区的 `SettingsLayout` 独立负责，主侧栏仅保留应用级返回入口。
+              </div>
+            </div>
           </div>
         ) : (
           <div className="size-full flex flex-col">

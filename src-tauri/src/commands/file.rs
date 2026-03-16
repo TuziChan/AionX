@@ -6,6 +6,7 @@ use std::path::PathBuf;
 pub struct FileContent {
     pub path: String,
     pub content: String,
+    #[specta(type = f64)]
     pub size: u64,
     pub mime_type: String,
 }
@@ -15,6 +16,7 @@ pub struct FileEntry {
     pub name: String,
     pub path: String,
     pub is_dir: bool,
+    #[specta(type = f64)]
     pub size: u64,
     pub modified: Option<f64>,
 }

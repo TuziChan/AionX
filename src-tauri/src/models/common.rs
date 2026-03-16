@@ -4,6 +4,7 @@ use specta::Type;
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct PaginatedResult<T: specta::Type> {
     pub items: Vec<T>,
+    #[specta(type = f64)]
     pub total: i64,
     pub page: u32,
     pub page_size: u32,

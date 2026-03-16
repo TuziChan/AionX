@@ -3,6 +3,8 @@ use crate::error::{AppError, Result};
 use crate::models::user::{CreateUser, User, UserInfo};
 use sqlx::SqlitePool;
 
+pub const DEFAULT_ADMIN_USERNAME: &str = "admin";
+
 pub struct AuthService {
     user_dao: UserDao,
     pool: SqlitePool,
@@ -65,6 +67,13 @@ impl AuthService {
         Ok(UserInfo::from(user))
     }
 
+    pub async fn get_admin_user(&self) -> Result<User> {
+        self.user_dao
+            .find_by_username(DEFAULT_ADMIN_USERNAME)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Admin user".into()))
+    }
+
     /// 修改密码
     pub async fn change_password(&self, user_id: &str, old_password: &str, new_password: &str) -> Result<()> {
         let user = self.user_dao.find_by_id(user_id)
@@ -88,15 +97,41 @@ impl AuthService {
         Ok(())
     }
 
+    pub async fn change_admin_password(&self, new_password: &str) -> Result<()> {
+        let admin = self.get_admin_user().await?;
+        let new_hash = hash_password(new_password)?;
+
+        self.user_dao.update(&admin.id, &crate::models::user::UserUpdate {
+            username: None,
+            email: None,
+            password_hash: Some(new_hash),
+        }).await?;
+
+        self.user_dao.update_jwt_secret(&admin.id).await?;
+        Ok(())
+    }
+
+    pub async fn reset_admin_password(&self) -> Result<String> {
+        let new_password = uuid::Uuid::new_v4()
+            .to_string()
+            .split('-')
+            .next()
+            .unwrap_or("admin123")
+            .to_string();
+        self.change_admin_password(&new_password).await?;
+        Ok(new_password)
+    }
+
     /// 确保至少有一个管理员用户（首次启动时）
-    pub async fn ensure_admin(&self) -> Result<()> {
+    pub async fn ensure_admin(&self) -> Result<Option<(String, String)>> {
         let count = self.user_dao.count().await?;
         if count == 0 {
             let default_password = uuid::Uuid::new_v4().to_string().split('-').next().unwrap_or("admin123").to_string();
-            self.register("admin", &default_password, None).await?;
+            self.register(DEFAULT_ADMIN_USERNAME, &default_password, None).await?;
             tracing::info!(password = %default_password, "Default admin user created");
+            return Ok(Some((DEFAULT_ADMIN_USERNAME.to_string(), default_password)));
         }
-        Ok(())
+        Ok(None)
     }
 }
 

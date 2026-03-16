@@ -55,7 +55,7 @@ impl ProcessManager {
         #[cfg(target_os = "windows")]
         {
             use std::os::windows::process::CommandExt;
-            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            cmd.as_std_mut().creation_flags(0x08000000); // CREATE_NO_WINDOW
         }
 
         let mut child = cmd.spawn().map_err(|e| {

@@ -109,7 +109,7 @@ impl ChannelService {
     ) -> Result<ChannelPairingCode> {
         let code = self.generate_random_code();
         self.dao
-            .create_pairing_code(&code, platform_type, platform_user_id, ttl_seconds)
+            .insert_pairing_code(&code, platform_type, platform_user_id, ttl_seconds)
             .await
     }
 

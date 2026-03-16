@@ -38,6 +38,8 @@ pub struct CronJobUpdate {
     pub prompt: Option<String>,
     pub enabled: Option<bool>,
     pub status: Option<String>,
+    #[specta(type = Option<f64>)]
     pub last_run: Option<i64>,
+    #[specta(type = Option<f64>)]
     pub next_run: Option<i64>,
 }

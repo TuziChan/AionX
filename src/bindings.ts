@@ -5,9 +5,9 @@
 
 
 export const commands = {
-async createChat(request: CreateChatRequest) : Promise<Result<Chat, string>> {
+async createChat(input: CreateChat) : Promise<Result<Chat, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("create_chat", { request }) };
+    return { status: "ok", data: await TAURI_INVOKE("create_chat", { input }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -21,9 +21,340 @@ async getChat(id: string) : Promise<Result<Chat | null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async listChats(limit: number) : Promise<Result<Chat[], string>> {
+async listChats(page: number | null, pageSize: number | null) : Promise<Result<PaginatedResult<Chat>, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("list_chats", { limit }) };
+    return { status: "ok", data: await TAURI_INVOKE("list_chats", { page, pageSize }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateChat(id: string, updates: ChatUpdate) : Promise<Result<Chat, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_chat", { id, updates }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteChat(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_chat", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getWorkspaceChats(workspacePath: string) : Promise<Result<Chat[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_workspace_chats", { workspacePath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getGroupedHistory() : Promise<Result<GroupedHistory, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_grouped_history") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getAssociatedChat(chatId: string) : Promise<Result<Chat | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_associated_chat", { chatId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getMessages(chatId: string) : Promise<Result<Message[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_messages", { chatId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async addMessage(input: CreateMessage) : Promise<Result<Message, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_message", { input }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async sendMessage(chatId: string, agentType: string, content: string, files: FileAttachment[] | null, config: AgentConfig) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("send_message", { chatId, agentType, content, files, config }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async stopAgent(chatId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("stop_agent", { chatId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getAgentStatus(chatId: string) : Promise<Result<AgentStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_agent_status", { chatId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async approvePermission(chatId: string, requestId: string, approved: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("approve_permission", { chatId, requestId, approved }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async detectAgents() : Promise<Result<DetectedAgent[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("detect_agents") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getSettings(category: string) : Promise<Result<JsonValue, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_settings", { category }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateSettings(category: string, settings: JsonValue) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_settings", { category, settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeLanguage(language: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_language", { language }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getDefaultConfig() : Promise<Result<AppConfig, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_default_config") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getSystemInfo() : Promise<Result<SystemInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_system_info") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async openDevTools() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_dev_tools") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setZoomFactor(factor: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_zoom_factor", { factor }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async logFromFrontend(level: string, message: string) : Promise<void> {
+    await TAURI_INVOKE("log_from_frontend", { level, message });
+},
+async readFile(path: string) : Promise<Result<FileContent, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("read_file", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async writeFile(path: string, content: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("write_file", { path, content }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async listDirectory(path: string, recursive: boolean | null) : Promise<Result<FileEntry[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_directory", { path, recursive }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async createZip(paths: string[], output: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_zip", { paths, output }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async extractZip(path: string, output: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("extract_zip", { path, output }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async downloadFile(url: string, savePath: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("download_file", { url, savePath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getFileType(path: string) : Promise<Result<FileTypeInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_file_type", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getMcpServers() : Promise<Result<McpServer[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_mcp_servers") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async addMcpServer(input: CreateMcpServer) : Promise<Result<McpServer, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_mcp_server", { input }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateMcpServer(id: string, updates: McpServerUpdate) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_mcp_server", { id, updates }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async removeMcpServer(id: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_mcp_server", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async testMcpConnection(id: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("test_mcp_connection", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async addCronJob(input: CreateCronJob) : Promise<Result<CronJob, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_cron_job", { input }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async listCronJobs() : Promise<Result<CronJob[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_cron_jobs") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getCronJob(id: string) : Promise<Result<CronJob, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_cron_job", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateCronJob(id: string, updates: CronJobUpdate) : Promise<Result<CronJob, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_cron_job", { id, updates }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async removeCronJob(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_cron_job", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async startWebui(port: number | null, remote: boolean | null) : Promise<Result<WebUiInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_webui", { port, remote }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async stopWebui() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("stop_webui") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getWebuiStatus() : Promise<Result<WebUiStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_webui_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeWebuiPassword(newPassword: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_webui_password", { newPassword }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async resetWebuiPassword() : Promise<Result<ResetWebUiPasswordResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_webui_password") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -41,9 +372,59 @@ async listChats(limit: number) : Promise<Result<Chat[], string>> {
 
 /** user-defined types **/
 
-export type AgentType = "acp" | "codex" | "gemini" | "nanobot" | "openclaw"
-export type Chat = { id: string; title: string; agent_type: AgentType; created_at: number; updated_at: number }
-export type CreateChatRequest = { title: string; agent_type: AgentType }
+/**
+ * Agent 配置
+ */
+export type AgentConfig = { agent_type: string; command: string | null; args: string[] | null; env: { [key in string]: string } | null; working_dir: string | null }
+/**
+ * Agent 运行状态
+ */
+export type AgentStatus = "idle" | "starting" | "running" | "stopping" | "error" | "disconnected"
+/**
+ * 应用配置结构
+ */
+export type AppConfig = { theme: string; language: string; zoom_factor: number; webui_port: number; webui_remote: boolean }
+/**
+ * Chat 对外模型 — 序列化到前端（extra 为 JSON Value）
+ */
+export type Chat = { id: string; user_id: string | null; name: string; type: string; model: string; agent_type: string; workspace_path: string; status: string; extra: JsonValue; created_at: number; updated_at: number }
+export type ChatUpdate = { name: string | null; model: string | null; status: string | null; extra: JsonValue | null }
+export type CreateChat = { name: string; agent_type: string; model: string | null; workspace_path: string | null; extra: JsonValue | null }
+export type CreateCronJob = { name: string; cron_expression: string; agent_type: string; prompt: string; enabled: boolean | null }
+export type CreateMcpServer = { name: string; type: string; command: string | null; args: string | null; env: string | null; url: string | null; oauth_config: string | null }
+export type CreateMessage = { chat_id: string; msg_id: string | null; type: string | null; role: string; content: string; extra: JsonValue | null }
+export type CronJob = { id: string; name: string; cron_expression: string; chat_id: string | null; agent_type: string; prompt: string; enabled: boolean; last_run: number | null; next_run: number | null; status: string; created_at: number; updated_at: number }
+export type CronJobUpdate = { name: string | null; cron_expression: string | null; prompt: string | null; enabled: boolean | null; status: string | null; last_run: number | null; next_run: number | null }
+/**
+ * 检测到的可用 Agent
+ */
+export type DetectedAgent = { agent_type: string; name: string; command: string; version: string | null; available: boolean }
+/**
+ * 文件附件（发送消息时附带）
+ */
+export type FileAttachment = { path: string; name: string; mime_type: string | null }
+export type FileContent = { path: string; content: string; size: number; mime_type: string }
+export type FileEntry = { name: string; path: string; is_dir: boolean; size: number; modified: number | null }
+export type FileTypeInfo = { path: string; mime_type: string; is_text: boolean; is_image: boolean }
+export type GroupedHistory = { today: Chat[]; yesterday: Chat[]; this_week: Chat[]; this_month: Chat[]; earlier: Chat[] }
+export type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]: JsonValue }
+export type McpServer = { id: string; name: string; type: string; command: string | null; args: string | null; env: string | null; url: string | null; enabled: boolean; oauth_config: string | null; created_at: number; updated_at: number }
+export type McpServerUpdate = { name: string | null; command: string | null; args: string | null; env: string | null; url: string | null; enabled: boolean | null; oauth_config: string | null }
+/**
+ * Message 对外模型
+ */
+export type Message = { id: string; chat_id: string; msg_id: string; type: string; role: string; content: string; position: number; status: string; extra: JsonValue; created_at: number }
+export type PaginatedResult<T> = { items: T[]; total: number; page: number; page_size: number }
+export type ResetWebUiPasswordResult = { password: string }
+export type SystemInfo = { os: string; arch: string; version: string }
+/**
+ * WebUI 服务器信息（返回给前端）
+ */
+export type WebUiInfo = { port: number; remote: boolean; url: string; admin_username: string; initial_password: string | null }
+/**
+ * WebUI 服务器状态
+ */
+export type WebUiStatus = { running: boolean; port: number | null; remote: boolean; admin_username: string; initial_password: string | null }
 
 /** tauri-specta globals **/
 

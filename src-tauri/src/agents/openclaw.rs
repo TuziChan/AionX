@@ -165,7 +165,7 @@ impl OpenClawAgent {
                         }
                     }
                 }
-                Ok(tokio_tungstenite::tungstenite::Message::Close(_)) | None => {
+                Ok(tokio_tungstenite::tungstenite::Message::Close(_)) => {
                     break;
                 }
                 _ => continue,

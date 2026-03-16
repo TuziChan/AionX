@@ -74,6 +74,8 @@ pub fn run() {
             commands::start_webui,
             commands::stop_webui,
             commands::get_webui_status,
+            commands::change_webui_password,
+            commands::reset_webui_password,
         ]);
 
     #[cfg(debug_assertions)]
@@ -104,7 +106,6 @@ pub fn run() {
                 let _ = window.set_focus();
             }
         }))
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_data_dir = app
                 .path()
