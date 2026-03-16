@@ -6,21 +6,16 @@ use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::sync::{mpsc, RwLock};
 
-/// 流式会话上下文：跟踪当前 msg_id
-struct StreamContext {
-    current_msg_id: String,
-}
-
-/// ACP (Anthropic Claude Protocol) Agent
-/// 通过子进程与 Claude Code / Codebuddy 等工具通信
+/// ACP Agent — Claude Code / Codebuddy 子进程通信
+///
+/// 协议参考：Claude Code `--output-format stream-json` NDJSON 格式
+/// 事件类型：system(init) → assistant/user(message) → stream_event(delta) → result(success/error)
+/// 参考：https://takopi.dev/reference/runners/claude/stream-json-cheatsheet/
 pub struct AcpAgent {
     process_manager: Arc<ProcessManager>,
     status: Arc<RwLock<AgentStatus>>,
-    /// 当前活跃进程的 stdin（用于权限响应）
     active_stdin: Arc<RwLock<Option<tokio::process::ChildStdin>>>,
-    /// 当前活跃进程 ID
     active_process_id: Arc<RwLock<Option<String>>>,
-    /// 取消正在运行的任务
     cancel_tx: Arc<RwLock<Option<tokio::sync::oneshot::Sender<()>>>>,
     config: Option<AgentConfig>,
 }
@@ -37,7 +32,6 @@ impl AcpAgent {
         }
     }
 
-    /// 检测系统中可用的 ACP 兼容工具
     pub async fn detect_available() -> Vec<DetectedAgent> {
         let candidates = vec![
             ("claude", "Claude Code"),
@@ -69,90 +63,179 @@ impl AcpAgent {
         result
     }
 
-    /// 解析 stdout 的一行 JSON，转换为 AgentEvent
-    fn parse_line(line: &str, ctx: &mut StreamContext) -> Option<AgentEvent> {
-        let v: serde_json::Value = serde_json::from_str(line).ok()?;
-        let event_type = v.get("type")?.as_str()?;
+    /// 解析 Claude Code stream-json NDJSON 行
+    ///
+    /// 官方事件格式：
+    /// - `{"type":"system","subtype":"init",...}` — 会话初始化
+    /// - `{"type":"assistant","message":{"id":"msg_1","content":[{"type":"text","text":"..."}]}}` — 助手消息
+    /// - `{"type":"stream_event","event":{"delta":{"type":"text_delta","text":"..."}}}` — 流式文本增量
+    /// - `{"type":"user","message":{"content":[{"type":"tool_result",...}]}}` — 工具结果
+    /// - `{"type":"result","subtype":"success","result":"..."}` — 完成
+    /// - `{"type":"result","subtype":"error","error":"..."}` — 错误
+    fn parse_line(line: &str, ctx: &mut StreamContext) -> Vec<AgentEvent> {
+        let v: serde_json::Value = match serde_json::from_str(line) {
+            Ok(v) => v,
+            Err(_) => return vec![],
+        };
+
+        let event_type = match v.get("type").and_then(|t| t.as_str()) {
+            Some(t) => t,
+            None => return vec![],
+        };
+
+        let mut events = Vec::new();
 
         match event_type {
-            "assistant" | "message_start" => {
-                let msg_id = v.get("message")
-                    .and_then(|m| m.get("id"))
-                    .and_then(|id| id.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                if !msg_id.is_empty() {
-                    ctx.current_msg_id = msg_id.clone();
+            // 会话初始化
+            "system" => {
+                if let Some(session_id) = v.get("session_id").and_then(|s| s.as_str()) {
+                    ctx.session_id = session_id.to_string();
                 }
-                Some(AgentEvent::MessageStart { msg_id })
+                // system init 不产生前端事件
             }
-            "content_block_delta" => {
-                let delta = v.get("delta")
-                    .and_then(|d| d.get("text"))
-                    .and_then(|t| t.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                if delta.is_empty() {
-                    return None;
+
+            // 助手消息（完整消息或包含工具调用）
+            "assistant" => {
+                if let Some(message) = v.get("message") {
+                    let msg_id = message.get("id")
+                        .and_then(|id| id.as_str())
+                        .unwrap_or("")
+                        .to_string();
+
+                    if !msg_id.is_empty() && msg_id != ctx.current_msg_id {
+                        ctx.current_msg_id = msg_id.clone();
+                        events.push(AgentEvent::MessageStart { msg_id: msg_id.clone() });
+                    }
+
+                    // 解析 content 数组
+                    if let Some(content) = message.get("content").and_then(|c| c.as_array()) {
+                        for block in content {
+                            let block_type = block.get("type").and_then(|t| t.as_str()).unwrap_or("");
+                            match block_type {
+                                "text" => {
+                                    if let Some(text) = block.get("text").and_then(|t| t.as_str()) {
+                                        events.push(AgentEvent::MessageDelta {
+                                            msg_id: ctx.current_msg_id.clone(),
+                                            content: text.to_string(),
+                                        });
+                                    }
+                                }
+                                "tool_use" => {
+                                    let tool_name = block.get("name")
+                                        .and_then(|n| n.as_str())
+                                        .unwrap_or("unknown")
+                                        .to_string();
+                                    let input = block.get("input")
+                                        .cloned()
+                                        .unwrap_or(serde_json::Value::Null);
+                                    events.push(AgentEvent::ToolCallStart {
+                                        msg_id: ctx.current_msg_id.clone(),
+                                        tool: tool_name,
+                                        input,
+                                    });
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
                 }
-                Some(AgentEvent::MessageDelta {
-                    msg_id: ctx.current_msg_id.clone(),
-                    content: delta,
-                })
             }
-            "result" | "message_stop" => {
-                Some(AgentEvent::MessageComplete {
-                    msg_id: ctx.current_msg_id.clone(),
-                })
+
+            // 用户消息（通常是工具结果）
+            "user" => {
+                if let Some(message) = v.get("message") {
+                    if let Some(content) = message.get("content").and_then(|c| c.as_array()) {
+                        for block in content {
+                            let block_type = block.get("type").and_then(|t| t.as_str()).unwrap_or("");
+                            if block_type == "tool_result" {
+                                let tool_use_id = block.get("tool_use_id")
+                                    .and_then(|id| id.as_str())
+                                    .unwrap_or("")
+                                    .to_string();
+                                // tool_result content 可以是 string 或 array
+                                let output = block.get("content")
+                                    .cloned()
+                                    .unwrap_or(serde_json::Value::Null);
+                                events.push(AgentEvent::ToolCallResult {
+                                    msg_id: ctx.current_msg_id.clone(),
+                                    tool: tool_use_id,
+                                    output,
+                                });
+                            }
+                        }
+                    }
+                }
             }
-            "tool_use" | "tool_call" => {
-                let tool = v.get("name")
-                    .or_else(|| v.get("tool"))
-                    .and_then(|n| n.as_str())
-                    .unwrap_or("unknown")
-                    .to_string();
-                let input = v.get("input").cloned().unwrap_or(serde_json::Value::Null);
-                Some(AgentEvent::ToolCallStart {
-                    msg_id: ctx.current_msg_id.clone(),
-                    tool,
-                    input,
-                })
+
+            // 流式增量事件（需要 --verbose --include-partial-messages）
+            "stream_event" => {
+                if let Some(event) = v.get("event") {
+                    if let Some(delta) = event.get("delta") {
+                        let delta_type = delta.get("type").and_then(|t| t.as_str()).unwrap_or("");
+                        match delta_type {
+                            "text_delta" => {
+                                if let Some(text) = delta.get("text").and_then(|t| t.as_str()) {
+                                    events.push(AgentEvent::MessageDelta {
+                                        msg_id: ctx.current_msg_id.clone(),
+                                        content: text.to_string(),
+                                    });
+                                }
+                            }
+                            "input_json_delta" => {
+                                // 工具输入的流式增量（可选处理）
+                            }
+                            _ => {}
+                        }
+                    }
+                }
             }
-            "tool_result" => {
-                let tool = v.get("tool")
-                    .and_then(|n| n.as_str())
-                    .unwrap_or("unknown")
-                    .to_string();
-                let output = v.get("output").cloned().unwrap_or(serde_json::Value::Null);
-                Some(AgentEvent::ToolCallResult {
-                    msg_id: ctx.current_msg_id.clone(),
-                    tool,
-                    output,
-                })
+
+            // 结果（完成或错误）
+            "result" => {
+                let subtype = v.get("subtype").and_then(|s| s.as_str()).unwrap_or("");
+                match subtype {
+                    "success" | "completion" => {
+                        // result 字段包含最终文本
+                        if let Some(result_text) = v.get("result").and_then(|r| r.as_str()) {
+                            if !result_text.is_empty() && ctx.current_msg_id.is_empty() {
+                                // 如果没有流式消息，直接发送完整内容
+                                events.push(AgentEvent::MessageDelta {
+                                    msg_id: "result".to_string(),
+                                    content: result_text.to_string(),
+                                });
+                            }
+                        }
+                        events.push(AgentEvent::MessageComplete {
+                            msg_id: ctx.current_msg_id.clone(),
+                        });
+                    }
+                    "error" => {
+                        let error_msg = v.get("error")
+                            .or_else(|| v.get("result"))
+                            .and_then(|e| e.as_str())
+                            .unwrap_or("Unknown error")
+                            .to_string();
+                        events.push(AgentEvent::Error { message: error_msg });
+                    }
+                    _ => {
+                        events.push(AgentEvent::MessageComplete {
+                            msg_id: ctx.current_msg_id.clone(),
+                        });
+                    }
+                }
             }
-            "permission" | "permission_request" => {
-                let id = v.get("id")
-                    .and_then(|i| i.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                let desc = v.get("description")
-                    .or_else(|| v.get("message"))
-                    .and_then(|d| d.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                Some(AgentEvent::PermissionRequest { id, description: desc })
-            }
-            "error" => {
-                let msg = v.get("message")
-                    .or_else(|| v.get("error"))
-                    .and_then(|m| m.as_str())
-                    .unwrap_or("Unknown error")
-                    .to_string();
-                Some(AgentEvent::Error { message: msg })
-            }
-            _ => None,
+
+            _ => {}
         }
+
+        events
     }
+}
+
+/// 流式解析上下文
+struct StreamContext {
+    session_id: String,
+    current_msg_id: String,
 }
 
 #[async_trait::async_trait]
@@ -160,13 +243,12 @@ impl AgentBackend for AcpAgent {
     async fn start(&mut self, config: &AgentConfig) -> Result<()> {
         let command = config.command.as_deref().unwrap_or("claude");
 
-        // 仅用 --version 验证命令可用，不启动完整进程
         let output = tokio::process::Command::new(command)
             .arg("--version")
             .output()
             .await
             .map_err(|e| AppError::Agent(format!(
-                "ACP command '{}' not found or not executable: {}", command, e
+                "ACP command '{}' not found: {}", command, e
             )))?;
 
         if !output.status.success() {
@@ -179,7 +261,7 @@ impl AgentBackend for AcpAgent {
         *self.status.write().await = AgentStatus::Idle;
 
         let version = String::from_utf8_lossy(&output.stdout);
-        tracing::info!(command = command, version = %version.trim(), "ACP agent verified and ready");
+        tracing::info!(command = command, version = %version.trim(), "ACP agent verified");
         Ok(())
     }
 
@@ -191,7 +273,7 @@ impl AgentBackend for AcpAgent {
         tx: mpsc::Sender<AgentEvent>,
     ) -> Result<()> {
         let config = self.config.as_ref().ok_or_else(|| {
-            AppError::Agent("Agent not configured. Call start() first.".into())
+            AppError::Agent("Agent not configured".into())
         })?;
 
         *self.status.write().await = AgentStatus::Running;
@@ -200,12 +282,13 @@ impl AgentBackend for AcpAgent {
         let command = config.command.as_deref().unwrap_or("claude");
         let process_id = format!("acp-{}-{}", chat_id, uuid::Uuid::new_v4());
 
+        // Claude Code 官方参数：-p (print mode) + stream-json + verbose
         let mut args: Vec<String> = vec![
+            "-p".to_string(),
+            message.to_string(),
             "--output-format".to_string(),
             "stream-json".to_string(),
             "--verbose".to_string(),
-            "-p".to_string(),
-            message.to_string(),
         ];
         if let Some(ref extra_args) = config.args {
             args.extend(extra_args.clone());
@@ -219,39 +302,35 @@ impl AgentBackend for AcpAgent {
             config.working_dir.as_deref(),
         ).await?;
 
-        // 存储 stdin 和进程 ID（供 handle_permission 使用）
         *self.active_stdin.write().await = Some(stdin);
         *self.active_process_id.write().await = Some(process_id.clone());
 
-        // 设置取消通道
         let (cancel_tx, mut cancel_rx) = tokio::sync::oneshot::channel::<()>();
         *self.cancel_tx.write().await = Some(cancel_tx);
 
         let status = self.status.clone();
         let pm = self.process_manager.clone();
-        let pid = process_id.clone();
+        let pid = process_id;
         let active_stdin = self.active_stdin.clone();
         let active_pid = self.active_process_id.clone();
 
-        // 异步读取 stdout — 带 10 分钟总超时
         tokio::spawn(async move {
             let reader = BufReader::new(stdout);
             let mut lines = reader.lines();
             let mut ctx = StreamContext {
+                session_id: String::new(),
                 current_msg_id: String::new(),
             };
 
-            let timeout_duration = tokio::time::Duration::from_secs(600);
-            let result = tokio::time::timeout(timeout_duration, async {
+            let timeout = tokio::time::Duration::from_secs(600);
+            let result = tokio::time::timeout(timeout, async {
                 loop {
                     tokio::select! {
                         line = lines.next_line() => {
                             match line {
                                 Ok(Some(text)) => {
-                                    if let Some(event) = AcpAgent::parse_line(&text, &mut ctx) {
-                                        if tx.send(event).await.is_err() {
-                                            break;
-                                        }
+                                    for event in AcpAgent::parse_line(&text, &mut ctx) {
+                                        if tx.send(event).await.is_err() { return; }
                                     }
                                 }
                                 Ok(None) => break,
@@ -264,7 +343,7 @@ impl AgentBackend for AcpAgent {
                             }
                         }
                         _ = &mut cancel_rx => {
-                            tracing::info!("Agent task cancelled");
+                            tracing::info!("ACP task cancelled");
                             break;
                         }
                     }
@@ -273,11 +352,10 @@ impl AgentBackend for AcpAgent {
 
             if result.is_err() {
                 let _ = tx.send(AgentEvent::Error {
-                    message: "Agent response timed out (10 minutes)".to_string(),
+                    message: "ACP response timed out (10 minutes)".to_string(),
                 }).await;
             }
 
-            // 清理
             pm.kill(&pid).await.ok();
             *status.write().await = AgentStatus::Idle;
             *active_stdin.write().await = None;
@@ -289,11 +367,9 @@ impl AgentBackend for AcpAgent {
     }
 
     async fn stop(&self, _chat_id: &str) -> Result<()> {
-        // 发送取消信号
         if let Some(tx) = self.cancel_tx.write().await.take() {
             let _ = tx.send(());
         }
-        // kill 当前活跃进程
         if let Some(ref pid) = *self.active_process_id.read().await {
             self.process_manager.kill(pid).await.ok();
         }
@@ -310,9 +386,8 @@ impl AgentBackend for AcpAgent {
         request_id: &str,
         approved: bool,
     ) -> Result<()> {
-        // 验证当前有活跃进程
         if self.active_process_id.read().await.is_none() {
-            return Err(AppError::Agent("No active agent process to send permission response".into()));
+            return Err(AppError::Agent("No active agent process".into()));
         }
 
         let response = serde_json::json!({
@@ -339,8 +414,6 @@ impl AgentBackend for AcpAgent {
     }
 
     fn status(&self) -> AgentStatus {
-        // 使用 blocking read — AgentBackend::status() 是同步的
-        // 在实际使用中，锁争用极少
         futures::executor::block_on(async {
             self.status.read().await.clone()
         })
