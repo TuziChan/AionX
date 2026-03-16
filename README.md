@@ -80,6 +80,15 @@ pnpm install
 # 启动开发服务器
 pnpm tauri dev
 ```
+### Rust 命令执行位置
+
+仓库根目录已配置 Cargo workspace，可直接在根目录执行 Rust 命令：
+
+```bash
+# 在仓库根目录执行
+cargo check
+```
+
 
 ### 构建生产版本
 

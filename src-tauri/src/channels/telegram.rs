@@ -218,11 +218,16 @@ impl TelegramChannel {
             .add_message(&chat_id, "user", text, None)
             .await?;
 
-        // 发送到 Agent（这里简化处理，实际需要调用 AgentService）
-        // TODO: 集成 AgentService 发送消息并获取响应
+        // 与 Lark 通道保持一致：将消息投递到通道事件总线，由上层统一路由到 AgentService
+        self.event_bus
+            .emit(
+                "channel:message",
+                serde_json::json!({ "chat_id": chat_id, "text": text }),
+            )
+            .await;
 
-        // 模拟响应
-        self.send_message(message.chat.id, format!("收到消息: {}", text))
+        // 回执：告知用户消息已被系统接收并转发
+        self.send_message(message.chat.id, "✅ 消息已接收并转发".to_string())
             .await?;
 
         Ok(())

@@ -1,10 +1,10 @@
-use crate::error::{AppError, Result};
 use super::process::ProcessManager;
 use super::traits::AgentBackend;
 use super::types::*;
+use crate::error::{AppError, Result};
+use futures::{SinkExt, StreamExt};
 use std::sync::Arc;
 use tokio::sync::{mpsc, RwLock};
-use futures::{SinkExt, StreamExt};
 
 /// OpenClaw Agent — WebSocket Gateway v3 协议
 ///
@@ -73,19 +73,19 @@ impl OpenClawAgent {
             port.to_string(),
         ];
 
-        let _ = self.process_manager.spawn(
-            &process_id,
-            command,
-            &args,
-            None,
-            None,
-        ).await?;
+        let _ = self
+            .process_manager
+            .spawn(&process_id, command, &args, None, None)
+            .await?;
 
         *self.gateway_process_id.write().await = Some(process_id);
 
         // 等待 Gateway 就绪（轮询端口，最多5秒）
         for _ in 0..50 {
-            if tokio::net::TcpStream::connect(format!("127.0.0.1:{}", port)).await.is_ok() {
+            if tokio::net::TcpStream::connect(format!("127.0.0.1:{}", port))
+                .await
+                .is_ok()
+            {
                 tracing::info!(port = port, "OpenClaw gateway is ready");
                 return Ok(());
             }
@@ -93,7 +93,8 @@ impl OpenClawAgent {
         }
 
         Err(AppError::Agent(format!(
-            "OpenClaw gateway failed to start on port {}", port
+            "OpenClaw gateway failed to start on port {}",
+            port
         )))
     }
 
@@ -104,7 +105,76 @@ impl OpenClawAgent {
             "id": id,
             "method": method,
             "params": params,
-        }).to_string()
+        })
+        .to_string()
+    }
+
+    async fn connect_gateway_writer(
+        &self,
+        client_id: &str,
+    ) -> Result<
+        futures::stream::SplitSink<
+            tokio_tungstenite::WebSocketStream<
+                tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
+            >,
+            tokio_tungstenite::tungstenite::Message,
+        >,
+    > {
+        let ws_url = format!("ws://127.0.0.1:{}", self.gateway_port);
+        let (ws_stream, _) = tokio_tungstenite::connect_async(&ws_url)
+            .await
+            .map_err(|e| {
+                AppError::Agent(format!(
+                    "Failed to connect to OpenClaw gateway at {}: {}",
+                    ws_url, e
+                ))
+            })?;
+
+        let (mut ws_write, mut ws_read) = ws_stream.split();
+
+        let connect_req = Self::make_rpc_request(
+            &format!("connect-{}", uuid::Uuid::new_v4()),
+            "connect",
+            serde_json::json!({
+                "protocolVersion": "v3",
+                "client": {
+                    "id": client_id,
+                    "displayName": "AionX",
+                    "version": env!("CARGO_PKG_VERSION"),
+                    "platform": std::env::consts::OS,
+                    "mode": "client",
+                },
+                "capabilities": ["tool-events"],
+            }),
+        );
+
+        ws_write
+            .send(tokio_tungstenite::tungstenite::Message::Text(connect_req))
+            .await
+            .map_err(|e| AppError::Agent(format!("WebSocket send error: {}", e)))?;
+
+        // 等待连接确认
+        while let Some(msg) = ws_read.next().await {
+            match msg {
+                Ok(tokio_tungstenite::tungstenite::Message::Text(text)) => {
+                    if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) {
+                        if v.get("type").and_then(|t| t.as_str()) == Some("res")
+                            && v.get("ok").and_then(|o| o.as_bool()) == Some(true)
+                        {
+                            return Ok(ws_write);
+                        }
+                    }
+                }
+                Ok(tokio_tungstenite::tungstenite::Message::Close(_)) | None => {
+                    break;
+                }
+                _ => continue,
+            }
+        }
+
+        Err(AppError::Agent(
+            "OpenClaw connect RPC was not acknowledged".to_string(),
+        ))
     }
 
     /// 解析 Gateway 事件为 AgentEvent
@@ -130,7 +200,8 @@ impl OpenClawAgent {
                 match event_type {
                     "delta" => {
                         // delta 携带累积文本快照，需要计算增量
-                        if let Some(text) = Self::extract_text_from_message(&payload.get("message")) {
+                        if let Some(text) = Self::extract_text_from_message(&payload.get("message"))
+                        {
                             if ctx.current_msg_id.is_empty() {
                                 ctx.current_msg_id = uuid::Uuid::new_v4().to_string();
                                 events.push(AgentEvent::MessageStart {
@@ -175,7 +246,8 @@ impl OpenClawAgent {
                         ctx.accumulated_text.clear();
                     }
                     "error" => {
-                        let msg = payload.get("error")
+                        let msg = payload
+                            .get("error")
                             .and_then(|e| e.as_str())
                             .unwrap_or("Chat error")
                             .to_string();
@@ -191,7 +263,8 @@ impl OpenClawAgent {
                 match event_type {
                     "tool" => {
                         let phase = payload.get("phase").and_then(|p| p.as_str()).unwrap_or("");
-                        let tool_name = payload.get("toolName")
+                        let tool_name = payload
+                            .get("toolName")
                             .or_else(|| payload.get("name"))
                             .and_then(|n| n.as_str())
                             .unwrap_or("unknown")
@@ -199,7 +272,8 @@ impl OpenClawAgent {
 
                         match phase {
                             "start" | "update" => {
-                                let input = payload.get("args")
+                                let input = payload
+                                    .get("args")
                                     .or_else(|| payload.get("input"))
                                     .cloned()
                                     .unwrap_or(serde_json::Value::Null);
@@ -210,7 +284,8 @@ impl OpenClawAgent {
                                 });
                             }
                             "result" => {
-                                let output = payload.get("result")
+                                let output = payload
+                                    .get("result")
                                     .or_else(|| payload.get("output"))
                                     .cloned()
                                     .unwrap_or(serde_json::Value::Null);
@@ -242,11 +317,13 @@ impl OpenClawAgent {
             }
 
             "exec.approval.request" => {
-                let id = payload.get("id")
+                let id = payload
+                    .get("id")
                     .and_then(|i| i.as_str())
                     .unwrap_or("")
                     .to_string();
-                let description = payload.get("description")
+                let description = payload
+                    .get("description")
                     .or_else(|| payload.get("tool"))
                     .and_then(|d| d.as_str())
                     .unwrap_or("Permission requested")
@@ -272,10 +349,14 @@ impl OpenClawAgent {
 
         // 数组格式: [{type: "text", text: "..."}, ...]
         if let Some(arr) = msg.as_array() {
-            let texts: Vec<String> = arr.iter()
+            let texts: Vec<String> = arr
+                .iter()
                 .filter_map(|block| {
                     if block.get("type").and_then(|t| t.as_str()) == Some("text") {
-                        block.get("text").and_then(|t| t.as_str()).map(|s| s.to_string())
+                        block
+                            .get("text")
+                            .and_then(|t| t.as_str())
+                            .map(|s| s.to_string())
                     } else {
                         None
                     }
@@ -307,7 +388,8 @@ impl AgentBackend for OpenClawAgent {
         let command = config.command.as_deref().unwrap_or("openclaw");
 
         // 从 env 获取端口配置
-        let port = config.env
+        let port = config
+            .env
             .as_ref()
             .and_then(|e| e.get("OPENCLAW_GATEWAY_PORT"))
             .and_then(|p| p.parse::<u16>().ok())
@@ -315,9 +397,9 @@ impl AgentBackend for OpenClawAgent {
         self.gateway_port = port;
 
         // 检查 Gateway 是否已在运行
-        let gateway_running = tokio::net::TcpStream::connect(
-            format!("127.0.0.1:{}", port)
-        ).await.is_ok();
+        let gateway_running = tokio::net::TcpStream::connect(format!("127.0.0.1:{}", port))
+            .await
+            .is_ok();
 
         if !gateway_running {
             // 尝试启动本地 Gateway
@@ -340,7 +422,11 @@ impl AgentBackend for OpenClawAgent {
         tx: mpsc::Sender<AgentEvent>,
     ) -> Result<()> {
         *self.status.write().await = AgentStatus::Running;
-        let _ = tx.send(AgentEvent::StatusChange { status: AgentStatus::Running }).await;
+        let _ = tx
+            .send(AgentEvent::StatusChange {
+                status: AgentStatus::Running,
+            })
+            .await;
 
         let port = self.gateway_port;
         let ws_url = format!("ws://127.0.0.1:{}", port);
@@ -348,9 +434,12 @@ impl AgentBackend for OpenClawAgent {
         // 连接 WebSocket
         let (ws_stream, _) = tokio_tungstenite::connect_async(&ws_url)
             .await
-            .map_err(|e| AppError::Agent(format!(
-                "Failed to connect to OpenClaw gateway at {}: {}", ws_url, e
-            )))?;
+            .map_err(|e| {
+                AppError::Agent(format!(
+                    "Failed to connect to OpenClaw gateway at {}: {}",
+                    ws_url, e
+                ))
+            })?;
 
         let (mut ws_write, mut ws_read) = ws_stream.split();
 
@@ -371,7 +460,8 @@ impl AgentBackend for OpenClawAgent {
             }),
         );
 
-        ws_write.send(tokio_tungstenite::tungstenite::Message::Text(connect_req))
+        ws_write
+            .send(tokio_tungstenite::tungstenite::Message::Text(connect_req))
             .await
             .map_err(|e| AppError::Agent(format!("WebSocket send error: {}", e)))?;
 
@@ -405,7 +495,8 @@ impl AgentBackend for OpenClawAgent {
                         "externalId": chat_id,
                     }),
                 );
-                ws_write.send(tokio_tungstenite::tungstenite::Message::Text(resolve_req))
+                ws_write
+                    .send(tokio_tungstenite::tungstenite::Message::Text(resolve_req))
                     .await
                     .map_err(|e| AppError::Agent(format!("WebSocket send error: {}", e)))?;
 
@@ -416,7 +507,8 @@ impl AgentBackend for OpenClawAgent {
                         Ok(tokio_tungstenite::tungstenite::Message::Text(text)) => {
                             if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) {
                                 if v.get("type").and_then(|t| t.as_str()) == Some("res") {
-                                    if let Some(key) = v.get("payload")
+                                    if let Some(key) = v
+                                        .get("payload")
                                         .and_then(|p| p.get("key"))
                                         .and_then(|k| k.as_str())
                                     {
@@ -444,7 +536,8 @@ impl AgentBackend for OpenClawAgent {
                 "idempotencyKey": uuid::Uuid::new_v4().to_string(),
             }),
         );
-        ws_write.send(tokio_tungstenite::tungstenite::Message::Text(chat_req))
+        ws_write
+            .send(tokio_tungstenite::tungstenite::Message::Text(chat_req))
             .await
             .map_err(|e| AppError::Agent(format!("WebSocket send error: {}", e)))?;
 
@@ -513,7 +606,11 @@ impl AgentBackend for OpenClawAgent {
             }).await;
 
             *status.write().await = AgentStatus::Idle;
-            let _ = tx.send(AgentEvent::StatusChange { status: AgentStatus::Idle }).await;
+            let _ = tx
+                .send(AgentEvent::StatusChange {
+                    status: AgentStatus::Idle,
+                })
+                .await;
         });
 
         Ok(())
@@ -529,21 +626,46 @@ impl AgentBackend for OpenClawAgent {
 
     async fn handle_permission(
         &self,
-        _chat_id: &str,
-        _request_id: &str,
-        _approved: bool,
+        chat_id: &str,
+        request_id: &str,
+        approved: bool,
     ) -> Result<()> {
-        // TODO: 通过 WebSocket 发送 exec.approval.response RPC
-        // 需要持有 ws_write 引用，当前架构需要调整
-        // 暂时不支持，等待后续重构
-        tracing::warn!("OpenClaw permission handling not yet implemented via WebSocket");
+        let session_key = self
+            .session_key
+            .read()
+            .await
+            .clone()
+            .ok_or_else(|| AppError::Agent("OpenClaw session key is not initialized".into()))?;
+
+        let mut ws_write = self
+            .connect_gateway_writer(&format!("aionx-perm-{}", chat_id))
+            .await?;
+
+        let req = Self::make_rpc_request(
+            &format!("approval-{}", uuid::Uuid::new_v4()),
+            "exec.approval.response",
+            serde_json::json!({
+                "sessionKey": session_key,
+                "id": request_id,
+                "approved": approved,
+            }),
+        );
+
+        ws_write
+            .send(tokio_tungstenite::tungstenite::Message::Text(req))
+            .await
+            .map_err(|e| AppError::Agent(format!("Failed to send approval response: {}", e)))?;
+
+        tracing::info!(
+            request_id = request_id,
+            approved = approved,
+            "OpenClaw permission response sent"
+        );
         Ok(())
     }
 
     fn status(&self) -> AgentStatus {
-        futures::executor::block_on(async {
-            self.status.read().await.clone()
-        })
+        futures::executor::block_on(async { self.status.read().await.clone() })
     }
 
     async fn shutdown(&mut self) -> Result<()> {
@@ -559,5 +681,69 @@ impl AgentBackend for OpenClawAgent {
         *self.session_key.write().await = None;
         tracing::info!("OpenClaw agent shut down");
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::OpenClawAgent;
+    use crate::agents::process::ProcessManager;
+    use crate::agents::traits::AgentBackend;
+    use futures::{SinkExt, StreamExt};
+    use std::sync::Arc;
+    use tokio::net::TcpListener;
+    use tokio_tungstenite::accept_async;
+    use tokio_tungstenite::tungstenite::Message;
+
+    #[tokio::test]
+    async fn handle_permission_sends_approval_response_rpc() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+
+        let server = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut ws = accept_async(stream).await.unwrap();
+
+            // 1) 接收 connect RPC
+            let first = ws.next().await.unwrap().unwrap();
+            let first_text = first.into_text().unwrap();
+            let first_json: serde_json::Value = serde_json::from_str(&first_text).unwrap();
+            assert_eq!(first_json["type"], "req");
+            assert_eq!(first_json["method"], "connect");
+
+            // 2) 返回 connect 成功响应
+            ws.send(Message::Text(
+                serde_json::json!({
+                    "type": "res",
+                    "id": first_json["id"],
+                    "ok": true,
+                    "payload": {}
+                })
+                .to_string(),
+            ))
+            .await
+            .unwrap();
+
+            // 3) 接收 exec.approval.response RPC
+            let second = ws.next().await.unwrap().unwrap();
+            let second_text = second.into_text().unwrap();
+            let second_json: serde_json::Value = serde_json::from_str(&second_text).unwrap();
+
+            assert_eq!(second_json["type"], "req");
+            assert_eq!(second_json["method"], "exec.approval.response");
+            assert_eq!(second_json["params"]["sessionKey"], "session-test");
+            assert_eq!(second_json["params"]["id"], "req-1");
+            assert_eq!(second_json["params"]["approved"], true);
+        });
+
+        let mut agent = OpenClawAgent::new(Arc::new(ProcessManager::new()));
+        *agent.session_key.write().await = Some("session-test".to_string());
+        agent.gateway_port = port;
+
+        <OpenClawAgent as AgentBackend>::handle_permission(&agent, "chat-1", "req-1", true)
+            .await
+            .unwrap();
+
+        server.await.unwrap();
     }
 }
