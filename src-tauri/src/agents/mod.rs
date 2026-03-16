@@ -1,2 +1,8 @@
-// Agent 模块 - 阶段2实现
-// 当前仅定义 trait 接口，具体 Agent 实现在阶段2/3完成
+pub mod acp;
+pub mod process;
+pub mod service;
+pub mod traits;
+pub mod types;
+
+pub use service::AgentService;
+pub use types::*;

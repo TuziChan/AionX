@@ -1,4 +1,5 @@
 use sqlx::SqlitePool;
+use crate::agents::AgentService;
 use crate::events::EventBus;
 use crate::services::{ChatService, MessageService};
 
@@ -8,6 +9,7 @@ pub struct AppState {
     pub event_bus: EventBus,
     pub chat_service: ChatService,
     pub message_service: MessageService,
+    pub agent_service: AgentService,
 }
 
 impl AppState {
@@ -15,12 +17,14 @@ impl AppState {
         let event_bus = EventBus::new();
         let chat_service = ChatService::new(pool.clone());
         let message_service = MessageService::new(pool.clone());
+        let agent_service = AgentService::new();
 
         Self {
             db_pool: pool,
             event_bus,
             chat_service,
             message_service,
+            agent_service,
         }
     }
 }

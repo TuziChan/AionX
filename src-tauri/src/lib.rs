@@ -31,6 +31,12 @@ pub fn run() {
             commands::get_associated_chat,
             commands::get_messages,
             commands::add_message,
+            // Agent commands
+            commands::send_message,
+            commands::stop_agent,
+            commands::get_agent_status,
+            commands::approve_permission,
+            commands::detect_agents,
             // Settings commands
             commands::get_settings,
             commands::update_settings,
