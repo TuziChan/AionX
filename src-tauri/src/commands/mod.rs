@@ -1,14 +1,20 @@
 pub mod agent;
+pub mod assistant_plugin;
+pub mod channel;
 pub mod chat;
 pub mod cron;
+pub mod extension;
 pub mod file;
 pub mod mcp;
 pub mod settings;
 pub mod webui;
 
 pub use agent::*;
+pub use assistant_plugin::*;
+pub use channel::*;
 pub use chat::*;
 pub use cron::*;
+pub use extension::*;
 pub use file::*;
 pub use mcp::*;
 pub use settings::*;

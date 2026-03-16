@@ -5,7 +5,6 @@ use axum::{
     response::{IntoResponse, Response},
     Extension,
 };
-use crate::models::user::UserInfo;
 use crate::services::AuthService;
 use std::sync::Arc;
 

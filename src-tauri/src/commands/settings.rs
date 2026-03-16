@@ -1,6 +1,7 @@
 use crate::config::AppConfig;
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use tauri::Manager;
 
 // --- Settings CRUD Commands ---
 
@@ -74,6 +75,34 @@ pub struct SystemInfo {
     pub os: String,
     pub arch: String,
     pub version: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Type)]
+pub struct SystemDirectories {
+    pub cache_dir: String,
+    pub data_dir: String,
+    pub log_dir: String,
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_system_directories(
+    app_handle: tauri::AppHandle,
+) -> Result<SystemDirectories, String> {
+    let paths = app_handle.path();
+    let cache_dir = paths
+        .app_cache_dir()
+        .map_err(|e| e.to_string())?;
+    let data_dir = paths
+        .app_data_dir()
+        .map_err(|e| e.to_string())?;
+    let log_dir = data_dir.join("logs");
+
+    Ok(SystemDirectories {
+        cache_dir: cache_dir.to_string_lossy().to_string(),
+        data_dir: data_dir.to_string_lossy().to_string(),
+        log_dir: log_dir.to_string_lossy().to_string(),
+    })
 }
 
 #[tauri::command]

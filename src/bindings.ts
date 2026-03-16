@@ -125,6 +125,78 @@ async detectAgents() : Promise<Result<DetectedAgent[], string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async listAssistantPlugins() : Promise<Result<AssistantPlugin[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_assistant_plugins") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async createAssistantPlugin(input: CreateAssistantPlugin) : Promise<Result<AssistantPlugin, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_assistant_plugin", { input }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateAssistantPlugin(id: string, updates: AssistantPluginUpdate) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_assistant_plugin", { id, updates }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async removeAssistantPlugin(id: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_assistant_plugin", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async listChannelPlugins() : Promise<Result<ChannelPlugin[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_channel_plugins") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async createChannelPlugin(input: CreateChannelPlugin) : Promise<Result<ChannelPlugin, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_channel_plugin", { input }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateChannelPlugin(id: string, updates: ChannelPluginUpdate) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_channel_plugin", { id, updates }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async listExtensions() : Promise<Result<Extension[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_extensions") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateExtension(id: string, updates: ExtensionUpdate) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_extension", { id, updates }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getSettings(category: string) : Promise<Result<JsonValue, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_settings", { category }) };
@@ -160,6 +232,14 @@ async getDefaultConfig() : Promise<Result<AppConfig, string>> {
 async getSystemInfo() : Promise<Result<SystemInfo, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_system_info") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getSystemDirectories() : Promise<Result<SystemDirectories, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_system_directories") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -384,11 +464,17 @@ export type AgentStatus = "idle" | "starting" | "running" | "stopping" | "error"
  * 应用配置结构
  */
 export type AppConfig = { theme: string; language: string; zoom_factor: number; webui_port: number; webui_remote: boolean }
+export type AssistantPlugin = { id: string; type: string; name: string; enabled: boolean; config: string | null; status: string; last_connected: number | null; created_at: number; updated_at: number }
+export type AssistantPluginUpdate = { name: string | null; enabled: boolean | null; config: string | null; status: string | null }
+export type ChannelPlugin = { id: string; type: string; name: string; enabled: boolean; config: string | null; status: string; created_at: number; updated_at: number }
+export type ChannelPluginUpdate = { name: string | null; enabled: boolean | null; config: string | null; status: string | null }
 /**
  * Chat 对外模型 — 序列化到前端（extra 为 JSON Value）
  */
 export type Chat = { id: string; user_id: string | null; name: string; type: string; model: string; agent_type: string; workspace_path: string; status: string; extra: JsonValue; created_at: number; updated_at: number }
 export type ChatUpdate = { name: string | null; model: string | null; status: string | null; extra: JsonValue | null }
+export type CreateAssistantPlugin = { type: string; name: string; config: string | null }
+export type CreateChannelPlugin = { type: string; name: string; config: string | null }
 export type CreateChat = { name: string; agent_type: string; model: string | null; workspace_path: string | null; extra: JsonValue | null }
 export type CreateCronJob = { name: string; cron_expression: string; agent_type: string; prompt: string; enabled: boolean | null }
 export type CreateMcpServer = { name: string; type: string; command: string | null; args: string | null; env: string | null; url: string | null; oauth_config: string | null }
@@ -399,6 +485,8 @@ export type CronJobUpdate = { name: string | null; cron_expression: string | nul
  * 检测到的可用 Agent
  */
 export type DetectedAgent = { agent_type: string; name: string; command: string; version: string | null; available: boolean }
+export type Extension = { id: string; name: string; version: string; description: string | null; path: string; enabled: boolean; config: string | null; created_at: number; updated_at: number }
+export type ExtensionUpdate = { name: string | null; version: string | null; description: string | null; enabled: boolean | null; config: string | null }
 /**
  * 文件附件（发送消息时附带）
  */
@@ -416,6 +504,7 @@ export type McpServerUpdate = { name: string | null; command: string | null; arg
 export type Message = { id: string; chat_id: string; msg_id: string; type: string; role: string; content: string; position: number; status: string; extra: JsonValue; created_at: number }
 export type PaginatedResult<T> = { items: T[]; total: number; page: number; page_size: number }
 export type ResetWebUiPasswordResult = { password: string }
+export type SystemDirectories = { cache_dir: string; data_dir: string; log_dir: string }
 export type SystemInfo = { os: string; arch: string; version: string }
 /**
  * WebUI 服务器信息（返回给前端）

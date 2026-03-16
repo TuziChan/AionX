@@ -16,6 +16,18 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     applyTheme(theme);
   }, [theme]);
 
+  useEffect(() => {
+    const customCss = localStorage.getItem('aionx.customCss') ?? '';
+    const styleId = 'aionx-custom-css-theme';
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = customCss;
+  }, []);
+
   return (
     <ConfigProvider
       theme={{
