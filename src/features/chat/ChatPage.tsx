@@ -5,6 +5,16 @@ import { useAgentStore } from './stores/agentStore';
 import { MessageList } from './components/MessageList';
 import { SendBox } from './components/SendBox';
 import { PermissionDialog } from './components/PermissionDialog';
+import { AgentStatusBadge } from './components/AgentStatusBadge';
+import { Tag } from '@arco-design/web-react';
+
+const AGENT_COLORS: Record<string, string> = {
+  acp: 'purple',
+  gemini: 'blue',
+  codex: 'green',
+  nanobot: 'orange',
+  openclaw: 'red',
+};
 
 export function Component() {
   const { id } = useParams<{ id: string }>();
@@ -36,11 +46,16 @@ export function Component() {
   return (
     <div className="flex flex-col h-full">
       {/* Chat header */}
-      <div className="shrink-0 h-12 flex items-center px-4 border-b border-b-light">
-        <h2 className="text-sm font-medium text-t-primary truncate">
-          {currentChat?.name || 'Loading...'}
-        </h2>
-        <span className="ml-2 text-xs text-t-tertiary">{agentType}</span>
+      <div className="shrink-0 h-12 flex items-center justify-between px-4 border-b border-b-light">
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-sm font-medium text-t-primary truncate">
+            {currentChat?.name || 'Loading...'}
+          </h2>
+          <Tag color={AGENT_COLORS[agentType] ?? 'gray'} size="small">
+            {agentType}
+          </Tag>
+        </div>
+        <AgentStatusBadge />
       </div>
 
       {/* Error banner */}

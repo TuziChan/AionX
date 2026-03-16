@@ -1,6 +1,6 @@
 import { SettingTwo, ArrowCircleLeft, Plus } from '@icon-park/react';
 import { IconMoonFill, IconSunFill } from '@arco-design/web-react/icon';
-import { Tooltip } from '@arco-design/web-react';
+import { Tooltip, Dropdown, Menu } from '@arco-design/web-react';
 import classNames from 'classnames';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRef, useEffect, useCallback } from 'react';
@@ -8,6 +8,14 @@ import { useThemeStore } from '../../stores/theme';
 import { useLayoutContext } from '../../contexts/LayoutContext';
 import { ChatHistory } from '../../features/chat/components/ChatHistory';
 import { useChatStore } from '../../features/chat/stores/chatStore';
+
+const AGENT_OPTIONS = [
+  { key: 'acp', label: 'Claude Code' },
+  { key: 'gemini', label: 'Gemini' },
+  { key: 'codex', label: 'Codex' },
+  { key: 'nanobot', label: 'Nanobot' },
+  { key: 'openclaw', label: 'OpenClaw' },
+];
 
 interface SidebarProps {
   onSessionClick?: () => void;
@@ -42,9 +50,10 @@ export function Sidebar({ onSessionClick, collapsed = false }: SidebarProps) {
     onSessionClick?.();
   };
 
-  const handleNewChat = useCallback(async () => {
+  const handleNewChat = useCallback(async (agentType: string) => {
     try {
-      const chat = await createChat('New Chat', 'acp');
+      const label = AGENT_OPTIONS.find((a) => a.key === agentType)?.label ?? agentType;
+      const chat = await createChat(`New ${label} Chat`, agentType);
       navigate(`/chat/${chat.id}`);
       onSessionClick?.();
     } catch (e) {
@@ -59,16 +68,26 @@ export function Sidebar({ onSessionClick, collapsed = false }: SidebarProps) {
 
   return (
     <div className="size-full flex flex-col">
-      {/* New Chat Button */}
+      {/* New Chat Button with Agent Dropdown */}
       {!isSettings && (
         <div className="shrink-0 p-2">
-          <button
-            onClick={handleNewChat}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-brand text-white text-sm hover:opacity-90 transition-opacity"
+          <Dropdown
+            position="br"
+            droplist={
+              <Menu onClickMenuItem={(key) => handleNewChat(key)}>
+                {AGENT_OPTIONS.map((agent) => (
+                  <Menu.Item key={agent.key}>{agent.label}</Menu.Item>
+                ))}
+              </Menu>
+            }
           >
-            <Plus theme="outline" size="16" fill="currentColor" />
-            {!collapsed && <span>New Chat</span>}
-          </button>
+            <button
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-brand text-white text-sm hover:opacity-90 transition-opacity"
+            >
+              <Plus theme="outline" size="16" fill="currentColor" />
+              {!collapsed && <span>New Chat</span>}
+            </button>
+          </Dropdown>
         </div>
       )}
 
