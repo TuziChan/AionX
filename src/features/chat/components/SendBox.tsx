@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { PauseOne, Send } from '@icon-park/react';
 import { useAgentStore } from '../stores/agentStore';
+import { getAgentAdapter } from '../adapters';
 
 interface Props {
   chatId: string;
@@ -16,13 +17,12 @@ export function SendBox({ chatId, agentType }: Props) {
   const isRunning = status === 'running';
 
   const handleSend = useCallback(async () => {
-    const text = input.trim();
+    const adapter = getAgentAdapter(agentType);
+    const text = (adapter.preprocessMessage?.(input) ?? input).trim();
     if (!text || isRunning) return;
 
     setInput('');
-    await sendMessage(chatId, agentType, text, {
-      agent_type: agentType,
-    });
+    await sendMessage(chatId, agentType, text, adapter.getDefaultConfig());
   }, [input, isRunning, chatId, agentType, sendMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
