@@ -1,6 +1,7 @@
 mod agent;
 mod commands;
 mod config;
+mod dao;
 mod db;
 mod error;
 mod events;
@@ -26,6 +27,8 @@ pub fn run() {
             commands::update_chat,
             commands::delete_chat,
             commands::get_workspace_chats,
+            commands::get_grouped_history,
+            commands::get_associated_chat,
             commands::get_messages,
             commands::add_message,
             // Settings commands

@@ -1,3 +1,4 @@
+use crate::dao::chat::GroupedHistory;
 use crate::models::{Chat, ChatUpdate, CreateChat, CreateMessage, ListParams, Message, PaginatedResult};
 use crate::state::AppState;
 use tauri::State;
@@ -56,6 +57,23 @@ pub async fn get_workspace_chats(
     workspace_path: String,
 ) -> Result<Vec<Chat>, String> {
     state.chat_service.get_by_workspace(&workspace_path).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_grouped_history(
+    state: State<'_, AppState>,
+) -> Result<GroupedHistory, String> {
+    state.chat_service.get_grouped_history().await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_associated_chat(
+    state: State<'_, AppState>,
+    chat_id: String,
+) -> Result<Option<Chat>, String> {
+    state.chat_service.get_associated(&chat_id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]

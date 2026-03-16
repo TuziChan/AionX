@@ -21,6 +21,7 @@ pub struct User {
     pub last_login: Option<i64>,
 }
 
+/// 前端可见的用户信息（不含敏感字段）
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct UserInfo {
     pub id: String,
@@ -36,4 +37,18 @@ impl From<User> for UserInfo {
             email: u.email,
         }
     }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CreateUser {
+    pub username: String,
+    pub email: Option<String>,
+    pub password_hash: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct UserUpdate {
+    pub username: Option<String>,
+    pub email: Option<String>,
+    pub password_hash: Option<String>,
 }
