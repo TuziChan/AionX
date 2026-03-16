@@ -1,7 +1,9 @@
 use sqlx::SqlitePool;
+use tokio::sync::RwLock;
 use crate::agents::AgentService;
 use crate::events::EventBus;
 use crate::services::{AuthService, ChatService, CronService, MessageService};
+use crate::webui::WebUiServer;
 
 /// 全局应用状态，通过 Tauri manage() 注入
 pub struct AppState {
@@ -12,6 +14,7 @@ pub struct AppState {
     pub agent_service: AgentService,
     pub auth_service: AuthService,
     pub cron_service: CronService,
+    pub webui_handle: RwLock<Option<WebUiServer>>,
 }
 
 impl AppState {
@@ -31,6 +34,7 @@ impl AppState {
             agent_service,
             auth_service,
             cron_service,
+            webui_handle: RwLock::new(None),
         }
     }
 }

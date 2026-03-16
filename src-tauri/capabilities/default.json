@@ -8,9 +8,22 @@
     "opener:default",
     "shell:allow-open",
     "shell:allow-execute",
+    "shell:allow-spawn",
+    "shell:allow-stdin-write",
     "fs:default",
     "fs:allow-read",
     "fs:allow-write",
-    "dialog:default"
+    "fs:allow-exists",
+    "fs:allow-mkdir",
+    "fs:allow-remove",
+    "dialog:default",
+    "notification:default",
+    "clipboard-manager:default",
+    "http:default",
+    "os:default",
+    "process:default",
+    "store:default",
+    "deep-link:default",
+    "window-state:default"
   ]
 }

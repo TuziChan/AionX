@@ -2,21 +2,16 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 /// Agent 运行状态
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum AgentStatus {
+    #[default]
     Idle,
     Starting,
     Running,
     Stopping,
     Error,
     Disconnected,
-}
-
-impl Default for AgentStatus {
-    fn default() -> Self {
-        Self::Idle
-    }
 }
 
 /// Agent 类型枚举

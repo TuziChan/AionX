@@ -70,6 +70,10 @@ pub fn run() {
             commands::get_cron_job,
             commands::update_cron_job,
             commands::remove_cron_job,
+            // WebUI commands
+            commands::start_webui,
+            commands::stop_webui,
+            commands::get_webui_status,
         ]);
 
     #[cfg(debug_assertions)]
