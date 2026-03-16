@@ -1,0 +1,28 @@
+{
+  "app": {
+    "name": "AionX",
+    "welcome": "Bienvenido a AionX"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "confirm": "Confirmar",
+    "loading": "Cargando...",
+    "success": "Éxito",
+    "error": "Error"
+  },
+  "chat": {
+    "newConversation": "Nueva conversación",
+    "sendMessage": "Enviar mensaje",
+    "placeholder": "Escribe tu mensaje..."
+  },
+  "settings": {
+    "title": "Configuración",
+    "general": "General",
+    "appearance": "Apariencia",
+    "language": "Idioma"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "app": {
+    "name": "AionX",
+    "welcome": "AionX에 오신 것을 환영합니다"
+  },
+  "common": {
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "편집",
+    "create": "생성",
+    "confirm": "확인",
+    "loading": "로딩 중...",
+    "success": "성공",
+    "error": "오류"
+  },
+  "chat": {
+    "newConversation": "새 대화",
+    "sendMessage": "메시지 보내기",
+    "placeholder": "메시지를 입력하세요..."
+  },
+  "settings": {
+    "title": "설정",
+    "general": "일반",
+    "appearance": "외관",
+    "language": "언어"
+  }
+}

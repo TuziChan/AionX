@@ -1,0 +1,28 @@
+{
+  "app": {
+    "name": "AionX",
+    "welcome": "歡迎使用 AionX"
+  },
+  "common": {
+    "save": "儲存",
+    "cancel": "取消",
+    "delete": "刪除",
+    "edit": "編輯",
+    "create": "建立",
+    "confirm": "確認",
+    "loading": "載入中...",
+    "success": "成功",
+    "error": "錯誤"
+  },
+  "chat": {
+    "newConversation": "新建對話",
+    "sendMessage": "傳送訊息",
+    "placeholder": "輸入你的訊息..."
+  },
+  "settings": {
+    "title": "設定",
+    "general": "一般",
+    "appearance": "外觀",
+    "language": "語言"
+  }
+}

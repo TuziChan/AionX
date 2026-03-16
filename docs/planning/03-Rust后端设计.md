@@ -5,13 +5,13 @@
 ```toml
 # Cargo.toml
 [package]
-name = "aionui-tauri"
+name = "aionx"
 version = "2.0.0"
 edition = "2021"
 
 [dependencies]
 # Tauri 核心
-tauri = { version = "2", features = ["tray-icon", "protocol-asset"] }
+tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-shell = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
@@ -30,14 +30,12 @@ tauri-plugin-window-state = "2"
 tokio = { version = "1", features = ["full"] }
 
 # 数据库
-rusqlite = { version = "0.31", features = ["bundled", "serde_json"] }
-r2d2 = "0.8"
-r2d2_sqlite = "0.24"
+sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls"] }
 
 # Web 服务器 (WebUI)
 axum = { version = "0.7", features = ["ws", "multipart"] }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "fs", "trace"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
 
 # 序列化
 serde = { version = "1", features = ["derive"] }
@@ -51,12 +49,17 @@ jsonwebtoken = "9"
 # HTTP 客户端
 reqwest = { version = "0.12", features = ["json", "stream", "multipart"] }
 
+# 类型导出
+specta = { version = "2.0.0-rc.20", features = ["derive"] }
+tauri-specta = { version = "2.0.0-rc.20", features = ["typescript"] }
+specta-typescript = "0.0.7"
+
 # 工具
-uuid = { version = "1", features = ["v4"] }
+uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 regex = "1"
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "1"
 anyhow = "1"
 zip = "0.6"
@@ -102,10 +105,11 @@ fn main() {
 // src-tauri/src/state.rs
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use sqlx::SqlitePool;
 
 pub struct AppState {
-    pub db: Arc<DatabasePool>,
-    pub conversation_service: Arc<ConversationService>,
+    pub db: Arc<SqlitePool>,
+    pub chat_service: Arc<ChatService>,
     pub agent_service: Arc<AgentService>,
     pub cron_service: Arc<RwLock<CronService>>,
     pub mcp_service: Arc<McpService>,
@@ -162,62 +166,79 @@ impl From<AppError> for tauri::ipc::InvokeError {
 
 ## 3. Commands 层设计
 
-### 3.1 对话管理 Commands
+### 3.1 聊天管理 Commands
 
 ```rust
-// src-tauri/src/commands/conversation.rs
+// src-tauri/src/commands/chat.rs
+use specta::Type;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Type)]
+pub struct Chat {
+    pub id: String,
+    pub name: String,
+    pub agent_type: String,
+    pub model: Option<String>,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
 
 #[tauri::command]
-async fn create_conversation(
+#[specta::specta]
+async fn create_chat(
     name: String,
     agent_type: String,
     model: Option<String>,
     state: State<'_, AppState>,
-) -> Result<Conversation, AppError>;
+) -> Result<Chat, AppError>;
 
 #[tauri::command]
-async fn get_conversation(
+#[specta::specta]
+async fn get_chat(
     id: String,
     state: State<'_, AppState>,
-) -> Result<Conversation, AppError>;
+) -> Result<Chat, AppError>;
 
 #[tauri::command]
-async fn list_conversations(
+#[specta::specta]
+async fn list_chats(
     page: Option<u32>,
     page_size: Option<u32>,
     state: State<'_, AppState>,
-) -> Result<PaginatedResult<Conversation>, AppError>;
+) -> Result<PaginatedResult<Chat>, AppError>;
 
 #[tauri::command]
-async fn delete_conversation(
+#[specta::specta]
+async fn delete_chat(
     id: String,
     state: State<'_, AppState>,
 ) -> Result<(), AppError>;
 
 #[tauri::command]
-async fn update_conversation(
+#[specta::specta]
+async fn update_chat(
     id: String,
-    updates: ConversationUpdate,
+    updates: ChatUpdate,
     state: State<'_, AppState>,
-) -> Result<Conversation, AppError>;
+) -> Result<Chat, AppError>;
 
 #[tauri::command]
 async fn get_messages(
-    conversation_id: String,
+    chat_id: String,
     state: State<'_, AppState>,
 ) -> Result<Vec<Message>, AppError>;
 
 #[tauri::command]
-async fn get_associate_conversation(
-    conversation_id: String,
+async fn get_associate_chat(
+    chat_id: String,
     state: State<'_, AppState>,
-) -> Result<Option<Conversation>, AppError>;
+) -> Result<Option<Chat>, AppError>;
 
 #[tauri::command]
-async fn get_workspace_conversations(
+async fn get_workspace_chats(
     workspace_path: String,
     state: State<'_, AppState>,
-) -> Result<Vec<Conversation>, AppError>;
+) -> Result<Vec<Chat>, AppError>;
 ```
 
 ### 3.2 Agent Commands
@@ -227,7 +248,7 @@ async fn get_workspace_conversations(
 
 #[tauri::command]
 async fn send_message(
-    conversation_id: String,
+    chat_id: String,
     content: String,
     files: Option<Vec<FileAttachment>>,
     app_handle: AppHandle,
@@ -236,19 +257,19 @@ async fn send_message(
 
 #[tauri::command]
 async fn stop_agent(
-    conversation_id: String,
+    chat_id: String,
     state: State<'_, AppState>,
 ) -> Result<(), AppError>;
 
 #[tauri::command]
 async fn get_agent_status(
-    conversation_id: String,
+    chat_id: String,
     state: State<'_, AppState>,
 ) -> Result<AgentStatus, AppError>;
 
 #[tauri::command]
 async fn approve_permission(
-    conversation_id: String,
+    chat_id: String,
     request_id: String,
     approved: bool,
     state: State<'_, AppState>,
@@ -543,19 +564,19 @@ pub trait AgentBackend: Send + Sync {
     /// 发送消息并获取流式响应
     async fn send_message(
         &self,
-        conversation_id: &str,
+        chat_id: &str,
         message: &str,
         files: Option<Vec<FileAttachment>>,
         tx: mpsc::Sender<AgentEvent>,
     ) -> Result<(), AppError>;
 
     /// 停止当前任务
-    async fn stop(&self, conversation_id: &str) -> Result<(), AppError>;
+    async fn stop(&self, chat_id: &str) -> Result<(), AppError>;
 
     /// 处理权限请求
     async fn handle_permission(
         &self,
-        conversation_id: &str,
+        chat_id: &str,
         request_id: &str,
         approved: bool,
     ) -> Result<(), AppError>;
@@ -589,14 +610,14 @@ impl AgentService {
     /// 为对话创建或获取 Agent 实例
     pub async fn get_or_create(
         &self,
-        conversation_id: &str,
+        chat_id: &str,
         agent_type: &str,
     ) -> Result<Arc<dyn AgentBackend>, AppError>;
 
     /// 转发 Agent 事件到前端
     async fn forward_events(
         app_handle: AppHandle,
-        conversation_id: String,
+        chat_id: String,
         mut rx: mpsc::Receiver<AgentEvent>,
     );
 }
@@ -632,24 +653,24 @@ impl AgentBackend for AcpAgent {
 }
 ```
 
-### 4.3 Conversation Service
+### 4.3 Chat Service
 
 ```rust
-// src-tauri/src/services/conversation.rs
+// src-tauri/src/services/chat.rs
 
-pub struct ConversationService {
+pub struct ChatService {
     db: Arc<DatabasePool>,
 }
 
-impl ConversationService {
-    pub async fn create(&self, input: CreateConversation) -> Result<Conversation, AppError>;
-    pub async fn get(&self, id: &str) -> Result<Conversation, AppError>;
-    pub async fn list(&self, params: ListParams) -> Result<PaginatedResult<Conversation>, AppError>;
-    pub async fn update(&self, id: &str, updates: ConversationUpdate) -> Result<Conversation, AppError>;
+impl ChatService {
+    pub async fn create(&self, input: CreateChat) -> Result<Chat, AppError>;
+    pub async fn get(&self, id: &str) -> Result<Chat, AppError>;
+    pub async fn list(&self, params: ListParams) -> Result<PaginatedResult<Chat>, AppError>;
+    pub async fn update(&self, id: &str, updates: ChatUpdate) -> Result<Chat, AppError>;
     pub async fn delete(&self, id: &str) -> Result<(), AppError>;
     pub async fn add_message(&self, conv_id: &str, msg: CreateMessage) -> Result<Message, AppError>;
     pub async fn get_messages(&self, conv_id: &str) -> Result<Vec<Message>, AppError>;
-    pub async fn get_by_workspace(&self, path: &str) -> Result<Vec<Conversation>, AppError>;
+    pub async fn get_by_workspace(&self, path: &str) -> Result<Vec<Chat>, AppError>;
     pub async fn get_grouped_history(&self) -> Result<GroupedHistory, AppError>;
 }
 ```
@@ -789,10 +810,10 @@ pub struct EventBus {
 }
 
 pub enum InternalEvent {
-    ConversationCreated(String),
-    ConversationDeleted(String),
-    AgentStarted { conversation_id: String, agent_type: String },
-    AgentStopped { conversation_id: String },
+    ChatCreated(String),
+    ChatDeleted(String),
+    AgentStarted { chat_id: String, agent_type: String },
+    AgentStopped { chat_id: String },
     SettingsChanged { category: String },
     // ...
 }
@@ -881,11 +902,11 @@ fn init_tracing() {
 
 // 使用示例
 #[instrument(skip(state))]
-async fn create_conversation(
+async fn create_chat(
     name: String,
     state: State<'_, AppState>,
-) -> Result<Conversation, AppError> {
-    info!(name = %name, "Creating new conversation");
+) -> Result<Chat, AppError> {
+    info!(name = %name, "Creating new chat");
     // ...
 }
 ```

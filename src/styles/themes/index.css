@@ -1,0 +1,3 @@
+/* Theme system entry point */
+@import './base.css';
+@import './color-schemes/default.css';

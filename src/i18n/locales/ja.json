@@ -1,0 +1,28 @@
+{
+  "app": {
+    "name": "AionX",
+    "welcome": "AionXへようこそ"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "create": "作成",
+    "confirm": "確認",
+    "loading": "読み込み中...",
+    "success": "成功",
+    "error": "エラー"
+  },
+  "chat": {
+    "newConversation": "新しい会話",
+    "sendMessage": "メッセージを送信",
+    "placeholder": "メッセージを入力..."
+  },
+  "settings": {
+    "title": "設定",
+    "general": "一般",
+    "appearance": "外観",
+    "language": "言語"
+  }
+}
