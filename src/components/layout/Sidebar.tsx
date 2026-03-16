@@ -1,11 +1,13 @@
-import { SettingTwo, ArrowCircleLeft } from '@icon-park/react';
+import { SettingTwo, ArrowCircleLeft, Plus } from '@icon-park/react';
 import { IconMoonFill, IconSunFill } from '@arco-design/web-react/icon';
 import { Tooltip } from '@arco-design/web-react';
 import classNames from 'classnames';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useThemeStore } from '../../stores/theme';
 import { useLayoutContext } from '../../contexts/LayoutContext';
+import { ChatHistory } from '../../features/chat/components/ChatHistory';
+import { useChatStore } from '../../features/chat/stores/chatStore';
 
 interface SidebarProps {
   onSessionClick?: () => void;
@@ -19,6 +21,7 @@ export function Sidebar({ onSessionClick, collapsed = false }: SidebarProps) {
   const { pathname, search, hash } = location;
   const navigate = useNavigate();
   const { mode, toggleTheme } = useThemeStore();
+  const createChat = useChatStore((s) => s.createChat);
 
   const isSettings = pathname.startsWith('/settings');
   const lastNonSettingsPathRef = useRef('/');
@@ -36,14 +39,18 @@ export function Sidebar({ onSessionClick, collapsed = false }: SidebarProps) {
     } else {
       navigate('/settings');
     }
-    if (onSessionClick) {
-      onSessionClick();
-    }
+    onSessionClick?.();
   };
 
-  const handleToggleTheme = () => {
-    toggleTheme();
-  };
+  const handleNewChat = useCallback(async () => {
+    try {
+      const chat = await createChat('New Chat', 'acp');
+      navigate(`/chat/${chat.id}`);
+      onSessionClick?.();
+    } catch (e) {
+      console.error('Failed to create chat:', e);
+    }
+  }, [createChat, navigate, onSessionClick]);
 
   const tooltipEnabled = collapsed && !isMobile;
   const iconColors = {
@@ -52,28 +59,31 @@ export function Sidebar({ onSessionClick, collapsed = false }: SidebarProps) {
 
   return (
     <div className="size-full flex flex-col">
+      {/* New Chat Button */}
+      {!isSettings && (
+        <div className="shrink-0 p-2">
+          <button
+            onClick={handleNewChat}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-brand text-white text-sm hover:opacity-90 transition-opacity"
+          >
+            <Plus theme="outline" size="16" fill="currentColor" />
+            {!collapsed && <span>New Chat</span>}
+          </button>
+        </div>
+      )}
+
       {/* Main content area */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {isSettings ? (
-          <div className="h-full flex flex-col">
-            {/* Settings Sider - 后续实现 */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <div className="p-4 text-t-secondary">Settings Content</div>
-            </div>
-          </div>
+          <div className="p-4 text-t-secondary">Settings Content</div>
         ) : (
-          <div className="h-full flex flex-col">
-            {/* Workspace History - 后续实现 */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <div className="p-4 text-t-secondary">Workspace History</div>
-            </div>
-          </div>
+          <ChatHistory />
         )}
       </div>
 
-      {/* Footer - settings button */}
-      <div className="shrink-0 mt-auto pt-2">
-        <div className="flex flex-col gap-2">
+      {/* Footer */}
+      <div className="shrink-0 mt-auto pt-2 px-2 pb-2">
+        <div className="flex flex-col gap-1">
           {isSettings && (
             <Tooltip
               disabled={!tooltipEnabled}
@@ -81,7 +91,7 @@ export function Sidebar({ onSessionClick, collapsed = false }: SidebarProps) {
               position="right"
             >
               <div
-                onClick={handleToggleTheme}
+                onClick={toggleTheme}
                 className={classNames(
                   'flex items-center justify-start gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-hover active:bg-active',
                   isMobile && 'py-3'
@@ -109,10 +119,9 @@ export function Sidebar({ onSessionClick, collapsed = false }: SidebarProps) {
               className={classNames(
                 'flex items-center justify-start gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors',
                 isMobile && 'py-3',
-                {
-                  'bg-[rgba(var(--primary-6),0.12)] text-primary': isSettings,
-                  'hover:bg-hover hover:shadow-sm active:bg-active': !isSettings,
-                }
+                isSettings
+                  ? 'bg-[rgba(var(--primary-6),0.12)] text-primary'
+                  : 'hover:bg-hover hover:shadow-sm active:bg-active'
               )}
             >
               {isSettings ? (
