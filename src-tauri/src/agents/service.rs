@@ -1,7 +1,9 @@
 use crate::error::{AppError, Result};
 use super::acp::AcpAgent;
+use super::codex::CodexAgent;
 use super::gemini::GeminiAgent;
-use super::subprocess_agent::SubprocessAgent;
+use super::nanobot::NanobotAgent;
+use super::openclaw::OpenClawAgent;
 use super::process::ProcessManager;
 use super::traits::AgentBackend;
 use super::types::*;
@@ -36,9 +38,9 @@ impl AgentService {
             let mut agent: Box<dyn AgentBackend> = match agent_type {
                 "acp" => Box::new(AcpAgent::new(self.process_manager.clone())),
                 "gemini" => Box::new(GeminiAgent::new()),
-                "codex" => Box::new(SubprocessAgent::codex(self.process_manager.clone())),
-                "nanobot" => Box::new(SubprocessAgent::nanobot(self.process_manager.clone())),
-                "openclaw" => Box::new(SubprocessAgent::openclaw(self.process_manager.clone())),
+                "codex" => Box::new(CodexAgent::new(self.process_manager.clone())),
+                "nanobot" => Box::new(NanobotAgent::new(self.process_manager.clone())),
+                "openclaw" => Box::new(OpenClawAgent::new(self.process_manager.clone())),
                 _ => return Err(AppError::Agent(format!("Unknown agent type: {}", agent_type))),
             };
             agent.start(config).await?;
@@ -47,7 +49,6 @@ impl AgentService {
         Ok(())
     }
 
-    /// 发送消息并启动流式响应
     pub async fn send_message(
         &self,
         chat_id: &str,
@@ -116,20 +117,14 @@ impl AgentService {
         // Gemini (HTTP API)
         result.push(GeminiAgent::detect_available());
 
-        // Codex
-        result.push(
-            SubprocessAgent::detect("codex", "OpenAI Codex", "codex").await
-        );
+        // Codex (子进程)
+        result.push(CodexAgent::detect_available().await);
 
-        // Nanobot
-        result.push(
-            SubprocessAgent::detect("nanobot", "Nanobot", "nanobot").await
-        );
+        // Nanobot (子进程 per-message)
+        result.push(NanobotAgent::detect_available().await);
 
-        // OpenClaw
-        result.push(
-            SubprocessAgent::detect("openclaw", "OpenClaw", "openclaw").await
-        );
+        // OpenClaw (Gateway WebSocket)
+        result.push(OpenClawAgent::detect_available().await);
 
         result
     }

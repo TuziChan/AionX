@@ -1,8 +1,10 @@
 pub mod acp;
+pub mod codex;
 pub mod gemini;
+pub mod nanobot;
+pub mod openclaw;
 pub mod process;
 pub mod service;
-pub mod subprocess_agent;
 pub mod traits;
 pub mod types;
 
