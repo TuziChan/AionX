@@ -30,7 +30,7 @@ pub struct CreateChat {
     pub extra: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Type)]
 pub struct ChatUpdate {
     pub name: Option<String>,
     pub model: Option<String>,
