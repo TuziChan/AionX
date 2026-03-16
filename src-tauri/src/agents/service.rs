@@ -1,5 +1,7 @@
 use crate::error::{AppError, Result};
 use super::acp::AcpAgent;
+use super::gemini::GeminiAgent;
+use super::subprocess_agent::SubprocessAgent;
 use super::process::ProcessManager;
 use super::traits::AgentBackend;
 use super::types::*;
@@ -9,7 +11,6 @@ use tauri::{AppHandle, Emitter};
 use tokio::sync::{mpsc, RwLock};
 
 /// Agent 管理服务
-/// 管理所有 Agent 实例的生命周期，转发事件到前端
 pub struct AgentService {
     agents: RwLock<HashMap<String, Box<dyn AgentBackend>>>,
     process_manager: Arc<ProcessManager>,
@@ -34,11 +35,10 @@ impl AgentService {
         if !agents.contains_key(chat_id) {
             let mut agent: Box<dyn AgentBackend> = match agent_type {
                 "acp" => Box::new(AcpAgent::new(self.process_manager.clone())),
-                // 阶段3 扩展：
-                // "gemini" => Box::new(GeminiAgent::new()),
-                // "codex" => Box::new(CodexAgent::new(self.process_manager.clone())),
-                // "nanobot" => Box::new(NanobotAgent::new()),
-                // "openclaw" => Box::new(OpenClawAgent::new()),
+                "gemini" => Box::new(GeminiAgent::new()),
+                "codex" => Box::new(SubprocessAgent::codex(self.process_manager.clone())),
+                "nanobot" => Box::new(SubprocessAgent::nanobot(self.process_manager.clone())),
+                "openclaw" => Box::new(SubprocessAgent::openclaw(self.process_manager.clone())),
                 _ => return Err(AppError::Agent(format!("Unknown agent type: {}", agent_type))),
             };
             agent.start(config).await?;
@@ -61,7 +61,6 @@ impl AgentService {
 
         let (tx, rx) = mpsc::channel::<AgentEvent>(128);
 
-        // 获取 agent 引用并发送消息
         {
             let agents = self.agents.read().await;
             let agent = agents.get(chat_id).ok_or_else(|| {
@@ -70,7 +69,6 @@ impl AgentService {
             agent.send_message(chat_id, message, files, tx).await?;
         }
 
-        // 启动事件转发任务
         let handle = app_handle.clone();
         let cid = chat_id.to_string();
         tokio::spawn(async move {
@@ -80,7 +78,6 @@ impl AgentService {
         Ok(())
     }
 
-    /// 停止指定 chat 的 Agent
     pub async fn stop_agent(&self, chat_id: &str) -> Result<()> {
         let agents = self.agents.read().await;
         if let Some(agent) = agents.get(chat_id) {
@@ -89,7 +86,6 @@ impl AgentService {
         Ok(())
     }
 
-    /// 获取 Agent 状态
     pub async fn get_status(&self, chat_id: &str) -> AgentStatus {
         let agents = self.agents.read().await;
         agents.get(chat_id)
@@ -97,7 +93,6 @@ impl AgentService {
             .unwrap_or(AgentStatus::Idle)
     }
 
-    /// 处理权限请求
     pub async fn handle_permission(
         &self,
         chat_id: &str,
@@ -111,12 +106,34 @@ impl AgentService {
         agent.handle_permission(chat_id, request_id, approved).await
     }
 
-    /// 检测系统中可用的 Agent
+    /// 检测系统中所有可用的 Agent
     pub async fn detect_agents() -> Vec<DetectedAgent> {
-        AcpAgent::detect_available().await
+        let mut result = Vec::new();
+
+        // ACP agents (claude, codebuddy)
+        result.extend(AcpAgent::detect_available().await);
+
+        // Gemini (HTTP API)
+        result.push(GeminiAgent::detect_available());
+
+        // Codex
+        result.push(
+            SubprocessAgent::detect("codex", "OpenAI Codex", "codex").await
+        );
+
+        // Nanobot
+        result.push(
+            SubprocessAgent::detect("nanobot", "Nanobot", "nanobot").await
+        );
+
+        // OpenClaw
+        result.push(
+            SubprocessAgent::detect("openclaw", "OpenClaw", "openclaw").await
+        );
+
+        result
     }
 
-    /// 清理指定 chat 的 Agent
     pub async fn remove_agent(&self, chat_id: &str) {
         let mut agents = self.agents.write().await;
         if let Some(mut agent) = agents.remove(chat_id) {
@@ -124,7 +141,6 @@ impl AgentService {
         }
     }
 
-    /// 应用退出时清理所有 Agent
     pub async fn shutdown_all(&self) {
         let mut agents = self.agents.write().await;
         for (id, mut agent) in agents.drain() {
@@ -134,7 +150,7 @@ impl AgentService {
         self.process_manager.cleanup_all().await;
     }
 
-    /// 转发 Agent 事件到前端（通过 Tauri Event）
+    /// 转发 Agent 事件到前端
     async fn forward_events(
         app_handle: AppHandle,
         chat_id: String,
