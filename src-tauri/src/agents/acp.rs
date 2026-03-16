@@ -6,14 +6,21 @@ use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::sync::{mpsc, RwLock};
 
+/// 流式会话上下文：跟踪当前 msg_id
+struct StreamContext {
+    current_msg_id: String,
+}
+
 /// ACP (Anthropic Claude Protocol) Agent
 /// 通过子进程与 Claude Code / Codebuddy 等工具通信
 pub struct AcpAgent {
     process_manager: Arc<ProcessManager>,
-    process_id: String,
     status: Arc<RwLock<AgentStatus>>,
-    stdin: Arc<RwLock<Option<tokio::process::ChildStdin>>>,
-    /// 用于取消正在运行的任务
+    /// 当前活跃进程的 stdin（用于权限响应）
+    active_stdin: Arc<RwLock<Option<tokio::process::ChildStdin>>>,
+    /// 当前活跃进程 ID
+    active_process_id: Arc<RwLock<Option<String>>>,
+    /// 取消正在运行的任务
     cancel_tx: Arc<RwLock<Option<tokio::sync::oneshot::Sender<()>>>>,
     config: Option<AgentConfig>,
 }
@@ -22,9 +29,9 @@ impl AcpAgent {
     pub fn new(process_manager: Arc<ProcessManager>) -> Self {
         Self {
             process_manager,
-            process_id: String::new(),
             status: Arc::new(RwLock::new(AgentStatus::Idle)),
-            stdin: Arc::new(RwLock::new(None)),
+            active_stdin: Arc::new(RwLock::new(None)),
+            active_process_id: Arc::new(RwLock::new(None)),
             cancel_tx: Arc::new(RwLock::new(None)),
             config: None,
         }
@@ -39,25 +46,17 @@ impl AcpAgent {
 
         let mut result = Vec::new();
         for (cmd, name) in candidates {
-            let available = tokio::process::Command::new(cmd)
+            let output = tokio::process::Command::new(cmd)
                 .arg("--version")
                 .output()
                 .await
-                .ok()
-                .map(|o| o.status.success())
-                .unwrap_or(false);
+                .ok();
 
-            let version = if available {
-                tokio::process::Command::new(cmd)
-                    .arg("--version")
-                    .output()
-                    .await
-                    .ok()
-                    .and_then(|o| String::from_utf8(o.stdout).ok())
-                    .map(|s| s.trim().to_string())
-            } else {
-                None
-            };
+            let available = output.as_ref().map(|o| o.status.success()).unwrap_or(false);
+            let version = output
+                .and_then(|o| String::from_utf8(o.stdout).ok())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty());
 
             result.push(DetectedAgent {
                 agent_type: "acp".to_string(),
@@ -71,54 +70,40 @@ impl AcpAgent {
     }
 
     /// 解析 stdout 的一行 JSON，转换为 AgentEvent
-    fn parse_line(line: &str) -> Option<AgentEvent> {
+    fn parse_line(line: &str, ctx: &mut StreamContext) -> Option<AgentEvent> {
         let v: serde_json::Value = serde_json::from_str(line).ok()?;
-
         let event_type = v.get("type")?.as_str()?;
+
         match event_type {
-            "assistant" => {
+            "assistant" | "message_start" => {
                 let msg_id = v.get("message")
                     .and_then(|m| m.get("id"))
                     .and_then(|id| id.as_str())
                     .unwrap_or("")
                     .to_string();
-
-                // 检查是否有 content
-                if let Some(content) = v.get("content_block")
-                    .and_then(|c| c.get("text"))
-                    .and_then(|t| t.as_str())
-                {
-                    return Some(AgentEvent::MessageDelta {
-                        msg_id,
-                        content: content.to_string(),
-                    });
+                if !msg_id.is_empty() {
+                    ctx.current_msg_id = msg_id.clone();
                 }
-
                 Some(AgentEvent::MessageStart { msg_id })
             }
             "content_block_delta" => {
-                let msg_id = String::new();
                 let delta = v.get("delta")
                     .and_then(|d| d.get("text"))
                     .and_then(|t| t.as_str())
                     .unwrap_or("")
                     .to_string();
-
                 if delta.is_empty() {
                     return None;
                 }
-
                 Some(AgentEvent::MessageDelta {
-                    msg_id,
+                    msg_id: ctx.current_msg_id.clone(),
                     content: delta,
                 })
             }
-            "result" => {
-                let msg_id = v.get("subtype")
-                    .and_then(|s| s.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                Some(AgentEvent::MessageComplete { msg_id })
+            "result" | "message_stop" => {
+                Some(AgentEvent::MessageComplete {
+                    msg_id: ctx.current_msg_id.clone(),
+                })
             }
             "tool_use" | "tool_call" => {
                 let tool = v.get("name")
@@ -126,11 +111,9 @@ impl AcpAgent {
                     .and_then(|n| n.as_str())
                     .unwrap_or("unknown")
                     .to_string();
-                let input = v.get("input")
-                    .cloned()
-                    .unwrap_or(serde_json::Value::Null);
+                let input = v.get("input").cloned().unwrap_or(serde_json::Value::Null);
                 Some(AgentEvent::ToolCallStart {
-                    msg_id: String::new(),
+                    msg_id: ctx.current_msg_id.clone(),
                     tool,
                     input,
                 })
@@ -140,11 +123,9 @@ impl AcpAgent {
                     .and_then(|n| n.as_str())
                     .unwrap_or("unknown")
                     .to_string();
-                let output = v.get("output")
-                    .cloned()
-                    .unwrap_or(serde_json::Value::Null);
+                let output = v.get("output").cloned().unwrap_or(serde_json::Value::Null);
                 Some(AgentEvent::ToolCallResult {
-                    msg_id: String::new(),
+                    msg_id: ctx.current_msg_id.clone(),
                     tool,
                     output,
                 })
@@ -177,41 +158,28 @@ impl AcpAgent {
 #[async_trait::async_trait]
 impl AgentBackend for AcpAgent {
     async fn start(&mut self, config: &AgentConfig) -> Result<()> {
-        *self.status.write().await = AgentStatus::Starting;
-
         let command = config.command.as_deref().unwrap_or("claude");
-        let default_args = vec!["--output-format".to_string(), "stream-json".to_string()];
-        let args = config.args.as_deref().unwrap_or(&default_args);
 
-        self.process_id = format!("acp-{}", uuid::Uuid::new_v4());
+        // 仅用 --version 验证命令可用，不启动完整进程
+        let output = tokio::process::Command::new(command)
+            .arg("--version")
+            .output()
+            .await
+            .map_err(|e| AppError::Agent(format!(
+                "ACP command '{}' not found or not executable: {}", command, e
+            )))?;
 
-        let (stdin, stdout) = self.process_manager.spawn(
-            &self.process_id,
-            command,
-            args,
-            config.env.as_ref(),
-            config.working_dir.as_deref(),
-        ).await?;
+        if !output.status.success() {
+            return Err(AppError::Agent(format!(
+                "ACP command '{}' returned error", command
+            )));
+        }
 
-        *self.stdin.write().await = Some(stdin);
         self.config = Some(config.clone());
-
-        // 启动 stdout 读取循环（后台）—— 由 send_message 按需启动
-        // stdout 会在 send_message 中使用
-        // 暂存 stdout 到临时位置并不合适，
-        // 重新设计：在 send_message 中直接处理 stdout
-
-        // 不在 start 中消费 stdout，因为 send_message 需要它
-        // 实际上 ACP 模式是：启动进程 → 写 stdin → 读 stdout
-        // 但 ACP CLI 是 per-invocation 的（每次 send 启动新进程）
-        // 所以 start 只记录配置，send_message 时真正启动
-
-        // 先 kill 刚启动的进程（start 只验证命令可用）
-        self.process_manager.kill(&self.process_id).await.ok();
-        *self.stdin.write().await = None;
         *self.status.write().await = AgentStatus::Idle;
 
-        tracing::info!(command = command, "ACP agent verified and ready");
+        let version = String::from_utf8_lossy(&output.stdout);
+        tracing::info!(command = command, version = %version.trim(), "ACP agent verified and ready");
         Ok(())
     }
 
@@ -232,7 +200,6 @@ impl AgentBackend for AcpAgent {
         let command = config.command.as_deref().unwrap_or("claude");
         let process_id = format!("acp-{}-{}", chat_id, uuid::Uuid::new_v4());
 
-        // 构建命令参数
         let mut args: Vec<String> = vec![
             "--output-format".to_string(),
             "stream-json".to_string(),
@@ -240,19 +207,21 @@ impl AgentBackend for AcpAgent {
             "-p".to_string(),
             message.to_string(),
         ];
-
         if let Some(ref extra_args) = config.args {
             args.extend(extra_args.clone());
         }
 
-        // 启动进程
-        let (_, stdout) = self.process_manager.spawn(
+        let (stdin, stdout) = self.process_manager.spawn(
             &process_id,
             command,
             &args,
             config.env.as_ref(),
             config.working_dir.as_deref(),
         ).await?;
+
+        // 存储 stdin 和进程 ID（供 handle_permission 使用）
+        *self.active_stdin.write().await = Some(stdin);
+        *self.active_process_id.write().await = Some(process_id.clone());
 
         // 设置取消通道
         let (cancel_tx, mut cancel_rx) = tokio::sync::oneshot::channel::<()>();
@@ -261,61 +230,77 @@ impl AgentBackend for AcpAgent {
         let status = self.status.clone();
         let pm = self.process_manager.clone();
         let pid = process_id.clone();
+        let active_stdin = self.active_stdin.clone();
+        let active_pid = self.active_process_id.clone();
 
-        // 异步读取 stdout 并解析事件
+        // 异步读取 stdout — 带 10 分钟总超时
         tokio::spawn(async move {
             let reader = BufReader::new(stdout);
             let mut lines = reader.lines();
+            let mut ctx = StreamContext {
+                current_msg_id: String::new(),
+            };
 
-            loop {
-                tokio::select! {
-                    line = lines.next_line() => {
-                        match line {
-                            Ok(Some(text)) => {
-                                if let Some(event) = AcpAgent::parse_line(&text) {
-                                    if tx.send(event).await.is_err() {
-                                        break;  // 接收端已关闭
+            let timeout_duration = tokio::time::Duration::from_secs(600);
+            let result = tokio::time::timeout(timeout_duration, async {
+                loop {
+                    tokio::select! {
+                        line = lines.next_line() => {
+                            match line {
+                                Ok(Some(text)) => {
+                                    if let Some(event) = AcpAgent::parse_line(&text, &mut ctx) {
+                                        if tx.send(event).await.is_err() {
+                                            break;
+                                        }
                                     }
                                 }
-                            }
-                            Ok(None) => break,  // EOF
-                            Err(e) => {
-                                let _ = tx.send(AgentEvent::Error {
-                                    message: format!("Read error: {}", e),
-                                }).await;
-                                break;
+                                Ok(None) => break,
+                                Err(e) => {
+                                    let _ = tx.send(AgentEvent::Error {
+                                        message: format!("Read error: {}", e),
+                                    }).await;
+                                    break;
+                                }
                             }
                         }
-                    }
-                    _ = &mut cancel_rx => {
-                        tracing::info!("Agent task cancelled");
-                        break;
+                        _ = &mut cancel_rx => {
+                            tracing::info!("Agent task cancelled");
+                            break;
+                        }
                     }
                 }
+            }).await;
+
+            if result.is_err() {
+                let _ = tx.send(AgentEvent::Error {
+                    message: "Agent response timed out (10 minutes)".to_string(),
+                }).await;
             }
 
             // 清理
             pm.kill(&pid).await.ok();
             *status.write().await = AgentStatus::Idle;
+            *active_stdin.write().await = None;
+            *active_pid.write().await = None;
             let _ = tx.send(AgentEvent::StatusChange { status: AgentStatus::Idle }).await;
         });
 
         Ok(())
     }
 
-    async fn stop(&self, chat_id: &str) -> Result<()> {
+    async fn stop(&self, _chat_id: &str) -> Result<()> {
         // 发送取消信号
         if let Some(tx) = self.cancel_tx.write().await.take() {
             let _ = tx.send(());
         }
-
-        // kill 所有该 chat 的进程
-        let process_id_prefix = format!("acp-{}-", chat_id);
-        // ProcessManager 不支持前缀匹配 kill，
-        // 但取消信号已经发出，stdout 循环会自行清理
+        // kill 当前活跃进程
+        if let Some(ref pid) = *self.active_process_id.read().await {
+            self.process_manager.kill(pid).await.ok();
+        }
         *self.status.write().await = AgentStatus::Idle;
-
-        tracing::info!(chat_id = chat_id, "ACP agent stopped");
+        *self.active_stdin.write().await = None;
+        *self.active_process_id.write().await = None;
+        tracing::info!("ACP agent stopped");
         Ok(())
     }
 
@@ -325,41 +310,52 @@ impl AgentBackend for AcpAgent {
         request_id: &str,
         approved: bool,
     ) -> Result<()> {
-        // 通过 stdin 向进程发送权限响应
+        // 验证当前有活跃进程
+        if self.active_process_id.read().await.is_none() {
+            return Err(AppError::Agent("No active agent process to send permission response".into()));
+        }
+
         let response = serde_json::json!({
             "type": "permission_response",
             "id": request_id,
             "approved": approved,
         });
 
-        let mut stdin_guard = self.stdin.write().await;
-        if let Some(ref mut stdin) = *stdin_guard {
-            let msg = serde_json::to_string(&response)? + "\n";
-            stdin.write_all(msg.as_bytes()).await.map_err(|e| {
-                AppError::Agent(format!("Failed to write permission response: {}", e))
-            })?;
-            stdin.flush().await.map_err(|e| {
-                AppError::Agent(format!("Failed to flush stdin: {}", e))
-            })?;
-        }
+        let mut stdin_guard = self.active_stdin.write().await;
+        let stdin = stdin_guard.as_mut().ok_or_else(|| {
+            AppError::Agent("Agent stdin not available".into())
+        })?;
 
+        let msg = serde_json::to_string(&response)? + "\n";
+        stdin.write_all(msg.as_bytes()).await.map_err(|e| {
+            AppError::Agent(format!("Failed to write permission response: {}", e))
+        })?;
+        stdin.flush().await.map_err(|e| {
+            AppError::Agent(format!("Failed to flush stdin: {}", e))
+        })?;
+
+        tracing::info!(request_id = request_id, approved = approved, "Permission response sent");
         Ok(())
     }
 
     fn status(&self) -> AgentStatus {
-        // 同步访问（best effort）
-        self.status.try_read()
-            .map(|s| s.clone())
-            .unwrap_or(AgentStatus::Idle)
+        // 使用 blocking read — AgentBackend::status() 是同步的
+        // 在实际使用中，锁争用极少
+        futures::executor::block_on(async {
+            self.status.read().await.clone()
+        })
     }
 
     async fn shutdown(&mut self) -> Result<()> {
-        // 取消所有运行中的任务
         if let Some(tx) = self.cancel_tx.write().await.take() {
             let _ = tx.send(());
         }
-        self.process_manager.kill(&self.process_id).await.ok();
+        if let Some(ref pid) = *self.active_process_id.read().await {
+            self.process_manager.kill(pid).await.ok();
+        }
         *self.status.write().await = AgentStatus::Disconnected;
+        *self.active_stdin.write().await = None;
+        *self.active_process_id.write().await = None;
         tracing::info!("ACP agent shut down");
         Ok(())
     }
