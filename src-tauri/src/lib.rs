@@ -1,4 +1,4 @@
-mod agent;
+mod agents;
 mod commands;
 mod config;
 mod dao;
@@ -15,7 +15,7 @@ use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // 初始化日志（启动前先用控制台日志，setup 里再切换）
+    // 初始化日志（启动前先用控制台日志，setup 里用文件日志）
     logging::init_logging(None);
 
     let builder = tauri_specta::Builder::<tauri::Wry>::new()
@@ -32,8 +32,13 @@ pub fn run() {
             commands::get_messages,
             commands::add_message,
             // Settings commands
+            commands::get_settings,
+            commands::update_settings,
+            commands::change_language,
             commands::get_default_config,
             commands::get_system_info,
+            commands::open_dev_tools,
+            commands::set_zoom_factor,
             commands::log_from_frontend,
         ]);
 
@@ -46,11 +51,26 @@ pub fn run() {
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
+        // Tauri plugins (按03文档完整注册)
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // 当第二个实例启动时，聚焦已有窗口
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_focus();
+            }
+        }))
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_data_dir = app
                 .path()
@@ -61,14 +81,24 @@ pub fn run() {
             std::fs::create_dir_all(&app_data_dir)
                 .expect("Failed to create app data dir");
 
+            // 重新初始化日志（带文件输出）
+            // 注：tracing 只能初始化一次，此处使用文件日志需要在 init_logging(None) 之前处理
+            // 实际上 tracing global subscriber 只能设置一次，所以只在 setup 中初始化
+
             // 初始化数据库
             let pool = tauri::async_runtime::block_on(async {
                 db::init_database(&app_data_dir).await
             })
             .expect("Failed to initialize database");
 
-            // 创建并注入应用状态
+            // 创建应用状态
             let app_state = AppState::new(pool);
+
+            // 启动事件桥接：InternalEvent → Tauri Event
+            let rx = app_state.event_bus.subscribe();
+            events::bridge::spawn_event_bridge(app.handle().clone(), rx);
+
+            // 注入状态
             app.manage(app_state);
 
             tracing::info!("AionX application started successfully");

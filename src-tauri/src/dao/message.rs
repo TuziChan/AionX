@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::models::{CreateMessage, Message};
+use crate::models::message::{CreateMessage, Message, MessageRow};
 use sqlx::SqlitePool;
 
 const MSG_COLUMNS: &str = "id, chat_id, msg_id, type, role, content, position, status, extra, created_at";
@@ -16,8 +16,10 @@ impl MessageDao {
     pub async fn insert(&self, input: &CreateMessage) -> Result<Message> {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().timestamp();
+        let extra_str = serde_json::to_string(
+            &input.extra.clone().unwrap_or(serde_json::Value::Object(Default::default()))
+        )?;
 
-        // 获取当前会话最大 position
         let (max_pos,): (i32,) = sqlx::query_as(
             "SELECT COALESCE(MAX(position), -1) FROM messages WHERE chat_id = ?"
         )
@@ -38,12 +40,11 @@ impl MessageDao {
         .bind(&input.role)
         .bind(&input.content)
         .bind(position)
-        .bind(input.extra.as_deref().unwrap_or("{}"))
+        .bind(&extra_str)
         .bind(now)
         .execute(&self.pool)
         .await?;
 
-        // 同步更新 chat 的 updated_at
         sqlx::query("UPDATE chats SET updated_at = ? WHERE id = ?")
             .bind(now)
             .bind(&input.chat_id)
@@ -51,32 +52,32 @@ impl MessageDao {
             .await?;
 
         let sql = format!("SELECT {MSG_COLUMNS} FROM messages WHERE id = ?");
-        let msg = sqlx::query_as::<_, Message>(&sql)
+        let row = sqlx::query_as::<_, MessageRow>(&sql)
             .bind(&id)
             .fetch_one(&self.pool)
             .await?;
 
-        Ok(msg)
+        Ok(Message::from(row))
     }
 
     pub async fn find_by_chat_id(&self, chat_id: &str) -> Result<Vec<Message>> {
         let sql = format!(
             "SELECT {MSG_COLUMNS} FROM messages WHERE chat_id = ? ORDER BY position ASC"
         );
-        let messages = sqlx::query_as::<_, Message>(&sql)
+        let rows = sqlx::query_as::<_, MessageRow>(&sql)
             .bind(chat_id)
             .fetch_all(&self.pool)
             .await?;
-        Ok(messages)
+        Ok(rows.into_iter().map(Message::from).collect())
     }
 
     pub async fn find_by_id(&self, id: &str) -> Result<Option<Message>> {
         let sql = format!("SELECT {MSG_COLUMNS} FROM messages WHERE id = ?");
-        let msg = sqlx::query_as::<_, Message>(&sql)
+        let row = sqlx::query_as::<_, MessageRow>(&sql)
             .bind(id)
             .fetch_optional(&self.pool)
             .await?;
-        Ok(msg)
+        Ok(row.map(Message::from))
     }
 
     pub async fn update_content(&self, id: &str, content: &str) -> Result<bool> {
@@ -97,7 +98,6 @@ impl MessageDao {
         Ok(result.rows_affected() > 0)
     }
 
-    /// 追加内容（流式场景：agent 分片推送）
     pub async fn append_content(&self, id: &str, delta: &str) -> Result<bool> {
         let result = sqlx::query(
             "UPDATE messages SET content = content || ? WHERE id = ?"
@@ -125,22 +125,21 @@ impl MessageDao {
         Ok(result.rows_affected() > 0)
     }
 
-    /// 获取会话中最后 N 条消息
     pub async fn find_last_n(&self, chat_id: &str, n: i32) -> Result<Vec<Message>> {
         let sql = format!(
             "SELECT {MSG_COLUMNS} FROM messages WHERE chat_id = ?
              ORDER BY position DESC LIMIT ?"
         );
-        let mut messages = sqlx::query_as::<_, Message>(&sql)
+        let rows = sqlx::query_as::<_, MessageRow>(&sql)
             .bind(chat_id)
             .bind(n)
             .fetch_all(&self.pool)
             .await?;
-        messages.reverse(); // 恢复正序
+        let mut messages: Vec<Message> = rows.into_iter().map(Message::from).collect();
+        messages.reverse();
         Ok(messages)
     }
 
-    /// 统计会话消息数
     pub async fn count_by_chat(&self, chat_id: &str) -> Result<i64> {
         let (count,): (i64,) = sqlx::query_as(
             "SELECT COUNT(*) FROM messages WHERE chat_id = ?"

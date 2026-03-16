@@ -8,6 +8,6 @@ pub mod assistant_plugin;
 pub mod channel;
 pub mod extension;
 
-pub use chat::*;
-pub use message::*;
+pub use chat::{Chat, CreateChat, ChatUpdate};
+pub use message::{Message, CreateMessage};
 pub use common::*;
