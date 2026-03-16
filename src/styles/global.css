@@ -6,5 +6,6 @@
 
 /* Import Arco overrides */
 @import './arco-override.css';
+@import './app-shell.css';
 
 /* UnoCSS will inject styles here */

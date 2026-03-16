@@ -9,13 +9,7 @@ export function TextMessage({ message }: Props) {
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div
-        className={`max-w-[85%] rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words ${
-          isUser
-            ? 'bg-[var(--color-message-user-bg)] text-t-primary'
-            : 'bg-bg-2 text-t-primary'
-        }`}
-      >
+      <div className={`chat-bubble ${isUser ? 'chat-bubble--user' : 'chat-bubble--assistant'}`}>
         {message.content}
       </div>
     </div>

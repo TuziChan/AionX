@@ -1,7 +1,7 @@
 // 主题 Provider 组件
 import { useEffect, type ReactNode } from 'react';
 import { ConfigProvider } from '@arco-design/web-react';
-import { useThemeStore } from '../stores/theme';
+import { useThemeStore } from '../stores/themeStore';
 import { applyTheme } from './theme';
 
 interface ThemeProviderProps {

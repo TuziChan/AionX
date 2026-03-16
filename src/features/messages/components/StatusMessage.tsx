@@ -7,7 +7,7 @@ interface Props {
 export function StatusMessage({ message }: Props) {
   return (
     <div className="flex justify-center">
-      <div className="text-xs text-t-tertiary bg-bg-1 px-3 py-1 rounded-full">
+      <div className="chat-status-pill text-xs text-t-tertiary">
         {message.content}
       </div>
     </div>

@@ -1,9 +1,9 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 interface LayoutContextValue {
   isMobile: boolean;
-  collapsed: boolean;
-  setCollapsed: (collapsed: boolean) => void;
+  siderCollapsed: boolean;
+  setSiderCollapsed: (collapsed: boolean) => void;
   siderWidth: number;
 }
 
@@ -38,15 +38,27 @@ interface LayoutProviderProps {
 
 export function LayoutProvider({ children }: LayoutProviderProps) {
   const [isMobile, setIsMobile] = useState(detectMobileViewport);
-  const [collapsed, setCollapsed] = useState(false);
+  const [siderCollapsed, setSiderCollapsed] = useState(() => detectMobileViewport());
 
-  const siderWidth = isMobile
-    ? Math.min(MOBILE_SIDER_MAX_WIDTH, Math.max(MOBILE_SIDER_MIN_WIDTH, window.innerWidth * MOBILE_SIDER_WIDTH_RATIO))
-    : DEFAULT_SIDER_WIDTH;
+  const siderWidth = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return DEFAULT_SIDER_WIDTH;
+    }
+    return isMobile
+      ? Math.min(
+          MOBILE_SIDER_MAX_WIDTH,
+          Math.max(MOBILE_SIDER_MIN_WIDTH, window.innerWidth * MOBILE_SIDER_WIDTH_RATIO)
+        )
+      : DEFAULT_SIDER_WIDTH;
+  }, [isMobile]);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(detectMobileViewport());
+      const mobile = detectMobileViewport();
+      setIsMobile(mobile);
+      if (mobile) {
+        setSiderCollapsed(true);
+      }
     };
 
     window.addEventListener('resize', handleResize);
@@ -55,8 +67,8 @@ export function LayoutProvider({ children }: LayoutProviderProps) {
 
   const value: LayoutContextValue = {
     isMobile,
-    collapsed,
-    setCollapsed,
+    siderCollapsed,
+    setSiderCollapsed,
     siderWidth,
   };
 

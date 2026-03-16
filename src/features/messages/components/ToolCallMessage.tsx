@@ -1,4 +1,5 @@
 import type { Message } from '@/services/chat';
+import { Tool } from '@icon-park/react';
 
 interface Props {
   message: Message;
@@ -10,13 +11,13 @@ export function ToolCallMessage({ message }: Props) {
 
   return (
     <div className="flex justify-start">
-      <div className="max-w-[85%] rounded-xl px-4 py-3 bg-bg-2 border border-b-light">
+      <div className="chat-tool-card">
         <div className="flex items-center gap-2 mb-2">
-          <span className="i-icon-park-outline-tool text-brand text-base" />
+          <Tool theme="outline" size="16" className="text-brand" />
           <span className="text-sm font-medium text-t-secondary">{tool}</span>
         </div>
         {input != null && (
-          <pre className="text-xs bg-bg-3 rounded-lg p-2 overflow-x-auto text-t-tertiary">
+          <pre className="chat-tool-card__body text-xs overflow-x-auto text-t-tertiary">
             {String(typeof input === 'string' ? input : JSON.stringify(input, null, 2))}
           </pre>
         )}

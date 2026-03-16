@@ -1,4 +1,3 @@
-// 主题状态管理
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ThemeMode, lightTheme, darkTheme, applyTheme, type Theme } from '../theme/theme';
@@ -32,6 +31,14 @@ export const useThemeStore = create<ThemeState>()(
     {
       name: 'aionx-theme',
       partialize: (state) => ({ mode: state.mode }),
+      merge: (persisted, current) => {
+        const mode = (persisted as Partial<ThemeState> | undefined)?.mode ?? current.mode;
+        return {
+          ...current,
+          mode,
+          theme: mode === 'light' ? lightTheme : darkTheme,
+        };
+      },
     }
   )
 );

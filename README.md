@@ -89,6 +89,58 @@ pnpm tauri dev
 cargo check
 ```
 
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+=======
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+
+
+### Cargo 常见报错排查
+
+如果在仓库根目录执行 `cargo check` 仍提示 `could not find Cargo.toml`，请先确认：
+
+```bash
+pwd
+ls Cargo.toml
+git log -1 --oneline
+```
+
+若 `Cargo.toml` 不存在，说明本地分支未同步到包含 workspace 清单的提交，请先更新分支后再重试。
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
 
 ### 构建生产版本
 

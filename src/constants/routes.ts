@@ -1,12 +1,11 @@
 export const ROUTES = {
   HOME: '/',
-  GUIDE: '/guide',
-  CHAT: '/chat/:id',
+  GUIDE: '/guid',
+  CHAT: '/conversation/:id',
   SETTINGS: '/settings',
   SETTINGS_GEMINI: '/settings/gemini',
   SETTINGS_MODEL: '/settings/model',
   SETTINGS_AGENT: '/settings/agent',
-  SETTINGS_SKILLS: '/settings/skills-hub',
   SETTINGS_DISPLAY: '/settings/display',
   SETTINGS_WEBUI: '/settings/webui',
   SETTINGS_SYSTEM: '/settings/system',
@@ -15,5 +14,5 @@ export const ROUTES = {
 } as const;
 
 export function chatRoute(id: string) {
-  return `/chat/${id}`;
+  return `/conversation/${id}`;
 }

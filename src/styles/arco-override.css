@@ -1,4 +1,4 @@
-/* Arco Design custom overrides */
+/* Arco Design custom overrides - non-theme related */
 
 .arco-btn {
   &.arco-btn-outline {
@@ -20,7 +20,6 @@
   }
 }
 
-/* Arco Tag dark mode styles */
 body[arco-theme='dark'] .arco-tag-checked.arco-tag-blue {
   background-color: rgba(59, 130, 246, 0.2) !important;
   color: rgb(96, 165, 250) !important;
@@ -46,13 +45,11 @@ body[arco-theme='dark'] .arco-tag-checked.arco-tag-gray {
   color: rgb(209, 213, 219) !important;
 }
 
-/* Arco Message custom styles */
 .arco-message {
   border: none !important;
   border-radius: 8px !important;
 }
 
-/* Light mode */
 .arco-message-success {
   background: linear-gradient(270deg, #f9fff2 0%, #d2ffd9 100%) !important;
 }
@@ -69,7 +66,6 @@ body[arco-theme='dark'] .arco-tag-checked.arco-tag-gray {
   background: linear-gradient(90deg, #ffdddb 0%, #fff3f0 100%) !important;
 }
 
-/* Dark mode */
 body[arco-theme='dark'] .arco-message-success {
   background: linear-gradient(270deg, rgba(249, 255, 242, 0.3) 0%, rgba(210, 255, 217, 0.3) 100%) !important;
 }
@@ -84,4 +80,39 @@ body[arco-theme='dark'] .arco-message-info {
 
 body[arco-theme='dark'] .arco-message-error {
   background: linear-gradient(90deg, rgba(255, 221, 219, 0.3) 0%, rgba(255, 243, 240, 0.3) 100%) !important;
+}
+
+.workspace-tree .arco-tree-node-selected .arco-tree-node-title {
+  background-color: transparent !important;
+}
+
+.workspace-tree .arco-tree-node:hover .arco-tree-node-title {
+  background-color: var(--color-fill-3) !important;
+}
+
+.settings-mobile-tabs {
+  .arco-tabs-nav {
+    border-bottom: 1px solid var(--color-border-2);
+  }
+
+  .arco-tabs-nav-tab {
+    font-size: 14px;
+    padding: 8px 0;
+    margin: 0 12px;
+    color: var(--color-text-2);
+  }
+
+  .arco-tabs-nav-tab:first-child {
+    margin-left: 0;
+  }
+
+  .arco-tabs-nav-tab-active {
+    color: var(--color-text-1);
+    font-weight: 500;
+  }
+
+  .arco-tabs-nav-ink {
+    height: 2px;
+    background: var(--color-primary);
+  }
 }

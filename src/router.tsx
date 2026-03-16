@@ -1,69 +1,44 @@
 import { createHashRouter, Navigate } from 'react-router-dom';
-import { AppLayout } from './components/layout/AppLayout';
+import { MainLayout } from './components/layout/MainLayout';
 import { Sidebar } from './components/layout/Sidebar';
+import { ProtectedLayout } from './features/auth/components/ProtectedLayout';
+import { chatRoutes } from './features/chat';
+import { settingsRoutes } from './features/settings';
 
 export const router = createHashRouter([
   {
+    path: '/login',
+    lazy: () => import('./features/auth/LoginPage'),
+  },
+  {
     path: '/',
-    element: <AppLayout sider={<Sidebar />} />,
+    element: (
+      <ProtectedLayout>
+        <MainLayout sider={<Sidebar />} />
+      </ProtectedLayout>
+    ),
     children: [
       {
         index: true,
-        element: <Navigate to="/guide" replace />,
+        element: <Navigate to="/guid" replace />,
       },
       {
-        path: 'guide',
+        path: 'guid',
         lazy: () => import('./features/guide/GuidePage'),
       },
       {
-        path: 'chat/:id',
-        lazy: () => import('./features/chat/ChatPage'),
+        path: 'cron',
+        lazy: () => import('./features/cron/CronPage'),
       },
       {
-        path: 'settings',
-        lazy: () => import('./features/settings/components/SettingsLayout'),
-        children: [
-          {
-            index: true,
-            element: <Navigate to="/settings/gemini" replace />,
-          },
-          {
-            path: 'gemini',
-            lazy: () => import('./features/settings/pages/GeminiSettings'),
-          },
-          {
-            path: 'model',
-            lazy: () => import('./features/settings/pages/ModelSettings'),
-          },
-          {
-            path: 'agent',
-            lazy: () => import('./features/settings/pages/AgentSettings'),
-          },
-          {
-            path: 'skills-hub',
-            lazy: () => import('./features/settings/pages/SkillsHubSettings'),
-          },
-          {
-            path: 'display',
-            lazy: () => import('./features/settings/pages/DisplaySettings'),
-          },
-          {
-            path: 'webui',
-            lazy: () => import('./features/settings/pages/WebuiSettings'),
-          },
-          {
-            path: 'system',
-            lazy: () => import('./features/settings/pages/SystemSettings'),
-          },
-          {
-            path: 'tools',
-            lazy: () => import('./features/settings/pages/ToolsSettings'),
-          },
-          {
-            path: 'about',
-            lazy: () => import('./features/settings/pages/About'),
-          },
-        ],
+        path: 'test/components',
+        lazy: () => import('./features/test/ComponentsShowcasePage'),
+      },
+      ...chatRoutes,
+      ...settingsRoutes,
+      {
+        path: '*',
+        element: <Navigate to="/guid" replace />,
       },
     ],
   },
