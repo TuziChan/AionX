@@ -1,30 +1,37 @@
+mod agent;
 mod commands;
+mod config;
 mod db;
+mod error;
+mod events;
+mod logging;
 mod models;
 mod services;
-mod error;
 mod state;
 
-use db::Database;
-use services::ChatService;
 use state::AppState;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // 初始化日志系统
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive(tracing::Level::INFO.into()),
-        )
-        .init();
+    // 初始化日志（启动前先用控制台日志，setup 里再切换）
+    logging::init_logging(None);
 
     let builder = tauri_specta::Builder::<tauri::Wry>::new()
         .commands(tauri_specta::collect_commands![
+            // Chat commands
             commands::create_chat,
             commands::get_chat,
             commands::list_chats,
+            commands::update_chat,
+            commands::delete_chat,
+            commands::get_workspace_chats,
+            commands::get_messages,
+            commands::add_message,
+            // Settings commands
+            commands::get_default_config,
+            commands::get_system_info,
+            commands::log_from_frontend,
         ]);
 
     #[cfg(debug_assertions)]
@@ -42,21 +49,24 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            let app_data_dir = app.path().app_data_dir().expect("Failed to get app data dir");
+            let app_data_dir = app
+                .path()
+                .app_data_dir()
+                .expect("Failed to get app data dir");
 
             // 确保数据目录存在
-            std::fs::create_dir_all(&app_data_dir).expect("Failed to create app data dir");
+            std::fs::create_dir_all(&app_data_dir)
+                .expect("Failed to create app data dir");
 
-            let db_path = app_data_dir.join("aionx.db");
+            // 初始化数据库
+            let pool = tauri::async_runtime::block_on(async {
+                db::init_database(&app_data_dir).await
+            })
+            .expect("Failed to initialize database");
 
-            tauri::async_runtime::block_on(async move {
-                let database = Database::new(db_path).await.expect("Failed to initialize database");
-                let chat_service = ChatService::new(database.pool().clone());
-                let app_state = AppState::new(database.pool().clone());
-
-                app.manage(chat_service);
-                app.manage(app_state);
-            });
+            // 创建并注入应用状态
+            let app_state = AppState::new(pool);
+            app.manage(app_state);
 
             tracing::info!("AionX application started successfully");
             Ok(())

@@ -1,37 +1,29 @@
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
-use std::path::PathBuf;
-use std::str::FromStr;
+pub mod migration;
+
+use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePool, SqlitePoolOptions, SqliteSynchronous};
+use std::path::Path;
 use crate::error::Result;
 
-pub struct Database {
-    pool: SqlitePool,
-}
+/// 初始化数据库连接池并运行迁移
+pub async fn init_database(app_data_dir: &Path) -> Result<SqlitePool> {
+    let db_path = app_data_dir.join("aionx.db");
 
-impl Database {
-    pub async fn new(db_path: PathBuf) -> Result<Self> {
-        // 确保数据库目录存在
-        if let Some(parent) = db_path.parent() {
-            tokio::fs::create_dir_all(parent).await?;
-        }
+    let connect_options = SqliteConnectOptions::new()
+        .filename(&db_path)
+        .create_if_missing(true)
+        .journal_mode(SqliteJournalMode::Wal)
+        .foreign_keys(true)
+        .busy_timeout(std::time::Duration::from_secs(5))
+        .synchronous(SqliteSynchronous::Normal);
 
-        let options = SqliteConnectOptions::from_str(&format!("sqlite:{}", db_path.display()))?
-            .create_if_missing(true)
-            .foreign_keys(true);
+    let pool = SqlitePoolOptions::new()
+        .max_connections(10)
+        .connect_with(connect_options)
+        .await?;
 
-        let pool = SqlitePoolOptions::new()
-            .max_connections(5)
-            .connect_with(options)
-            .await?;
+    // 运行迁移
+    migration::run_migrations(&pool).await?;
 
-        // 运行迁移
-        sqlx::query(include_str!("../../migrations/001_initial.sql"))
-            .execute(&pool)
-            .await?;
-
-        Ok(Self { pool })
-    }
-
-    pub fn pool(&self) -> &SqlitePool {
-        &self.pool
-    }
+    tracing::info!("Database initialized at {}", db_path.display());
+    Ok(pool)
 }

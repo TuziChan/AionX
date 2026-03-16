@@ -1,11 +1,2 @@
-pub mod backend;
-pub mod events;
-pub mod process;
-pub mod service;
-pub mod acp;
-
-pub use backend::*;
-pub use events::*;
-pub use process::*;
-pub use service::*;
-pub use acp::*;
+// Agent 模块 - 阶段2实现
+// 当前仅定义 trait 接口，具体 Agent 实现在阶段2/3完成

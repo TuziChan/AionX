@@ -25,6 +25,15 @@ pub enum AppError {
     #[error("Authentication error: {0}")]
     Auth(String),
 
+    #[error("Config error: {0}")]
+    Config(String),
+
+    #[error("Network error: {0}")]
+    Network(String),
+
+    #[error("File system error: {0}")]
+    FileSystem(String),
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
@@ -46,5 +55,16 @@ impl From<serde_json::Error> for AppError {
         AppError::Serialization(err.to_string())
     }
 }
+
+impl From<reqwest::Error> for AppError {
+    fn from(err: reqwest::Error) -> Self {
+        AppError::Network(err.to_string())
+    }
+}
+
+// Tauri IPC 需要将错误序列化传递到前端
+// tauri::command 要求返回 Result<T, E> 其中 E: Into<InvokeError>
+// 对于 specta 兼容，使用 String 作为错误类型是最简单可靠的方案
+// commands 层使用 .map_err(|e| e.to_string()) 转换
 
 pub type Result<T> = std::result::Result<T, AppError>;

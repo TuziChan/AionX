@@ -1,47 +1,77 @@
-use crate::models::{AgentType, Chat};
-use crate::services::ChatService;
-use specta::Type;
-use serde::{Deserialize, Serialize};
+use crate::models::{Chat, ChatUpdate, CreateChat, CreateMessage, ListParams, Message, PaginatedResult};
+use crate::state::AppState;
 use tauri::State;
-
-#[derive(Debug, Serialize, Deserialize, Type)]
-pub struct CreateChatRequest {
-    pub title: String,
-    pub agent_type: AgentType,
-}
 
 #[tauri::command]
 #[specta::specta]
 pub async fn create_chat(
-    service: State<'_, ChatService>,
-    request: CreateChatRequest,
+    state: State<'_, AppState>,
+    input: CreateChat,
 ) -> Result<Chat, String> {
-    service
-        .create_chat(request.title, request.agent_type)
-        .await
-        .map_err(|e| e.to_string())
+    state.chat_service.create(input).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_chat(
-    service: State<'_, ChatService>,
+    state: State<'_, AppState>,
     id: String,
 ) -> Result<Option<Chat>, String> {
-    service
-        .get_chat(&id)
-        .await
-        .map_err(|e| e.to_string())
+    state.chat_service.get(&id).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn list_chats(
-    service: State<'_, ChatService>,
-    limit: u32,
+    state: State<'_, AppState>,
+    page: Option<u32>,
+    page_size: Option<u32>,
+) -> Result<PaginatedResult<Chat>, String> {
+    state.chat_service.list(ListParams { page, page_size }).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn update_chat(
+    state: State<'_, AppState>,
+    id: String,
+    updates: ChatUpdate,
+) -> Result<Chat, String> {
+    state.chat_service.update(&id, updates).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_chat(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<(), String> {
+    state.chat_service.delete(&id).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_workspace_chats(
+    state: State<'_, AppState>,
+    workspace_path: String,
 ) -> Result<Vec<Chat>, String> {
-    service
-        .list_chats(limit as i64)
-        .await
-        .map_err(|e| e.to_string())
+    state.chat_service.get_by_workspace(&workspace_path).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_messages(
+    state: State<'_, AppState>,
+    chat_id: String,
+) -> Result<Vec<Message>, String> {
+    state.message_service.get_by_chat(&chat_id).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn add_message(
+    state: State<'_, AppState>,
+    input: CreateMessage,
+) -> Result<Message, String> {
+    state.message_service.add(input).await.map_err(|e| e.to_string())
 }
