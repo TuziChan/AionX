@@ -1,19 +1,9 @@
-pub mod assistant_plugin;
-pub mod channel_plugin;
 pub mod chat;
-pub mod common;
-pub mod cron_job;
-pub mod extension;
-pub mod mcp_server;
 pub mod message;
 pub mod user;
+pub mod common;
 
-pub use assistant_plugin::*;
-pub use channel_plugin::*;
 pub use chat::*;
-pub use common::*;
-pub use cron_job::*;
-pub use extension::*;
-pub use mcp_server::*;
 pub use message::*;
 pub use user::*;
+pub use common::*;

@@ -1,5 +1,4 @@
 pub mod migration;
-pub mod repositories;
 
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePool, SqlitePoolOptions, SqliteSynchronous};
 use std::path::Path;
