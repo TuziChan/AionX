@@ -50,6 +50,26 @@ pub fn run() {
             commands::open_dev_tools,
             commands::set_zoom_factor,
             commands::log_from_frontend,
+            // File commands
+            commands::read_file,
+            commands::write_file,
+            commands::list_directory,
+            commands::create_zip,
+            commands::extract_zip,
+            commands::download_file,
+            commands::get_file_type,
+            // MCP commands
+            commands::get_mcp_servers,
+            commands::add_mcp_server,
+            commands::update_mcp_server,
+            commands::remove_mcp_server,
+            commands::test_mcp_connection,
+            // Cron commands
+            commands::add_cron_job,
+            commands::list_cron_jobs,
+            commands::get_cron_job,
+            commands::update_cron_job,
+            commands::remove_cron_job,
         ]);
 
     #[cfg(debug_assertions)]

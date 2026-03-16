@@ -1,7 +1,7 @@
 use sqlx::SqlitePool;
 use crate::agents::AgentService;
 use crate::events::EventBus;
-use crate::services::{ChatService, MessageService};
+use crate::services::{AuthService, ChatService, CronService, MessageService};
 
 /// 全局应用状态，通过 Tauri manage() 注入
 pub struct AppState {
@@ -10,6 +10,8 @@ pub struct AppState {
     pub chat_service: ChatService,
     pub message_service: MessageService,
     pub agent_service: AgentService,
+    pub auth_service: AuthService,
+    pub cron_service: CronService,
 }
 
 impl AppState {
@@ -18,6 +20,8 @@ impl AppState {
         let chat_service = ChatService::new(pool.clone());
         let message_service = MessageService::new(pool.clone());
         let agent_service = AgentService::new();
+        let auth_service = AuthService::new(pool.clone());
+        let cron_service = CronService::new(pool.clone());
 
         Self {
             db_pool: pool,
@@ -25,6 +29,8 @@ impl AppState {
             chat_service,
             message_service,
             agent_service,
+            auth_service,
+            cron_service,
         }
     }
 }
