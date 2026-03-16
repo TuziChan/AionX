@@ -1,14 +1,18 @@
 mod agents;
+mod channels;
 mod commands;
 mod config;
 mod dao;
 mod db;
 mod error;
 mod events;
+mod extensions;
 mod logging;
 mod models;
 mod services;
 mod state;
+mod utils;
+mod webui;
 
 use state::AppState;
 use tauri::Manager;

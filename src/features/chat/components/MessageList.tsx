@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useChatStore } from '../stores/chatStore';
-import { MessageItem } from './MessageItem';
-import { StreamingMessage } from './StreamingMessage';
+import { MessageItem, StreamingMessage } from '@/features/messages';
 
 export function MessageList() {
   const messages = useChatStore((s) => s.messages);
