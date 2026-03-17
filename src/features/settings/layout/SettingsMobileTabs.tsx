@@ -1,12 +1,15 @@
 import { useEffect, useRef } from 'react';
 import classNames from 'classnames';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getMobileSettingsRegistry } from '../registry/settingsRegistry';
+import type { SettingsRegistryItem } from '../registry/settingsRegistry';
 
-export function SettingsMobileTabs() {
+interface SettingsMobileTabsProps {
+  items: SettingsRegistryItem[];
+}
+
+export function SettingsMobileTabs({ items }: SettingsMobileTabsProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const items = getMobileSettingsRegistry();
   const activeTabRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {

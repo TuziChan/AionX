@@ -1,11 +1,14 @@
 import classNames from 'classnames';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getSettingsRegistry } from '../registry/settingsRegistry';
+import type { SettingsRegistryItem } from '../registry/settingsRegistry';
 
-export function SettingsNav() {
+interface SettingsNavProps {
+  items: SettingsRegistryItem[];
+}
+
+export function SettingsNav({ items }: SettingsNavProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const items = getSettingsRegistry();
 
   return (
     <nav className="settings-nav" aria-label="Settings navigation">

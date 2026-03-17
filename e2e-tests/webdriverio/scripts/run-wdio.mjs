@@ -16,6 +16,7 @@ function runSuite(targetSuite) {
   const env = {
     ...process.env,
     TAURI_E2E_PROFILE: profile,
+    AIONX_E2E_SEED_EXTENSION: '1',
     ...(targetSuite ? { TAURI_E2E_SUITE: targetSuite } : {}),
   };
 
@@ -55,6 +56,7 @@ const env = {
   ...process.env,
   TAURI_E2E_PROFILE: profile,
   TAURI_E2E_SUITE: suite,
+  AIONX_E2E_SEED_EXTENSION: '1',
 };
 
 const child =

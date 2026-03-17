@@ -90,8 +90,8 @@ const builtinSettingsTabs: SettingsRegistryItem[] = [
     id: 'system',
     path: '/settings/system',
     label: '系统',
-    title: '系统与工作区',
-    description: '控制启动行为、工作区默认策略和日志级别。',
+    title: '系统与运行环境',
+    description: '控制语言、托盘行为与运行目录。',
     icon: settingsIcon,
     widthPreset: 'regular',
     layoutMode: 'form-stack',
@@ -124,18 +124,25 @@ const builtinSettingsTabs: SettingsRegistryItem[] = [
   },
 ];
 
-export const settingsRegistry = [...builtinSettingsTabs].sort((left, right) => left.order - right.order);
+export const settingsRegistry = mergeSettingsRegistry();
 
-export function getSettingsRegistry() {
-  return settingsRegistry;
+export function mergeSettingsRegistry(extensionItems: SettingsRegistryItem[] = []) {
+  return [...builtinSettingsTabs, ...extensionItems].sort((left, right) => left.order - right.order);
 }
 
-export function getMobileSettingsRegistry() {
-  return settingsRegistry.filter((item) => item.mobileVisible);
+export function getSettingsRegistry(items: SettingsRegistryItem[] = settingsRegistry) {
+  return items;
 }
 
-export function getSettingsRegistryItemByPath(pathname: string): SettingsRegistryItem | null {
-  const exactMatch = settingsRegistry.find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
+export function getMobileSettingsRegistry(items: SettingsRegistryItem[] = settingsRegistry) {
+  return items.filter((item) => item.mobileVisible);
+}
+
+export function getSettingsRegistryItemByPath(
+  pathname: string,
+  items: SettingsRegistryItem[] = settingsRegistry,
+): SettingsRegistryItem | null {
+  const exactMatch = items.find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
   if (exactMatch) {
     return exactMatch;
   }
@@ -144,7 +151,7 @@ export function getSettingsRegistryItemByPath(pathname: string): SettingsRegistr
     const tabId = pathname.replace('/settings/ext/', '').split('/')[0] || 'extension';
     return {
       id: `ext:${tabId}`,
-      path: pathname,
+      path: `/settings/ext/${tabId}`,
       label: 'Extension',
       title: '扩展设置',
       description: `正在查看扩展设置页：${tabId}。`,

@@ -41,6 +41,8 @@ pub fn run() {
             commands::get_agent_status,
             commands::approve_permission,
             commands::detect_agents,
+            commands::list_builtin_assistants,
+            commands::save_builtin_assistant_preferences,
             commands::list_assistant_plugins,
             commands::create_assistant_plugin,
             commands::update_assistant_plugin,
@@ -49,8 +51,14 @@ pub fn run() {
             commands::list_channel_plugins,
             commands::create_channel_plugin,
             commands::update_channel_plugin,
+            commands::delete_channel_plugin,
+            commands::validate_channel_plugin_config,
             commands::list_extensions,
             commands::update_extension,
+            commands::list_extension_settings_tabs,
+            commands::get_extension_settings_tab,
+            commands::set_extension_enabled,
+            commands::get_extension_host_context,
             // Settings commands
             commands::get_settings,
             commands::update_settings,
@@ -61,6 +69,10 @@ pub fn run() {
             commands::get_google_auth_status,
             commands::start_google_auth,
             commands::logout_google_auth,
+            commands::get_webui_settings,
+            commands::save_webui_settings,
+            commands::get_system_settings,
+            commands::save_system_settings,
             commands::get_system_info,
             commands::get_system_directories,
             commands::open_dev_tools,
@@ -155,6 +167,11 @@ pub fn run() {
             })
             .expect("Failed to initialize database");
 
+            tauri::async_runtime::block_on(async {
+                seed_e2e_extension_if_needed(&pool).await
+            })
+            .expect("Failed to seed E2E extension fixture");
+
             // 创建应用状态
             let app_state = AppState::new(pool);
 
@@ -171,4 +188,54 @@ pub fn run() {
         .invoke_handler(builder.invoke_handler())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+async fn seed_e2e_extension_if_needed(pool: &sqlx::SqlitePool) -> Result<(), String> {
+    if !should_seed_e2e_extension() {
+        return Ok(());
+    }
+
+    let now = chrono::Utc::now().timestamp();
+    let config = serde_json::json!({
+        "settings": {
+            "tabId": "host-smoke",
+            "host": {
+                "entryUrl": "/extension-host-smoke.html"
+            }
+        }
+    })
+    .to_string();
+
+    sqlx::query(
+        "INSERT INTO extensions (id, name, version, description, path, enabled, config, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           name = excluded.name,
+           version = excluded.version,
+           description = excluded.description,
+           path = excluded.path,
+           enabled = excluded.enabled,
+           config = excluded.config,
+           updated_at = excluded.updated_at",
+    )
+    .bind("e2e-extension-host")
+    .bind("E2E Host Extension")
+    .bind("0.1.0")
+    .bind("用于验证扩展设置宿主页 iframe 链路的自动化样本。")
+    .bind("embedded://extension-host-smoke")
+    .bind(true)
+    .bind(config)
+    .bind(now)
+    .bind(now)
+    .execute(pool)
+    .await
+    .map_err(|error| error.to_string())?;
+
+    Ok(())
+}
+
+fn should_seed_e2e_extension() -> bool {
+    std::env::var("AIONX_E2E_SEED_EXTENSION")
+        .map(|value| matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"))
+        .unwrap_or(false)
 }

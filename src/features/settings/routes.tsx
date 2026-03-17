@@ -19,7 +19,7 @@ export const settingsRoutes: RouteObject[] = [
       },
       {
         path: 'agent',
-        lazy: () => import('./pages/AgentSettings'),
+        lazy: () => import('./pages/agent/page'),
       },
       {
         path: 'display',
@@ -27,11 +27,11 @@ export const settingsRoutes: RouteObject[] = [
       },
       {
         path: 'webui',
-        lazy: () => import('./pages/WebuiSettings'),
+        lazy: () => import('./pages/webui/page'),
       },
       {
         path: 'system',
-        lazy: () => import('./pages/SystemSettings'),
+        lazy: () => import('./pages/system/page'),
       },
       {
         path: 'tools',
@@ -43,7 +43,7 @@ export const settingsRoutes: RouteObject[] = [
       },
       {
         path: 'ext/:tabId',
-        lazy: () => import('./pages/ExtensionSettings'),
+        lazy: () => import('./pages/extension/page'),
       },
     ],
   },

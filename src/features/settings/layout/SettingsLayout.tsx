@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useLayoutContext } from '@/contexts/LayoutContext';
+import { useSettingsRegistryItems } from '../hooks/useSettingsRegistryItems';
 import { getSettingsRegistryItemByPath } from '../registry/settingsRegistry';
 import { SettingsBackLink } from './SettingsBackLink';
 import { SettingsHeader } from './SettingsHeader';
@@ -24,7 +25,8 @@ const FALLBACK_ITEM = {
 export function Component() {
   const { isMobile } = useLayoutContext();
   const { pathname } = useLocation();
-  const currentItem = getSettingsRegistryItemByPath(pathname) ?? FALLBACK_ITEM;
+  const { currentItem, items, mobileItems } = useSettingsRegistryItems(pathname);
+  const resolvedItem = currentItem ?? getSettingsRegistryItemByPath(pathname, items) ?? FALLBACK_ITEM;
 
   return (
     <div className="settings-layout">
@@ -34,16 +36,16 @@ export function Component() {
             <div className="settings-layout__sidebar-back">
               <SettingsBackLink />
             </div>
-            <SettingsNav />
+            <SettingsNav items={items} />
           </aside>
         ) : null}
 
         <main className="settings-layout__main">
-          {isMobile ? <SettingsTopbar currentItem={currentItem} /> : null}
-          {isMobile ? <SettingsMobileTabs /> : null}
+          {isMobile ? <SettingsTopbar currentItem={resolvedItem} /> : null}
+          {isMobile ? <SettingsMobileTabs items={mobileItems} /> : null}
           <div className="settings-layout__body">
-            <SettingsHeader currentItem={currentItem} />
-            <div className={classNames('settings-layout__content', `settings-page--${currentItem.widthPreset}`)}>
+            <SettingsHeader currentItem={resolvedItem} />
+            <div className={classNames('settings-layout__content', `settings-page--${resolvedItem.widthPreset}`)}>
               <Outlet />
             </div>
           </div>

@@ -1,7 +1,11 @@
 use crate::config::AppConfig;
+use crate::models::{SystemRuntimeInfo, SystemSettings};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::Manager;
+
+const SYSTEM_CLOSE_TO_TRAY_KEY: &str = "system.closeToTray";
+const SYSTEM_RUNTIME_INFO_KEY: &str = "system.runtimeInfo";
 
 // --- Settings CRUD Commands ---
 
@@ -60,6 +64,34 @@ pub async fn get_default_config() -> Result<AppConfig, String> {
 
 // --- System Commands ---
 
+#[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct StoredSystemRuntimeInfo {
+    #[serde(default)]
+    cache_dir: String,
+    #[serde(default)]
+    work_dir: String,
+    #[serde(default)]
+    log_dir: String,
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_system_settings(
+    app_handle: tauri::AppHandle,
+) -> Result<SystemSettings, String> {
+    load_system_settings(&app_handle)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn save_system_settings(
+    app_handle: tauri::AppHandle,
+    settings: SystemSettings,
+) -> Result<SystemSettings, String> {
+    persist_system_settings(&app_handle, settings)
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn get_system_info() -> Result<SystemInfo, String> {
@@ -89,6 +121,74 @@ pub struct SystemDirectories {
 pub async fn get_system_directories(
     app_handle: tauri::AppHandle,
 ) -> Result<SystemDirectories, String> {
+    resolve_system_directories(&app_handle)
+}
+
+fn load_system_settings(app_handle: &tauri::AppHandle) -> Result<SystemSettings, String> {
+    use tauri_plugin_store::StoreExt;
+
+    let store = app_handle.store("config.json").map_err(|error| error.to_string())?;
+    let defaults = resolve_system_directories(app_handle)?;
+    let close_to_tray = store
+        .get(SYSTEM_CLOSE_TO_TRAY_KEY)
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false);
+
+    let runtime_info = match store.get(SYSTEM_RUNTIME_INFO_KEY) {
+        Some(value) if !value.is_null() => {
+            let stored: StoredSystemRuntimeInfo = serde_json::from_value(value)
+                .map_err(|error| format!("Invalid system.runtimeInfo: {error}"))?;
+
+            SystemRuntimeInfo {
+                cache_dir: normalize_path(stored.cache_dir, &defaults.cache_dir),
+                work_dir: normalize_path(stored.work_dir, &defaults.data_dir),
+                log_dir: normalize_path(stored.log_dir, &defaults.log_dir),
+            }
+        }
+        _ => SystemRuntimeInfo {
+            cache_dir: defaults.cache_dir.clone(),
+            work_dir: defaults.data_dir.clone(),
+            log_dir: defaults.log_dir.clone(),
+        },
+    };
+
+    Ok(SystemSettings {
+        close_to_tray,
+        runtime_info,
+    })
+}
+
+fn persist_system_settings(
+    app_handle: &tauri::AppHandle,
+    settings: SystemSettings,
+) -> Result<SystemSettings, String> {
+    use tauri_plugin_store::StoreExt;
+
+    let defaults = resolve_system_directories(app_handle)?;
+    let normalized = SystemSettings {
+        close_to_tray: settings.close_to_tray,
+        runtime_info: SystemRuntimeInfo {
+            cache_dir: normalize_path(settings.runtime_info.cache_dir, &defaults.cache_dir),
+            work_dir: normalize_path(settings.runtime_info.work_dir, &defaults.data_dir),
+            log_dir: normalize_path(settings.runtime_info.log_dir, &defaults.log_dir),
+        },
+    };
+
+    let store = app_handle.store("config.json").map_err(|error| error.to_string())?;
+    store.set(
+        SYSTEM_CLOSE_TO_TRAY_KEY,
+        serde_json::Value::Bool(normalized.close_to_tray),
+    );
+    store.set(
+        SYSTEM_RUNTIME_INFO_KEY,
+        serde_json::to_value(&normalized.runtime_info).map_err(|error| error.to_string())?,
+    );
+    store.save().map_err(|error| error.to_string())?;
+
+    Ok(normalized)
+}
+
+fn resolve_system_directories(app_handle: &tauri::AppHandle) -> Result<SystemDirectories, String> {
     let paths = app_handle.path();
     let cache_dir = paths
         .app_cache_dir()
@@ -103,6 +203,15 @@ pub async fn get_system_directories(
         data_dir: data_dir.to_string_lossy().to_string(),
         log_dir: log_dir.to_string_lossy().to_string(),
     })
+}
+
+fn normalize_path(value: String, fallback: &str) -> String {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        fallback.to_string()
+    } else {
+        trimmed.to_string()
+    }
 }
 
 #[tauri::command]

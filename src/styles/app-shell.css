@@ -1466,6 +1466,208 @@
   width: min(320px, 100%);
 }
 
+.settings-webui-page {
+  gap: 18px;
+}
+
+.settings-webui-page__toolbar-card {
+  padding: 12px 18px;
+}
+
+.settings-webui-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-webui-page__tab-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--fill-0);
+  border: 1px solid var(--border-base);
+}
+
+.settings-webui-page__tab {
+  min-width: 92px;
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.settings-webui-page__tab--active {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.settings-webui-page__service,
+.settings-webui-page__channels {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settings-webui-page__hero-card,
+.settings-webui-page__channel-card,
+.settings-webui-page__service .settings-group-card {
+  padding: 20px;
+}
+
+.settings-webui-page__hero-header,
+.settings-webui-page__section-header,
+.settings-webui-page__channel-header,
+.settings-webui-page__channel-body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-webui-page__section-header {
+  margin-bottom: 16px;
+}
+
+.settings-webui-page__hero-title {
+  margin-top: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.settings-webui-page__section-subtitle {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.settings-webui-page__hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(320px, 100%);
+}
+
+.settings-webui-page__inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 0 20px 20px;
+}
+
+.settings-webui-page__channel-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-webui-page__channel-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-webui-page__channel-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+.settings-webui-page__channel-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-webui-page__channel-modal .arco-modal-body {
+  padding-top: 8px;
+}
+
+.settings-extension-page {
+  gap: 18px;
+}
+
+.settings-extension-page__hero-card,
+.settings-extension-page__meta-card,
+.settings-extension-page__host-card {
+  padding: 20px;
+}
+
+.settings-extension-page__hero-header,
+.settings-extension-page__section-header,
+.settings-extension-page__host-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-extension-page__hero-copy {
+  min-width: 0;
+}
+
+.settings-extension-page__hero-title {
+  margin-top: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.settings-extension-page__section-subtitle {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.settings-extension-page__hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(320px, 100%);
+}
+
+.settings-extension-page__hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.settings-extension-page__host-frame-shell {
+  margin-top: 16px;
+  min-height: 560px;
+  border-radius: 18px;
+  border: 1px solid var(--border-base);
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+.settings-extension-page__host-frame {
+  width: 100%;
+  min-height: 560px;
+  border: none;
+  background: transparent;
+}
+
 .settings-assistants {
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
@@ -2271,6 +2473,14 @@
   .settings-model-page__pane-header,
   .settings-model-page__section-header,
   .settings-model-page__detail-hero,
+  .settings-webui-page__toolbar,
+  .settings-webui-page__hero-header,
+  .settings-webui-page__section-header,
+  .settings-webui-page__channel-header,
+  .settings-webui-page__channel-body,
+  .settings-extension-page__hero-header,
+  .settings-extension-page__section-header,
+  .settings-extension-page__host-header,
   .settings-gemini-page__hero-content,
   .settings-gemini-page__section-header,
   .settings-model-page__model-row,
@@ -2287,6 +2497,38 @@
   .settings-model-page__model-actions,
   .settings-tools-page__detail-actions {
     justify-content: flex-start;
+  }
+
+  .settings-webui-page__toolbar-card,
+  .settings-webui-page__hero-card,
+  .settings-webui-page__channel-card {
+    padding: 16px;
+  }
+
+  .settings-webui-page__tab-list,
+  .settings-webui-page__hero-side {
+    width: 100%;
+  }
+
+  .settings-webui-page__inline-actions {
+    padding: 0 16px 16px;
+  }
+
+  .settings-extension-page__hero-card,
+  .settings-extension-page__meta-card,
+  .settings-extension-page__host-card {
+    padding: 16px;
+  }
+
+  .settings-extension-page__hero-side,
+  .settings-extension-page__hero-badges {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .settings-extension-page__host-frame-shell,
+  .settings-extension-page__host-frame {
+    min-height: 420px;
   }
 
   .settings-tools-page__list,
