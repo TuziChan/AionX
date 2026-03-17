@@ -487,71 +487,236 @@
 }
 
 .settings-layout {
+  height: 100%;
   padding: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(117, 131, 178, 0.16), transparent 26%),
+    linear-gradient(180deg, var(--bg-base) 0%, var(--bg-1) 100%);
 }
 
-.settings-layout__inner {
+.settings-layout__surface {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 280px minmax(0, 1fr);
   gap: 18px;
   height: 100%;
 }
 
-.settings-layout__sider {
-  background: var(--bg-1);
+.settings-layout__sidebar,
+.settings-layout__main {
+  min-height: 0;
   border: 1px solid var(--border-base);
-  border-radius: 22px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
+}
+
+[data-theme='dark'] .settings-layout__sidebar,
+[data-theme='dark'] .settings-layout__main {
+  background: rgba(26, 26, 26, 0.92);
+}
+
+.settings-layout__sidebar {
+  display: flex;
+  flex-direction: column;
   padding: 18px 14px;
 }
 
-.settings-layout__sider-title {
-  margin-bottom: 14px;
+.settings-layout__sidebar-header {
+  padding: 6px 10px 16px;
+}
+
+.settings-layout__sidebar-title {
   font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-secondary);
 }
 
-.settings-layout__sider-list {
+.settings-layout__sidebar-subtitle {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.settings-layout__main {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  overflow: hidden;
 }
 
-.settings-layout__sider-item {
-  height: 42px;
-  border: none;
-  border-radius: 14px;
-  background: transparent;
-  text-align: left;
-  padding: 0 14px;
+.settings-layout__topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-base);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent);
+}
+
+.settings-layout__topbar-meta {
+  min-width: 0;
+}
+
+.settings-layout__topbar-title {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text-secondary);
-  cursor: pointer;
 }
 
-.settings-layout__sider-item--active {
-  background: rgba(22, 93, 255, 0.1);
+.settings-layout__topbar-subtitle {
+  margin-top: 4px;
+  font-size: 15px;
   color: var(--text-primary);
 }
 
-.settings-layout__content {
-  min-width: 0;
+.settings-layout__body {
+  min-height: 0;
+  flex: 1;
   overflow-y: auto;
-  background: var(--bg-1);
-  border: 1px solid var(--border-base);
-  border-radius: 22px;
-  padding: 18px 20px;
+  padding: 24px;
 }
 
-.settings-mobile-top-nav {
+.settings-layout__header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.settings-layout__eyebrow {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.settings-layout__title {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.05;
+  color: var(--text-primary);
+}
+
+.settings-layout__description {
+  margin: 0;
+  max-width: 720px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.settings-layout__content {
+  width: min(100%, 1280px);
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 14px;
+}
+
+.settings-nav__section-label {
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.settings-nav__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.settings-nav__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.settings-nav__item:hover {
+  transform: translateY(-1px);
+  background: rgba(22, 93, 255, 0.06);
+}
+
+.settings-nav__item--active {
+  background: rgba(22, 93, 255, 0.1);
+  border-color: rgba(22, 93, 255, 0.14);
+}
+
+.settings-nav__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(22, 93, 255, 0.08);
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-nav__meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-nav__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-nav__description {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.settings-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border-base);
+  border-radius: 999px;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.settings-back-link__icon {
+  color: var(--primary);
+}
+
+.settings-mobile-tabs {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  padding: 12px 16px 0;
   overflow-x: auto;
 }
 
-.settings-mobile-top-nav__item {
+.settings-mobile-tabs__item {
   height: 34px;
   padding: 0 12px;
   border: 1px solid var(--border-base);
@@ -562,13 +727,9 @@
   flex-shrink: 0;
 }
 
-.settings-mobile-top-nav__item--active {
+.settings-mobile-tabs__item--active {
   background: rgba(22, 93, 255, 0.1);
   color: var(--text-primary);
-}
-
-.settings-mobile-top-nav__label {
-  white-space: nowrap;
 }
 
 .cron-page__grid,
@@ -1605,7 +1766,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .settings-layout__inner,
+  .settings-layout__surface,
   .chat-layout-shell,
   .chat-layout-body {
     grid-template-columns: minmax(0, 1fr);
@@ -1615,7 +1776,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .settings-layout__sider {
+  .settings-layout__sidebar {
     display: none;
   }
 
@@ -1641,7 +1802,7 @@
   }
 
   .guid-input-card,
-  .settings-layout__content {
+  .settings-layout__body {
     padding: 16px;
   }
 
@@ -1670,5 +1831,9 @@
 
   .settings-layout {
     padding: 12px;
+  }
+
+  .settings-layout__topbar {
+    padding: 14px 16px;
   }
 }
