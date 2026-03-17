@@ -2,6 +2,7 @@ import classNames from 'classnames';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useLayoutContext } from '@/contexts/LayoutContext';
 import { getSettingsRegistryItemByPath } from '../registry/settingsRegistry';
+import { SettingsBackLink } from './SettingsBackLink';
 import { SettingsHeader } from './SettingsHeader';
 import { SettingsMobileTabs } from './SettingsMobileTabs';
 import { SettingsNav } from './SettingsNav';
@@ -30,16 +31,15 @@ export function Component() {
       <div className="settings-layout__surface">
         {!isMobile ? (
           <aside className="settings-layout__sidebar">
-            <div className="settings-layout__sidebar-header">
-              <div className="settings-layout__sidebar-title">Settings</div>
-              <div className="settings-layout__sidebar-subtitle">独立工作区导航</div>
+            <div className="settings-layout__sidebar-back">
+              <SettingsBackLink />
             </div>
             <SettingsNav />
           </aside>
         ) : null}
 
         <main className="settings-layout__main">
-          <SettingsTopbar currentItem={currentItem} />
+          {isMobile ? <SettingsTopbar currentItem={currentItem} /> : null}
           {isMobile ? <SettingsMobileTabs /> : null}
           <div className="settings-layout__body">
             <SettingsHeader currentItem={currentItem} />

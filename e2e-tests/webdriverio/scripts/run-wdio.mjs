@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,9 +10,51 @@ const wdioBinary =
     : path.join(projectRoot, 'node_modules', '.bin', 'wdio');
 
 const profile = process.argv[2] ?? 'debug';
+const suite = process.argv[3];
+
+function runSuite(targetSuite) {
+  const env = {
+    ...process.env,
+    TAURI_E2E_PROFILE: profile,
+    ...(targetSuite ? { TAURI_E2E_SUITE: targetSuite } : {}),
+  };
+
+  const result =
+    process.platform === 'win32'
+      ? spawnSync(`"${wdioBinary}" run wdio.conf.mjs`, [], {
+          cwd: projectRoot,
+          env,
+          shell: true,
+          stdio: 'inherit',
+        })
+      : spawnSync(wdioBinary, ['run', 'wdio.conf.mjs'], {
+          cwd: projectRoot,
+          env,
+          stdio: 'inherit',
+        });
+
+  if (result.signal) {
+    process.kill(process.pid, result.signal);
+    return false;
+  }
+
+  return (result.status ?? 1) === 0;
+}
+
+if (!suite) {
+  const desktopPassed = runSuite('desktop');
+  if (!desktopPassed) {
+    process.exit(1);
+  }
+
+  const responsivePassed = runSuite('responsive');
+  process.exit(responsivePassed ? 0 : 1);
+}
+
 const env = {
   ...process.env,
   TAURI_E2E_PROFILE: profile,
+  TAURI_E2E_SUITE: suite,
 };
 
 const child =

@@ -11,14 +11,14 @@ use tokio::time::{timeout, Duration};
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_mcp_servers(state: State<'_, AppState>) -> Result<Vec<McpServer>, String> {
+pub async fn list_mcp_servers(state: State<'_, AppState>) -> Result<Vec<McpServer>, String> {
     let dao = McpServerDao::new(state.db_pool.clone());
     dao.find_all().await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn add_mcp_server(
+pub async fn create_mcp_server(
     state: State<'_, AppState>,
     input: CreateMcpServer,
 ) -> Result<McpServer, String> {
@@ -32,14 +32,22 @@ pub async fn update_mcp_server(
     state: State<'_, AppState>,
     id: String,
     updates: McpServerUpdate,
-) -> Result<bool, String> {
+) -> Result<McpServer, String> {
     let dao = McpServerDao::new(state.db_pool.clone());
-    dao.update(&id, &updates).await.map_err(|e| e.to_string())
+    let updated = dao.update(&id, &updates).await.map_err(|e| e.to_string())?;
+    if !updated {
+        return Err(format!("MCP server not found: {id}"));
+    }
+
+    dao.find_by_id(&id)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("MCP server not found: {id}"))
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn remove_mcp_server(state: State<'_, AppState>, id: String) -> Result<bool, String> {
+pub async fn delete_mcp_server(state: State<'_, AppState>, id: String) -> Result<bool, String> {
     let dao = McpServerDao::new(state.db_pool.clone());
     dao.delete(&id).await.map_err(|e| e.to_string())
 }

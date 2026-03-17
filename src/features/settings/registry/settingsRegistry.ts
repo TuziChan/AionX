@@ -1,4 +1,4 @@
-import { SettingTwo } from '@icon-park/react';
+import { Calendar, CodeBrackets, CompassOne, PreviewOpen, Robot, SettingTwo, Tool } from '@icon-park/react';
 import type { ComponentType } from 'react';
 
 export type SettingsWidthPreset = 'narrow' | 'regular' | 'wide' | 'full';
@@ -18,6 +18,12 @@ export interface SettingsRegistryItem {
 }
 
 const settingsIcon = SettingTwo as ComponentType<Record<string, unknown>>;
+const compassIcon = CompassOne as ComponentType<Record<string, unknown>>;
+const codeIcon = CodeBrackets as ComponentType<Record<string, unknown>>;
+const previewIcon = PreviewOpen as ComponentType<Record<string, unknown>>;
+const robotIcon = Robot as ComponentType<Record<string, unknown>>;
+const toolIcon = Tool as ComponentType<Record<string, unknown>>;
+const calendarIcon = Calendar as ComponentType<Record<string, unknown>>;
 
 const builtinSettingsTabs: SettingsRegistryItem[] = [
   {
@@ -26,7 +32,7 @@ const builtinSettingsTabs: SettingsRegistryItem[] = [
     label: 'Gemini',
     title: 'Gemini 连接设置',
     description: '配置模型接入方式、认证状态和默认行为。',
-    icon: settingsIcon,
+    icon: compassIcon,
     widthPreset: 'regular',
     layoutMode: 'form-stack',
     order: 10,
@@ -35,10 +41,10 @@ const builtinSettingsTabs: SettingsRegistryItem[] = [
   {
     id: 'model',
     path: '/settings/model',
-    label: 'Model',
+    label: '模型',
     title: '模型与平台',
     description: '统一管理模型平台、默认模型和展示规则。',
-    icon: settingsIcon,
+    icon: codeIcon,
     widthPreset: 'wide',
     layoutMode: 'split-view',
     order: 20,
@@ -50,7 +56,7 @@ const builtinSettingsTabs: SettingsRegistryItem[] = [
     label: 'Agent',
     title: 'Agent 管理',
     description: '控制默认 Agent、回退策略和自定义助手能力。',
-    icon: settingsIcon,
+    icon: robotIcon,
     widthPreset: 'wide',
     layoutMode: 'split-view',
     order: 30,
@@ -59,10 +65,10 @@ const builtinSettingsTabs: SettingsRegistryItem[] = [
   {
     id: 'display',
     path: '/settings/display',
-    label: 'Display',
+    label: '显示',
     title: '显示与主题',
     description: '统一明暗主题、缩放和界面展示偏好。',
-    icon: settingsIcon,
+    icon: previewIcon,
     widthPreset: 'regular',
     layoutMode: 'form-stack',
     order: 40,
@@ -74,7 +80,7 @@ const builtinSettingsTabs: SettingsRegistryItem[] = [
     label: 'WebUI',
     title: 'WebUI / 通道',
     description: '管理对外接入页、远程通道和嵌入式展示能力。',
-    icon: settingsIcon,
+    icon: calendarIcon,
     widthPreset: 'wide',
     layoutMode: 'tabbed',
     order: 50,
@@ -83,7 +89,7 @@ const builtinSettingsTabs: SettingsRegistryItem[] = [
   {
     id: 'system',
     path: '/settings/system',
-    label: 'System',
+    label: '系统',
     title: '系统与工作区',
     description: '控制启动行为、工作区默认策略和日志级别。',
     icon: settingsIcon,
@@ -95,10 +101,10 @@ const builtinSettingsTabs: SettingsRegistryItem[] = [
   {
     id: 'tools',
     path: '/settings/tools',
-    label: 'Tools',
-    title: '工具与权限',
-    description: '定义工具可见性、确认策略与工具栏排序。',
-    icon: settingsIcon,
+    label: '工具',
+    title: 'MCP 工具与图像生成',
+    description: '管理 MCP Server、连接测试和图像生成模型。',
+    icon: toolIcon,
     widthPreset: 'wide',
     layoutMode: 'split-view',
     order: 70,
@@ -107,7 +113,7 @@ const builtinSettingsTabs: SettingsRegistryItem[] = [
   {
     id: 'about',
     path: '/settings/about',
-    label: 'About',
+    label: '关于',
     title: '关于与版本',
     description: '展示版本信息、更新偏好与产品说明。',
     icon: settingsIcon,

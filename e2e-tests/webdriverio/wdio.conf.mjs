@@ -8,6 +8,7 @@ import { spawn, spawnSync } from 'node:child_process';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
 const profile = process.env.TAURI_E2E_PROFILE === 'release' ? 'release' : 'debug';
+const suite = process.env.TAURI_E2E_SUITE;
 const appName = process.platform === 'win32' ? 'aionx.exe' : 'aionx';
 const applicationPath = path.join(repoRoot, 'target', profile, appName);
 const edgeDriverPath = path.join(repoRoot, 'msedgedriver.exe');
@@ -207,6 +208,15 @@ export const config = {
   hostname: '127.0.0.1',
   port: 4444,
   specs: ['./tests/**/*.e2e.mjs'],
+  ...(suite
+    ? {
+        specs: [`./tests/smoke.${suite}.e2e.mjs`],
+      }
+    : {}),
+  suites: {
+    desktop: ['./tests/smoke.desktop.e2e.mjs'],
+    responsive: ['./tests/smoke.responsive.e2e.mjs'],
+  },
   maxInstances: 1,
   logLevel: 'info',
   waitforTimeout: 20000,

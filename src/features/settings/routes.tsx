@@ -15,7 +15,7 @@ export const settingsRoutes: RouteObject[] = [
       },
       {
         path: 'model',
-        lazy: () => import('./pages/ModelSettings'),
+        lazy: () => import('./pages/model/page'),
       },
       {
         path: 'agent',
@@ -35,7 +35,7 @@ export const settingsRoutes: RouteObject[] = [
       },
       {
         path: 'tools',
-        lazy: () => import('./pages/ToolsSettings'),
+        lazy: () => import('./pages/tools/page'),
       },
       {
         path: 'about',

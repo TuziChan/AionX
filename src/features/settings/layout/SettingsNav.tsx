@@ -9,7 +9,6 @@ export function SettingsNav() {
 
   return (
     <nav className="settings-nav" aria-label="Settings navigation">
-      <div className="settings-nav__section-label">Workspace</div>
       <div className="settings-nav__list">
         {items.map((item) => {
           const Icon = item.icon;
@@ -24,10 +23,7 @@ export function SettingsNav() {
               <span className="settings-nav__icon" aria-hidden="true">
                 <Icon theme="outline" size="18" />
               </span>
-              <span className="settings-nav__meta">
-                <span className="settings-nav__label">{item.label}</span>
-                <span className="settings-nav__description">{item.description}</span>
-              </span>
+              <span className="settings-nav__label">{item.label}</span>
             </button>
           );
         })}

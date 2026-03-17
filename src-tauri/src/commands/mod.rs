@@ -6,7 +6,9 @@ pub mod cron;
 pub mod extension;
 pub mod file;
 pub mod mcp;
+pub mod model;
 pub mod settings;
+pub mod tools;
 pub mod webui;
 
 pub use agent::*;
@@ -17,5 +19,7 @@ pub use cron::*;
 pub use extension::*;
 pub use file::*;
 pub use mcp::*;
+pub use model::*;
 pub use settings::*;
+pub use tools::*;
 pub use webui::*;

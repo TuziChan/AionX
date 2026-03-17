@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "e2e:debug": "npm --prefix e2e-tests/webdriverio run test:debug",
+    "e2e:debug:desktop": "npm --prefix e2e-tests/webdriverio run test:debug:desktop",
+    "e2e:debug:responsive": "npm --prefix e2e-tests/webdriverio run test:debug:responsive",
     "e2e:release": "npm --prefix e2e-tests/webdriverio run test:release",
+    "e2e:release:desktop": "npm --prefix e2e-tests/webdriverio run test:release:desktop",
+    "e2e:release:responsive": "npm --prefix e2e-tests/webdriverio run test:release:responsive",
     "verify:consistency": "node scripts/verify-phase-consistency.mjs",
     "check:phase5": "npm run build && npm run verify:consistency"
   },

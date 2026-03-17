@@ -61,6 +61,17 @@ pub fn run() {
             commands::open_dev_tools,
             commands::set_zoom_factor,
             commands::log_from_frontend,
+            // Model settings commands
+            commands::list_model_providers,
+            commands::create_model_provider,
+            commands::update_model_provider,
+            commands::delete_model_provider,
+            commands::upsert_provider_model,
+            commands::delete_provider_model,
+            commands::set_model_provider_enabled,
+            commands::set_provider_model_enabled,
+            commands::set_provider_model_protocol,
+            commands::run_model_health_check,
             // File commands
             commands::read_file,
             commands::write_file,
@@ -69,12 +80,14 @@ pub fn run() {
             commands::extract_zip,
             commands::download_file,
             commands::get_file_type,
-            // MCP commands
-            commands::get_mcp_servers,
-            commands::add_mcp_server,
+            // MCP / tools commands
+            commands::list_mcp_servers,
+            commands::create_mcp_server,
             commands::update_mcp_server,
-            commands::remove_mcp_server,
+            commands::delete_mcp_server,
             commands::test_mcp_connection,
+            commands::get_image_generation_settings,
+            commands::save_image_generation_settings,
             // Cron commands
             commands::add_cron_job,
             commands::list_cron_jobs,

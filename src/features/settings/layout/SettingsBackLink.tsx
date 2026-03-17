@@ -11,7 +11,7 @@ export function SettingsBackLink() {
       onClick={() => navigate('/guid')}
     >
       <ArrowCircleLeft theme="outline" size="18" className="settings-back-link__icon" />
-      <span>返回应用</span>
+      <span className="settings-back-link__label">返回应用</span>
     </button>
   );
 }
