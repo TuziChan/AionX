@@ -1421,6 +1421,51 @@
   color: var(--text-secondary);
 }
 
+.settings-gemini-page {
+  gap: 18px;
+}
+
+.settings-gemini-page__hero-card,
+.settings-gemini-page .settings-group-card {
+  padding: 20px;
+}
+
+.settings-gemini-page__hero-content,
+.settings-gemini-page__section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-gemini-page__hero-copy {
+  min-width: 0;
+}
+
+.settings-gemini-page__hero-title {
+  margin-top: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.settings-gemini-page__hero-subtitle,
+.settings-gemini-page__section-subtitle {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.settings-gemini-page__hero-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: min(320px, 100%);
+}
+
 .settings-assistants {
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
@@ -2226,6 +2271,8 @@
   .settings-model-page__pane-header,
   .settings-model-page__section-header,
   .settings-model-page__detail-hero,
+  .settings-gemini-page__hero-content,
+  .settings-gemini-page__section-header,
   .settings-model-page__model-row,
   .settings-model-page__provider-item,
   .settings-tools-page__pane-header,

@@ -41,9 +41,53 @@ export async function expectGeminiSettingsDesktopShell() {
   const newConversationButton = await $('button=New Conversation');
   assert.equal(await newConversationButton.isExisting(), false);
 
-  const googleLoginButton = await $('button=Google 登录');
-  await googleLoginButton.waitForDisplayed({ timeout: 20000 });
-  assert.equal(await googleLoginButton.getText(), 'Google 登录');
+  const accountCard = await $('[data-testid="gemini-account-card"]');
+  await accountCard.waitForDisplayed({ timeout: 20000 });
+}
+
+export async function connectGeminiAccountAndBindProject() {
+  const loginButton = await $('[data-testid="gemini-login-button"]');
+  if (await loginButton.isExisting()) {
+    await loginButton.waitForDisplayed({ timeout: 20000 });
+    await loginButton.click();
+  } else {
+    const switchButton = await $('button=切换账号');
+    await switchButton.waitForDisplayed({ timeout: 20000 });
+    await switchButton.click();
+  }
+
+  const emailInput = await $('#gemini-login-email');
+  await emailInput.waitForDisplayed({ timeout: 20000 });
+  await emailInput.setValue('codex@gmail.example');
+
+  const confirmButton = await $('.settings-gemini-page__auth-modal .arco-modal-footer .arco-btn-primary');
+  await confirmButton.click();
+
+  const accountEmailInput = await $('#gemini-account-email');
+  await accountEmailInput.waitForDisplayed({ timeout: 20000 });
+  await browser.waitUntil(async () => (await accountEmailInput.getValue()) === 'codex@gmail.example', {
+    timeout: 20000,
+    timeoutMsg: 'expected Gemini account email to be persisted after login',
+  });
+
+  const projectInput = await $('#gemini-project-id');
+  await projectInput.waitForDisplayed({ timeout: 20000 });
+  await projectInput.setValue('codex-gcp-project');
+  await browser.pause(600);
+}
+
+export async function expectGeminiProjectPersistence() {
+  const accountEmailInput = await $('#gemini-account-email');
+  await accountEmailInput.waitForDisplayed({ timeout: 20000 });
+  assert.equal(await accountEmailInput.getValue(), 'codex@gmail.example');
+
+  const projectInput = await $('#gemini-project-id');
+  await projectInput.waitForDisplayed({ timeout: 20000 });
+
+  await browser.waitUntil(async () => (await projectInput.getValue()) === 'codex-gcp-project', {
+    timeout: 20000,
+    timeoutMsg: 'expected Gemini project binding to persist after route switches',
+  });
 }
 
 export async function createProviderAndModel() {
@@ -154,6 +198,9 @@ export async function expectToolsResponsivePage() {
 
   const imageCard = await $('[data-testid="tools-image-card"]');
   await imageCard.waitForDisplayed({ timeout: 20000 });
+
+  const accountCard = await $('[data-testid="gemini-account-card"]');
+  assert.equal(await accountCard.isExisting(), false);
 }
 
 export async function expectResponsiveSettingsShell() {

@@ -11,7 +11,7 @@ export const settingsRoutes: RouteObject[] = [
       },
       {
         path: 'gemini',
-        lazy: () => import('./pages/GeminiSettings'),
+        lazy: () => import('./pages/gemini/page'),
       },
       {
         path: 'model',
