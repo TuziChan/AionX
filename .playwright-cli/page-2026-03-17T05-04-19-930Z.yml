@@ -1,0 +1,24 @@
+- generic [ref=e8]:
+  - generic [ref=e9]:
+    - img [ref=e12]
+    - heading "AionX" [level=1] [ref=e16]
+    - paragraph [ref=e17]: 与 AionUi 视觉基线对齐的桌面智能工作台
+  - generic [ref=e18]:
+    - generic [ref=e19]:
+      - generic [ref=e20]: 用户名
+      - textbox "用户名" [ref=e22]:
+        - /placeholder: victory
+    - generic [ref=e23]:
+      - generic [ref=e24]: 密码
+      - generic [ref=e25]:
+        - textbox "密码" [ref=e26]:
+          - /placeholder: ••••••••
+        - button "显示" [ref=e27] [cursor=pointer]
+    - generic [ref=e28]:
+      - checkbox "记住登录状态" [checked] [ref=e29]
+      - generic [ref=e30]: 记住登录状态
+    - button "进入 AionX" [ref=e31] [cursor=pointer]
+  - generic [ref=e33]:
+    - generic [ref=e34]: Screenshot-ready Shell
+    - generic [ref=e35]: •
+    - generic [ref=e36]: Guide / Conversation / Settings / Cron

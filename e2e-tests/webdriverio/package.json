@@ -1,0 +1,18 @@
+{
+  "name": "aionx-webdriverio",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "wdio run wdio.conf.mjs",
+    "test:debug": "node ./scripts/run-wdio.mjs debug",
+    "test:release": "node ./scripts/run-wdio.mjs release"
+  },
+  "dependencies": {
+    "@wdio/cli": "^9.19.2"
+  },
+  "devDependencies": {
+    "@wdio/local-runner": "^9.19.2",
+    "@wdio/mocha-framework": "^9.19.2",
+    "@wdio/spec-reporter": "^9.19.2"
+  }
+}

@@ -1,0 +1,96 @@
+- generic [ref=e3]:
+  - complementary "Settings navigation" [ref=e4]:
+    - generic [ref=e5]:
+      - button "返回应用 回到主工作区" [ref=e6] [cursor=pointer]:
+        - img [ref=e8]
+        - generic [ref=e12]:
+          - generic [ref=e13]: 返回应用
+          - generic [ref=e14]: 回到主工作区
+      - generic [ref=e15]:
+        - generic [ref=e16]: 设置导航
+        - navigation [ref=e17]:
+          - link "Gemini 配置模型接入方式、认证状态和默认行为。" [ref=e18] [cursor=pointer]:
+            - /url: "#/settings/gemini"
+            - img [ref=e21]
+            - generic [ref=e24]:
+              - generic [ref=e25]: Gemini
+              - generic [ref=e26]: 配置模型接入方式、认证状态和默认行为。
+          - link "模型 统一管理模型平台、默认模型和协议设置。" [ref=e27] [cursor=pointer]:
+            - /url: "#/settings/model"
+            - img [ref=e30]
+            - generic [ref=e33]:
+              - generic [ref=e34]: 模型
+              - generic [ref=e35]: 统一管理模型平台、默认模型和协议设置。
+          - link "助手 管理内置助手、自定义助手与默认入口策略。" [ref=e36] [cursor=pointer]:
+            - /url: "#/settings/agent"
+            - img [ref=e39]
+            - generic [ref=e45]:
+              - generic [ref=e46]: 助手
+              - generic [ref=e47]: 管理内置助手、自定义助手与默认入口策略。
+          - link "显示 控制主题、缩放、间距和预览视觉呈现。" [ref=e48] [cursor=pointer]:
+            - /url: "#/settings/display"
+            - img [ref=e51]
+            - generic [ref=e55]:
+              - generic [ref=e56]: 显示
+              - generic [ref=e57]: 控制主题、缩放、间距和预览视觉呈现。
+          - link "远程连接 管理远程访问、服务状态与外部接入配置。" [ref=e58] [cursor=pointer]:
+            - /url: "#/settings/webui"
+            - img [ref=e61]
+            - generic [ref=e66]:
+              - generic [ref=e67]: 远程连接
+              - generic [ref=e68]: 管理远程访问、服务状态与外部接入配置。
+          - link "系统 管理启动行为、工作区目录和系统级偏好。" [ref=e69] [cursor=pointer]:
+            - /url: "#/settings/system"
+            - img [ref=e72]
+            - generic [ref=e74]:
+              - generic [ref=e75]: 系统
+              - generic [ref=e76]: 管理启动行为、工作区目录和系统级偏好。
+          - link "工具 配置工具可见性、权限确认与外部服务接入。" [ref=e77] [cursor=pointer]:
+            - /url: "#/settings/tools"
+            - img [ref=e80]
+            - generic [ref=e84]:
+              - generic [ref=e85]: 工具
+              - generic [ref=e86]: 配置工具可见性、权限确认与外部服务接入。
+          - link "关于 查看版本信息、更新状态和产品说明。" [ref=e87] [cursor=pointer]:
+            - /url: "#/settings/about"
+            - img [ref=e90]
+            - generic [ref=e94]:
+              - generic [ref=e95]: 关于
+              - generic [ref=e96]: 查看版本信息、更新状态和产品说明。
+  - generic [ref=e97]:
+    - generic [ref=e98]:
+      - paragraph [ref=e99]: Settings Workspace
+      - heading "工具与权限" [level=1] [ref=e445]
+      - paragraph [ref=e101]: 配置工具可见性、权限确认与外部服务接入。
+    - main [ref=e103]:
+      - generic [ref=e446]:
+        - alert [ref=e447]:
+          - img [ref=e449]
+          - generic [ref=e452]: "Error: Tauri mock invoke: unsupported command 'get_mcp_servers'"
+        - generic [ref=e453]:
+          - generic [ref=e455]:
+            - generic [ref=e456]:
+              - generic [ref=e457]: MCP 服务器
+              - button "添加服务器" [ref=e458] [cursor=pointer]:
+                - img [ref=e460]
+                - text: 添加服务器
+            - generic [ref=e462]:
+              - generic [ref=e463]: 暂无 MCP 服务器
+              - generic [ref=e464]: 添加 stdio / sse / http 服务器后可在这里管理、测试和启用。
+          - alert [ref=e466]:
+            - img [ref=e468]
+            - generic [ref=e471]: 请先从左侧选择一个 MCP 服务器，或先创建服务器。
+        - generic [ref=e473]:
+          - generic [ref=e474]: 图像生成
+          - generic [ref=e475]:
+            - generic [ref=e476]:
+              - generic [ref=e479]: 启用图像生成
+              - switch [disabled] [ref=e481]
+            - generic [ref=e483]:
+              - generic [ref=e486]: 图像生成模型
+              - combobox [ref=e488] [cursor=pointer]:
+                - generic [ref=e489]:
+                  - generic [ref=e490]:
+                    - textbox "暂无可用图像模型"
+                    - generic [ref=e491]: 暂无可用图像模型
+                  - img [ref=e494]

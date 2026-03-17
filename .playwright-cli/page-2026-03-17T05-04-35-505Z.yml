@@ -1,0 +1,51 @@
+- generic [ref=e37]:
+  - generic [ref=e38]:
+    - button "Toggle sidebar" [ref=e40] [cursor=pointer]:
+      - img [ref=e42]
+    - generic:
+      - generic:
+        - generic:
+          - img
+        - generic: AionX
+    - button "Back to Guide" [ref=e45] [cursor=pointer]:
+      - img [ref=e47]
+  - generic [ref=e50]:
+    - complementary [ref=e51]:
+      - main [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - img [ref=e57]
+            - generic [ref=e61]: AionX
+          - generic [ref=e64]:
+            - generic [ref=e65]: Settings
+            - generic [ref=e66]: "设置页内部导航由内容区的 `SettingsLayout` 独立负责，主侧栏仅保留应用级返回入口。"
+          - generic [ref=e68]:
+            - generic [ref=e69] [cursor=pointer]:
+              - img [ref=e70]
+              - generic [ref=e72]: Theme · Light
+            - generic [ref=e73] [cursor=pointer]:
+              - img [ref=e75]
+              - generic [ref=e78]: Back
+    - main [ref=e79]:
+      - generic [ref=e81]:
+        - complementary [ref=e82]:
+          - generic [ref=e83]: Settings
+          - generic [ref=e84]:
+            - button "Gemini" [ref=e85] [cursor=pointer]
+            - button "Model" [ref=e86] [cursor=pointer]
+            - button "Agent" [ref=e87] [cursor=pointer]
+            - button "Tools" [ref=e88] [cursor=pointer]
+            - button "Display" [ref=e89] [cursor=pointer]
+            - button "WebUI" [ref=e90] [cursor=pointer]
+            - button "System" [ref=e91] [cursor=pointer]
+            - button "About" [ref=e92] [cursor=pointer]
+        - main [ref=e93]:
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - generic [ref=e97]: 模型与平台
+              - button "添加平台" [ref=e98] [cursor=pointer]:
+                - img [ref=e100]
+                - text: 添加平台
+            - generic [ref=e102]:
+              - generic [ref=e103]: 暂无已配置模型平台
+              - generic [ref=e104]: 请先添加模型平台，再配置模型、协议和启用状态。

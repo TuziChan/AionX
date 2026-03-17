@@ -8,6 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "e2e:debug": "npm --prefix e2e-tests/webdriverio run test:debug",
+    "e2e:release": "npm --prefix e2e-tests/webdriverio run test:release",
     "verify:consistency": "node scripts/verify-phase-consistency.mjs",
     "check:phase5": "npm run build && npm run verify:consistency"
   },
