@@ -1,0 +1,133 @@
+- generic [ref=e37]:
+  - generic [ref=e38]:
+    - button "Toggle sidebar" [ref=e40] [cursor=pointer]:
+      - img [ref=e42]
+    - generic:
+      - generic:
+        - generic:
+          - img
+        - generic: AionX
+    - button "Open Settings" [ref=e45] [cursor=pointer]:
+      - img [ref=e47]
+  - generic [ref=e50]:
+    - complementary [ref=e51]:
+      - main [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - img [ref=e57]
+            - generic [ref=e61]: AionX
+          - generic [ref=e63]:
+            - generic [ref=e64]:
+              - button "New Conversation" [ref=e65] [cursor=pointer]:
+                - img [ref=e67]
+                - generic [ref=e69]: New Conversation
+              - button [ref=e70] [cursor=pointer]:
+                - img [ref=e72]
+            - generic [ref=e76]:
+              - button "Cron" [ref=e77] [cursor=pointer]:
+                - img [ref=e79]
+                - generic [ref=e82]: Cron
+              - button "Components" [ref=e83] [cursor=pointer]:
+                - img [ref=e85]
+                - generic [ref=e88]: Components
+            - generic [ref=e90]:
+              - generic [ref=e91]:
+                - generic [ref=e92]: Today
+                - generic [ref=e93] [cursor=pointer]:
+                  - generic [ref=e94]: Landing page revamp
+                  - generic [ref=e95]: Mock conversation
+                - generic [ref=e96] [cursor=pointer]:
+                  - generic [ref=e97]: Codex review session
+                  - generic [ref=e98]: Mock conversation
+              - generic [ref=e99]:
+                - generic [ref=e100]: Yesterday
+                - generic [ref=e101] [cursor=pointer]:
+                  - generic [ref=e102]: Gemini settings cleanup
+                  - generic [ref=e103]: Mock conversation
+          - generic [ref=e106] [cursor=pointer]:
+            - img [ref=e108]
+            - generic [ref=e111]: 设置
+    - main [ref=e112]:
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - paragraph [ref=e116]: Guided Workspace
+          - heading "用统一视觉入口发起新的工作流" [level=1] [ref=e117]
+          - paragraph [ref=e118]: "这里对齐 AionUi 的 Guide 结构: Agent Pill、输入卡、快捷动作、模型选择与工作区提示全部放在一个统一入口中。"
+        - generic [ref=e119]:
+          - button "Claude Code 偏代码执行与本地工具链" [ref=e120] [cursor=pointer]:
+            - generic [ref=e121]: Claude Code
+            - generic [ref=e122]: 偏代码执行与本地工具链
+          - button "Codex 偏工程改造与终端执行" [ref=e123] [cursor=pointer]:
+            - generic [ref=e124]: Codex
+            - generic [ref=e125]: 偏工程改造与终端执行
+          - button "Gemini 偏多模态与快速规划" [ref=e126] [cursor=pointer]:
+            - generic [ref=e127]: Gemini
+            - generic [ref=e128]: 偏多模态与快速规划
+          - button "Nanobot 偏轻量自动化与脚本" [ref=e129] [cursor=pointer]:
+            - generic [ref=e130]: Nanobot
+            - generic [ref=e131]: 偏轻量自动化与脚本
+          - button "OpenClaw 偏系统巡检与工作流" [ref=e132] [cursor=pointer]:
+            - generic [ref=e133]: OpenClaw
+            - generic [ref=e134]: 偏系统巡检与工作流
+        - generic [ref=e135]:
+          - generic [ref=e136]:
+            - generic [ref=e137]:
+              - generic [ref=e138]: 当前 Agent
+              - generic [ref=e139]:
+                - generic [ref=e141]: Claude Code
+                - generic [ref=e142]: 偏代码执行与本地工具链
+            - generic [ref=e143]:
+              - combobox [ref=e144] [cursor=pointer]:
+                - generic "claude-sonnet-4" [ref=e145]:
+                  - generic [ref=e146]:
+                    - textbox
+                    - generic [ref=e147]: claude-sonnet-4
+                  - img [ref=e150]
+              - textbox "Workspace path" [ref=e152]: F:/Work/AionX
+          - textbox "给 Claude Code 一个清晰任务，例如：对比 AionUi 与 AionX 的 Conversation 页面结构并给出实施顺序" [ref=e153]
+          - generic [ref=e154]:
+            - generic [ref=e155]:
+              - button "工作区已连接" [ref=e156]:
+                - img [ref=e158]
+                - text: 工作区已连接
+              - 'button "模型: claude-sonnet-4" [ref=e165]':
+                - img [ref=e167]
+                - text: "模型: claude-sonnet-4"
+              - button "预览面板默认可用" [ref=e170]:
+                - img [ref=e172]
+                - text: 预览面板默认可用
+            - button "开始会话" [ref=e175] [cursor=pointer]
+        - generic [ref=e176]:
+          - generic [ref=e177]:
+            - generic [ref=e178]: Claude Code
+            - paragraph [ref=e179]: 偏代码执行与本地工具链
+            - button "设为当前入口" [ref=e180] [cursor=pointer]
+          - generic [ref=e181]:
+            - generic [ref=e182]: Codex
+            - paragraph [ref=e183]: 偏工程改造与终端执行
+            - button "设为当前入口" [ref=e184] [cursor=pointer]
+          - generic [ref=e185]:
+            - generic [ref=e186]: Gemini
+            - paragraph [ref=e187]: 偏多模态与快速规划
+            - button "设为当前入口" [ref=e188] [cursor=pointer]
+          - generic [ref=e189]:
+            - generic [ref=e190]: Nanobot
+            - paragraph [ref=e191]: 偏轻量自动化与脚本
+            - button "设为当前入口" [ref=e192] [cursor=pointer]
+          - generic [ref=e193]:
+            - generic [ref=e194]: OpenClaw
+            - paragraph [ref=e195]: 偏系统巡检与工作流
+            - button "设为当前入口" [ref=e196] [cursor=pointer]
+        - generic [ref=e197]:
+          - button "重构设置页" [ref=e198] [cursor=pointer]:
+            - img [ref=e201]
+            - generic [ref=e203]: 重构设置页
+          - button "检查差异" [ref=e204] [cursor=pointer]:
+            - img [ref=e207]
+            - generic [ref=e209]: 检查差异
+          - button "补全截图页" [ref=e210] [cursor=pointer]:
+            - img [ref=e213]
+            - generic [ref=e215]: 补全截图页
+          - button "生成计划" [ref=e216] [cursor=pointer]:
+            - img [ref=e219]
+            - generic [ref=e221]: 生成计划

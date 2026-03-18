@@ -1,0 +1,22 @@
+{
+  "name": "aionx-webdriverio",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "wdio run wdio.conf.mjs",
+    "test:debug": "node ./scripts/run-wdio.mjs debug",
+    "test:debug:desktop": "node ./scripts/run-wdio.mjs debug desktop",
+    "test:debug:responsive": "node ./scripts/run-wdio.mjs debug responsive",
+    "test:release": "node ./scripts/run-wdio.mjs release",
+    "test:release:desktop": "node ./scripts/run-wdio.mjs release desktop",
+    "test:release:responsive": "node ./scripts/run-wdio.mjs release responsive"
+  },
+  "dependencies": {
+    "@wdio/cli": "^9.19.2"
+  },
+  "devDependencies": {
+    "@wdio/local-runner": "^9.19.2",
+    "@wdio/mocha-framework": "^9.19.2",
+    "@wdio/spec-reporter": "^9.19.2"
+  }
+}

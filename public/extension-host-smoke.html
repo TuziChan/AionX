@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AionX Extension Host Smoke</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(circle at top left, rgba(14, 116, 144, 0.18), transparent 28%),
+          linear-gradient(135deg, rgba(226, 232, 240, 0.95), rgba(248, 250, 252, 0.98));
+        color: #0f172a;
+      }
+
+      .host-card {
+        width: min(720px, calc(100vw - 32px));
+        padding: 28px;
+        border-radius: 24px;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        background: rgba(255, 255, 255, 0.86);
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+      }
+
+      .eyebrow {
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #0f766e;
+      }
+
+      h1 {
+        margin: 12px 0 8px;
+        font-size: 28px;
+      }
+
+      p {
+        margin: 0;
+        line-height: 1.7;
+        color: #334155;
+      }
+
+      .meta-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .meta-item {
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: rgba(15, 23, 42, 0.04);
+      }
+
+      .meta-label {
+        font-size: 12px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .meta-value {
+        margin-top: 6px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #0f172a;
+        word-break: break-word;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background:
+            radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 28%),
+            linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.98));
+          color: #e2e8f0;
+        }
+
+        .host-card {
+          border-color: rgba(148, 163, 184, 0.16);
+          background: rgba(15, 23, 42, 0.82);
+          box-shadow: none;
+        }
+
+        p {
+          color: #cbd5e1;
+        }
+
+        .meta-item {
+          background: rgba(148, 163, 184, 0.08);
+        }
+
+        .meta-label {
+          color: #94a3b8;
+        }
+
+        .meta-value {
+          color: #f8fafc;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="host-card">
+      <div class="eyebrow">AionX Extension Host</div>
+      <h1 data-testid="extension-host-ready">AionX Extension Host Ready</h1>
+      <p>这个静态页面用于验证 ExtensionSettingsHost 的真实 iframe 宿主链路，而不是 metadata fallback。</p>
+
+      <div class="meta-list">
+        <section class="meta-item">
+          <div class="meta-label">Locale</div>
+          <div class="meta-value" data-testid="extension-host-locale"></div>
+        </section>
+        <section class="meta-item">
+          <div class="meta-label">Theme</div>
+          <div class="meta-value" data-testid="extension-host-theme"></div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      document.querySelector('[data-testid="extension-host-locale"]').textContent = params.get('aionxLocale') || 'missing';
+      document.querySelector('[data-testid="extension-host-theme"]').textContent = params.get('aionxTheme') || 'missing';
+    </script>
+  </body>
+</html>

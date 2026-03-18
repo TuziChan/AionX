@@ -34,3 +34,22 @@ pub struct ExtensionUpdate {
     pub enabled: Option<bool>,
     pub config: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct ExtensionSettingsHostContext {
+    pub mode: String,
+    pub entry_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct ExtensionSettingsTab {
+    pub tab_id: String,
+    pub extension_id: String,
+    pub name: String,
+    pub version: String,
+    pub description: Option<String>,
+    pub path: String,
+    pub enabled: bool,
+    pub config: Option<String>,
+    pub host: Option<ExtensionSettingsHostContext>,
+}
