@@ -10,12 +10,16 @@ export function Component() {
     error,
     loading,
     savingCloseToTray,
+    savingCronNotification,
     savingLanguage,
+    savingNotification,
     savingRuntimeInfo,
     settings,
     systemInfoLabel,
     updateCloseToTray,
+    updateCronNotificationEnabled,
     updateLanguage,
+    updateNotificationEnabled,
     updateRuntimeInfo,
   } = useSystemSettings();
 
@@ -53,21 +57,31 @@ export function Component() {
 
   return (
     <div className="settings-panel settings-panel--regular settings-system-page">
-      <SystemBehaviorCard
-        closeToTray={settings?.closeToTray ?? false}
-        currentLanguage={currentLanguage}
-        savingCloseToTray={savingCloseToTray}
-        savingLanguage={savingLanguage}
-        systemInfoLabel={systemInfoLabel}
-        onCloseToTrayChange={(checked) => void updateCloseToTray(checked)}
-        onLanguageChange={(language) => void updateLanguage(language)}
-      />
+      <section className="settings-group-card settings-system-page__card">
+        <div className="settings-system-page__card-body">
+          <SystemBehaviorCard
+            closeToTray={settings?.closeToTray ?? false}
+            cronNotificationEnabled={settings?.cronNotificationEnabled ?? false}
+            currentLanguage={currentLanguage}
+            notificationEnabled={settings?.notificationEnabled ?? true}
+            savingCloseToTray={savingCloseToTray}
+            savingCronNotification={savingCronNotification}
+            savingLanguage={savingLanguage}
+            savingNotification={savingNotification}
+            systemInfoLabel={systemInfoLabel}
+            onCloseToTrayChange={(checked) => void updateCloseToTray(checked)}
+            onCronNotificationChange={(checked) => void updateCronNotificationEnabled(checked)}
+            onLanguageChange={(language) => void updateLanguage(language)}
+            onNotificationChange={(checked) => void updateNotificationEnabled(checked)}
+          />
 
-      <RuntimeDirectoriesCard
-        runtimeInfo={runtimeInfo}
-        saving={savingRuntimeInfo || !settings}
-        onPickDirectory={(field) => void pickDirectory(field)}
-      />
+          <RuntimeDirectoriesCard
+            runtimeInfo={runtimeInfo}
+            saving={savingRuntimeInfo || !settings}
+            onPickDirectory={(field) => void pickDirectory(field)}
+          />
+        </div>
+      </section>
 
       {error ? <Alert type="error" content={error} /> : null}
       {loading ? <Alert type="info" content="正在加载系统设置..." /> : null}

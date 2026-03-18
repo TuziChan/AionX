@@ -1,5 +1,4 @@
 import { Select, Switch } from '@arco-design/web-react';
-import { PreferenceRow } from '@/features/settings/components/PreferenceRow';
 import type { ImageGenerationDraft, ImageGenerationOption } from '../types';
 
 interface ImageGenerationCardProps {
@@ -20,18 +19,19 @@ export function ImageGenerationCard({
 
   return (
     <section className="settings-group-card settings-tools-page__image-card" data-testid="tools-image-card">
-      <div className="settings-tools-page__section-header">
+      <div className="settings-tools-page__image-header">
         <div>
           <div className="settings-group-card__title">图像生成</div>
-          <div className="settings-tools-page__pane-subtitle">图像模型配置保持独立 card，不和 MCP server 列表交叉混排。</div>
+          <div className="settings-tools-page__pane-subtitle">保持与 MCP 管理分离的独立卡片，节奏对齐 AionUi 的标题行开关布局。</div>
         </div>
+        <Switch checked={settings.enabled} onChange={(value) => void onToggleEnabled(value)} disabled={!selectedValue} />
       </div>
 
-      <div className="settings-group-card__body">
-        <PreferenceRow label="启用图像生成">
-          <Switch checked={settings.enabled} onChange={(value) => void onToggleEnabled(value)} disabled={!selectedValue} />
-        </PreferenceRow>
-        <PreferenceRow label="图像模型">
+      <div className="settings-tools-page__image-divider" />
+
+      <div className="settings-tools-page__image-form">
+        <div className="settings-tools-page__image-form-label">图像模型</div>
+        <div className="settings-tools-page__image-form-control">
           <Select
             value={selectedValue}
             options={options}
@@ -39,7 +39,7 @@ export function ImageGenerationCard({
             allowClear
             placeholder={options.length ? '选择一个图像模型' : '暂无可用模型'}
           />
-        </PreferenceRow>
+        </div>
       </div>
 
       <div className="settings-tools-page__image-footnote">

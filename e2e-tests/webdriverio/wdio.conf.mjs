@@ -15,20 +15,28 @@ const edgeDriverPath = path.join(repoRoot, 'msedgedriver.exe');
 const tauriCliPath = path.join(repoRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'tauri.cmd' : 'tauri');
 const tauriDriverPath = process.platform === 'win32' ? 'tauri-driver.exe' : 'tauri-driver';
 const tauriDriverCommand = path.join(os.homedir(), '.cargo', 'bin', tauriDriverPath);
+const e2eEnv = {
+  ...process.env,
+  AIONX_E2E_SEED_EXTENSION: process.env.AIONX_E2E_SEED_EXTENSION ?? '1',
+};
 
 let tauriDriverProcess;
+
+process.env.AIONX_E2E_SEED_EXTENSION = e2eEnv.AIONX_E2E_SEED_EXTENSION;
 
 function runCommand(command, args, options = {}) {
   const result =
     process.platform === 'win32'
       ? spawnSync(`"${command}" ${args.map((arg) => (arg.includes(' ') ? `"${arg}"` : arg)).join(' ')}`, {
           cwd: repoRoot,
+          env: e2eEnv,
           shell: true,
           stdio: 'inherit',
           ...options,
         })
       : spawnSync(command, args, {
           cwd: repoRoot,
+          env: e2eEnv,
           stdio: 'inherit',
           ...options,
         });
@@ -247,6 +255,7 @@ export const config = {
       ['--native-driver', edgeDriverPath, '--port', '4444'],
       {
         cwd: repoRoot,
+        env: e2eEnv,
         stdio: 'inherit',
       },
     );

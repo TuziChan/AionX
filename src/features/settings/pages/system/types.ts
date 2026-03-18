@@ -8,6 +8,8 @@ export interface RuntimeDirectoryDraft {
 
 export interface SystemSettingsSnapshot {
   closeToTray: boolean;
+  notificationEnabled: boolean;
+  cronNotificationEnabled: boolean;
   runtimeInfo: RuntimeDirectoryDraft;
 }
 

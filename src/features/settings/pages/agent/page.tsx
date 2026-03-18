@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { AssistantDetailPane } from './components/AssistantDetailPane';
 import { AssistantEditorModal } from './components/AssistantEditorModal';
 import { AssistantListPane } from './components/AssistantListPane';
+import type { AssistantEditorValues } from './types';
 import { useAgentAssistants } from './hooks/useAgentAssistants';
 
 export function Component() {
@@ -17,47 +17,84 @@ export function Component() {
     getStatusLabel,
     saveAssistant,
     selectAssistant,
+    toggleAssistantEnabled,
+    togglingAssistantId,
   } = useAgentAssistants();
   const [editorVisible, setEditorVisible] = useState(false);
   const [editingAssistant, setEditingAssistant] = useState<typeof selectedAssistant>(null);
+  const [initialValues, setInitialValues] = useState<AssistantEditorValues | null>(null);
 
   const openCreateAssistant = () => {
     setEditingAssistant(null);
+    setInitialValues(null);
+    setEditorVisible(true);
+  };
+
+  const openEditAssistant = (assistant: NonNullable<typeof selectedAssistant>) => {
+    selectAssistant(assistant.id);
+    setEditingAssistant(assistant);
+    setInitialValues(null);
+    setEditorVisible(true);
+  };
+
+  const openDuplicateAssistant = (assistant: NonNullable<typeof selectedAssistant>) => {
+    selectAssistant(assistant.id);
+    setEditingAssistant(null);
+    setInitialValues({
+      id: '',
+      source: 'custom',
+      name: `${assistant.name} (副本)`,
+      description: assistant.description,
+      avatar: assistant.avatar,
+      mainAgent: assistant.mainAgent,
+      enabled: assistant.enabled,
+      prompt: assistant.prompt,
+    });
     setEditorVisible(true);
   };
 
   return (
     <div className="settings-panel settings-panel--wide settings-agent-page">
-      <div className="settings-split-view settings-agent-page__shell">
-        <AssistantListPane
-          assistants={assistants}
-          selectedAssistantId={selectedAssistantId}
-          onAddAssistant={openCreateAssistant}
-          onSelectAssistant={selectAssistant}
-          resolveStatusLabel={getStatusLabel}
-        />
-
-        <AssistantDetailPane
-          assistant={selectedAssistant}
-          deleting={removingAssistantId === selectedAssistant?.id}
-          onDeleteAssistant={(assistant) => void deleteAssistant(assistant)}
-          onEditAssistant={(assistant) => {
-            setEditingAssistant(assistant);
-            setEditorVisible(true);
-          }}
-          resolveStatusLabel={getStatusLabel}
-        />
-      </div>
+      <AssistantListPane
+        assistants={assistants}
+        selectedAssistantId={selectedAssistantId}
+        onAddAssistant={openCreateAssistant}
+        onDuplicateAssistant={openDuplicateAssistant}
+        onEditAssistant={openEditAssistant}
+        onSelectAssistant={selectAssistant}
+        onToggleAssistantEnabled={(assistant, enabled) => void toggleAssistantEnabled(assistant, enabled)}
+        resolveStatusLabel={getStatusLabel}
+        togglingAssistantId={togglingAssistantId}
+      />
 
       <AssistantEditorModal
         agentOptions={agentOptions}
+        deleting={removingAssistantId === editingAssistant?.id}
         assistant={editingAssistant}
+        initialValues={initialValues}
+        resolveStatusLabel={getStatusLabel}
         saving={saving}
         visible={editorVisible}
-        onCancel={() => setEditorVisible(false)}
+        onCancel={() => {
+          setEditorVisible(false);
+          setEditingAssistant(null);
+          setInitialValues(null);
+        }}
+        onDelete={(assistant) => {
+          void deleteAssistant(assistant).then((deleted) => {
+            if (!deleted) {
+              return;
+            }
+            setEditorVisible(false);
+            setEditingAssistant(null);
+            setInitialValues(null);
+          });
+        }}
         onSubmit={async (values, assistant) => {
           await saveAssistant(values, assistant);
           setEditorVisible(false);
+          setEditingAssistant(null);
+          setInitialValues(null);
         }}
       />
 

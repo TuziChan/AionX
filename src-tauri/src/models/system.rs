@@ -13,5 +13,7 @@ pub struct SystemRuntimeInfo {
 #[serde(rename_all = "camelCase")]
 pub struct SystemSettings {
     pub close_to_tray: bool,
+    pub notification_enabled: bool,
+    pub cron_notification_enabled: bool,
     pub runtime_info: SystemRuntimeInfo,
 }

@@ -1,11 +1,15 @@
 import {
   configureAgentAssistants,
+  configureAboutSettings,
+  configureDisplaySettings,
   configureSystemSettings,
   connectGeminiAccountAndBindProject,
   configureWebuiAndChannel,
   createAndTestToolServer,
+  expectAboutPersistence,
   createProviderAndModel,
   expectAgentPersistence,
+  expectDisplayPersistence,
   expectGeminiProjectPersistence,
   expectGeminiSettingsDesktopShell,
   expectExtensionHostPage,
@@ -28,18 +32,26 @@ describe('AionX desktop smoke flow', () => {
     await createAndTestToolServer();
     await openSettingsPage('#/settings/agent', 'Agent');
     await configureAgentAssistants();
+    await openSettingsPage('#/settings/display', '显示');
+    const expectedCustomCss = await configureDisplaySettings();
     await openSettingsPage('#/settings/system', '系统');
     const expectedCloseToTray = await configureSystemSettings();
     await openSettingsPage('#/settings/webui', 'WebUI');
     await configureWebuiAndChannel();
+    await openSettingsPage('#/settings/about', '关于');
+    const expectedIncludePrerelease = await configureAboutSettings();
     await openSettingsPage('#/settings/gemini', 'Gemini');
     await expectGeminiProjectPersistence();
     await openSettingsPage('#/settings/agent', 'Agent');
     await expectAgentPersistence();
+    await openSettingsPage('#/settings/display', '显示');
+    await expectDisplayPersistence(expectedCustomCss);
     await openSettingsPage('#/settings/system', '系统');
     await expectSystemPersistence(expectedCloseToTray);
     await openSettingsPage('#/settings/webui', 'WebUI');
     await expectWebuiPersistence();
+    await openSettingsPage('#/settings/about', '关于');
+    await expectAboutPersistence(expectedIncludePrerelease);
     await openSettingsPage('#/settings/ext/host-smoke', 'E2E Host Extension');
     await expectExtensionHostPage();
     await openSettingsPage('#/settings/ext/missing-extension', 'Extension');

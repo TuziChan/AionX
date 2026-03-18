@@ -17,6 +17,22 @@ function getMetaValue(value: string | null | undefined, fallback = '未配置') 
   return nextValue ? nextValue : fallback;
 }
 
+function getConnectionState(testMessage: string | undefined, testing: boolean) {
+  if (testing) {
+    return { color: 'arcoblue' as const, label: '测试中' };
+  }
+
+  if (!testMessage?.trim()) {
+    return { color: 'gray' as const, label: '未测试' };
+  }
+
+  if (/failed|error|invalid|missing|unsupported|non-success|not found|拒绝|失败|无效|缺少|不存在|错误/i.test(testMessage)) {
+    return { color: 'red' as const, label: '连接异常' };
+  }
+
+  return { color: 'green' as const, label: '已连通' };
+}
+
 export function McpServerDetailPane({
   server,
   testingServerId,
@@ -28,17 +44,17 @@ export function McpServerDetailPane({
 }: McpServerDetailPaneProps) {
   if (!server) {
     return (
-      <section className="settings-group-card settings-tools-page__detail" data-testid="tools-server-detail">
-        <div className="settings-empty-state settings-tools-page__detail-empty">
-          <div className="settings-empty-state__title">选择一个 MCP Server</div>
-          <div className="settings-empty-state__desc">左侧会展示已接入的工具节点。选中后即可查看状态、测试连通性和维护参数。</div>
-        </div>
-      </section>
+      <div className="settings-empty-state settings-tools-page__detail-empty" data-testid="tools-server-detail">
+        <div className="settings-empty-state__title">选择一个 MCP Server</div>
+        <div className="settings-empty-state__desc">上方会展示已接入的工具节点。选中后即可查看状态、测试连通性和维护参数。</div>
+      </div>
     );
   }
 
+  const connectionState = getConnectionState(testMessage, testingServerId === server.id);
+
   return (
-    <section className="settings-group-card settings-tools-page__detail" data-testid="tools-server-detail">
+    <div className="settings-tools-page__detail" data-testid="tools-server-detail">
       <div className="settings-tools-page__detail-hero">
         <div className="settings-tools-page__detail-meta">
           <div className="settings-tools-page__detail-title">{server.name}</div>
@@ -46,12 +62,15 @@ export function McpServerDetailPane({
             <span>{server.type.toUpperCase()}</span>
             <span>{server.url?.trim() || server.command?.trim() || '未配置地址/命令'}</span>
           </div>
+          <div className="settings-tools-page__detail-statuses">
+            <Tag color={connectionState.color}>{connectionState.label}</Tag>
+            <Tag color={server.enabled ? 'green' : 'gray'}>{server.enabled ? '运行中' : '已停用'}</Tag>
+            <Tag color={server.oauth_config && server.oauth_config !== '{}' ? 'arcoblue' : 'gray'}>
+              {server.oauth_config && server.oauth_config !== '{}' ? 'OAuth 已配置' : 'OAuth 未配置'}
+            </Tag>
+          </div>
         </div>
         <div className="settings-tools-page__detail-actions">
-          <Tag color={server.enabled ? 'green' : 'gray'}>{server.enabled ? '运行中' : '已停用'}</Tag>
-          <Tag color={server.oauth_config && server.oauth_config !== '{}' ? 'arcoblue' : 'gray'}>
-            {server.oauth_config && server.oauth_config !== '{}' ? 'OAuth 已配置' : 'OAuth 未配置'}
-          </Tag>
           <Switch checked={server.enabled} onChange={(value) => onToggleServer(server, value)} />
           <Button
             data-testid="tools-test-server"
@@ -112,6 +131,6 @@ export function McpServerDetailPane({
           当前 server 已保存基础配置，后续能力会在这里继续扩展，而不再回到单页堆按钮模式。
         </div>
       </div>
-    </section>
+    </div>
   );
 }

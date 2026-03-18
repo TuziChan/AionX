@@ -9,38 +9,80 @@ interface RuntimeDirectoriesCardProps {
   onPickDirectory: (field: 'cacheDir' | 'workDir') => void;
 }
 
+function DirectoryRow({
+  actionLabel,
+  actionTestId,
+  description,
+  inputId,
+  label,
+  onAction,
+  value,
+  disabled,
+}: {
+  actionLabel: string;
+  actionTestId: string;
+  description?: string;
+  inputId: string;
+  label: string;
+  onAction: () => void;
+  value: string;
+  disabled: boolean;
+}) {
+  return (
+    <PreferenceRow label={label} description={description}>
+      <div className="settings-system-page__directory-control">
+        <Input id={inputId} readOnly value={value} />
+        <Button data-testid={actionTestId} disabled={disabled} onClick={onAction}>
+          {actionLabel}
+        </Button>
+      </div>
+    </PreferenceRow>
+  );
+}
+
 export function RuntimeDirectoriesCard({ runtimeInfo, saving, onPickDirectory }: RuntimeDirectoriesCardProps) {
   return (
-    <section className="settings-group-card" data-testid="system-runtime-card">
-      <div className="settings-group-card__body">
-        <PreferenceRow label="缓存目录">
-          <div className="settings-inline-actions settings-inline-actions--compact">
-            <Input id="system-cache-dir" readOnly value={runtimeInfo.cacheDir} />
-            <Button data-testid="system-pick-cache-dir" disabled={saving} onClick={() => onPickDirectory('cacheDir')}>
-              选择
-            </Button>
-          </div>
-        </PreferenceRow>
-        <PreferenceRow label="工作目录">
-          <div className="settings-inline-actions settings-inline-actions--compact">
-            <Input id="system-work-dir" readOnly value={runtimeInfo.workDir} />
-            <Button data-testid="system-pick-work-dir" disabled={saving} onClick={() => onPickDirectory('workDir')}>
-              选择
-            </Button>
-          </div>
-        </PreferenceRow>
-        <PreferenceRow label="日志目录">
-          <div className="settings-inline-actions settings-inline-actions--compact">
-            <Input id="system-log-dir" readOnly value={runtimeInfo.logDir} />
-            <Button
-              data-testid="system-open-log-dir"
-              disabled={!runtimeInfo.logDir}
-              onClick={() => void openPath(runtimeInfo.logDir)}
-            >
-              打开
-            </Button>
-          </div>
-        </PreferenceRow>
+    <section className="settings-system-page__section" data-testid="system-runtime-card">
+      <div className="settings-system-page__section-heading">
+        <div className="settings-system-page__section-title">运行目录</div>
+        <div className="settings-system-page__section-description">
+          调整缓存与工作目录时会在保存后提示重启；日志目录保持只读，只提供快速打开入口。
+        </div>
+      </div>
+
+      <div className="settings-system-page__section-body">
+        <DirectoryRow
+          actionLabel="选择"
+          actionTestId="system-pick-cache-dir"
+          description="用于缓存模型响应和临时文件。"
+          disabled={saving}
+          inputId="system-cache-dir"
+          label="缓存目录"
+          onAction={() => onPickDirectory('cacheDir')}
+          value={runtimeInfo.cacheDir}
+        />
+
+        <DirectoryRow
+          actionLabel="选择"
+          actionTestId="system-pick-work-dir"
+          description="用于工作流与运行时数据落盘。"
+          disabled={saving}
+          inputId="system-work-dir"
+          label="工作目录"
+          onAction={() => onPickDirectory('workDir')}
+          value={runtimeInfo.workDir}
+        />
+
+        <DirectoryRow
+          actionLabel="打开"
+          actionTestId="system-open-log-dir"
+          description="日志目录由系统维护，便于快速排查运行问题。"
+          disabled={!runtimeInfo.logDir}
+          inputId="system-log-dir"
+          label="日志目录"
+          onAction={() => void openPath(runtimeInfo.logDir)}
+          value={runtimeInfo.logDir}
+        />
       </div>
     </section>
   );

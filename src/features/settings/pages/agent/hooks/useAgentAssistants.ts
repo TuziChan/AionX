@@ -22,6 +22,7 @@ export function useAgentAssistants() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [removingAssistantId, setRemovingAssistantId] = useState<string | null>(null);
+  const [togglingAssistantId, setTogglingAssistantId] = useState<string | null>(null);
   const [detectedAgents, setDetectedAgents] = useState<DetectedAgent[]>([]);
 
   const loadAssistants = useCallback(async (preferredSelectedId?: string | null) => {
@@ -106,7 +107,7 @@ export function useAgentAssistants() {
   const deleteAssistant = useCallback(
     async (assistant: AssistantEntry) => {
       if (assistant.source !== 'custom' || !assistant.pluginId) {
-        return;
+        return false;
       }
 
       setRemovingAssistantId(assistant.id);
@@ -114,10 +115,49 @@ export function useAgentAssistants() {
         await removeCustomAssistant(assistant.pluginId);
         Message.success('自定义助手已删除');
         await loadAssistants(null);
+        return true;
       } catch (error) {
         Message.error(`删除助手失败: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
       } finally {
         setRemovingAssistantId(null);
+      }
+    },
+    [loadAssistants],
+  );
+
+  const toggleAssistantEnabled = useCallback(
+    async (assistant: AssistantEntry, enabled: boolean) => {
+      setTogglingAssistantId(assistant.id);
+      try {
+        if (assistant.source === 'builtin') {
+          await saveBuiltinAssistantPreferences(assistant.id, {
+            mainAgent: assistant.mainAgent,
+            enabled,
+          });
+        } else {
+          if (!assistant.pluginId) {
+            throw new Error('缺少自定义助手插件 ID');
+          }
+
+          await updateCustomAssistant(assistant.pluginId, {
+            id: assistant.id,
+            source: assistant.source,
+            name: assistant.name,
+            description: assistant.description,
+            avatar: assistant.avatar,
+            mainAgent: assistant.mainAgent,
+            enabled,
+            prompt: assistant.prompt,
+          });
+        }
+
+        Message.success(enabled ? '助手已启用' : '助手已停用');
+        await loadAssistants(assistant.id);
+      } catch (error) {
+        Message.error(`切换助手状态失败: ${error instanceof Error ? error.message : String(error)}`);
+      } finally {
+        setTogglingAssistantId(null);
       }
     },
     [loadAssistants],
@@ -136,5 +176,7 @@ export function useAgentAssistants() {
     loadAssistants,
     saveAssistant,
     selectAssistant: setSelectedAssistantId,
+    toggleAssistantEnabled,
+    togglingAssistantId,
   };
 }

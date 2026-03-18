@@ -1,4 +1,4 @@
-export type WebuiInnerTab = 'service' | 'channels';
+export type WebuiInnerTab = 'webui' | 'channels';
 
 export type ChannelPluginType = 'telegram' | 'lark' | 'dingtalk' | 'slack' | 'discord';
 

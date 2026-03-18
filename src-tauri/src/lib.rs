@@ -64,6 +64,12 @@ pub fn run() {
             commands::update_settings,
             commands::change_language,
             commands::get_default_config,
+            commands::get_display_settings,
+            commands::save_display_settings,
+            commands::get_app_metadata,
+            commands::get_update_preferences,
+            commands::save_update_preferences,
+            commands::check_for_updates,
             commands::get_gemini_settings,
             commands::save_gemini_settings,
             commands::get_google_auth_status,
@@ -148,6 +154,10 @@ pub fn run() {
             }
         }))
         .setup(|app| {
+            #[cfg(desktop)]
+            app.handle()
+                .plugin(tauri_plugin_updater::Builder::new().build())?;
+
             let app_data_dir = app
                 .path()
                 .app_data_dir()

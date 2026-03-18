@@ -4,6 +4,8 @@ import type { SystemSettingsSnapshot } from '../pages/system/types';
 
 type SystemSettingsPayload = {
   closeToTray?: boolean;
+  notificationEnabled?: boolean;
+  cronNotificationEnabled?: boolean;
   runtimeInfo?: {
     cacheDir?: string;
     workDir?: string;
@@ -43,6 +45,8 @@ export async function changeAppLanguage(language: string): Promise<void> {
 function normalizeSystemSettings(settings: SystemSettingsPayload | SystemSettingsSnapshot): SystemSettingsSnapshot {
   return {
     closeToTray: Boolean(settings.closeToTray),
+    notificationEnabled: settings.notificationEnabled ?? true,
+    cronNotificationEnabled: Boolean(settings.cronNotificationEnabled),
     runtimeInfo: {
       cacheDir: settings.runtimeInfo?.cacheDir?.trim() || EMPTY_RUNTIME_INFO.cacheDir,
       workDir: settings.runtimeInfo?.workDir?.trim() || EMPTY_RUNTIME_INFO.workDir,

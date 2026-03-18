@@ -11,6 +11,8 @@ export function useSystemSettings() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingCloseToTray, setSavingCloseToTray] = useState(false);
+  const [savingNotification, setSavingNotification] = useState(false);
+  const [savingCronNotification, setSavingCronNotification] = useState(false);
   const [savingRuntimeInfo, setSavingRuntimeInfo] = useState(false);
   const [savingLanguage, setSavingLanguage] = useState(false);
 
@@ -91,6 +93,64 @@ export function useSystemSettings() {
     [settings],
   );
 
+  const updateNotificationEnabled = useCallback(
+    async (enabled: boolean) => {
+      if (!settings) {
+        return;
+      }
+
+      const previous = settings;
+      const nextSettings = {
+        ...settings,
+        notificationEnabled: enabled,
+      };
+
+      setSettings(nextSettings);
+      setSavingNotification(true);
+
+      try {
+        const saved = await saveSystemSettings(nextSettings);
+        setSettings(saved);
+        Message.success('通知设置已保存');
+      } catch (caughtError) {
+        setSettings(previous);
+        Message.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
+      } finally {
+        setSavingNotification(false);
+      }
+    },
+    [settings],
+  );
+
+  const updateCronNotificationEnabled = useCallback(
+    async (enabled: boolean) => {
+      if (!settings) {
+        return;
+      }
+
+      const previous = settings;
+      const nextSettings = {
+        ...settings,
+        cronNotificationEnabled: enabled,
+      };
+
+      setSettings(nextSettings);
+      setSavingCronNotification(true);
+
+      try {
+        const saved = await saveSystemSettings(nextSettings);
+        setSettings(saved);
+        Message.success('任务通知设置已保存');
+      } catch (caughtError) {
+        setSettings(previous);
+        Message.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
+      } finally {
+        setSavingCronNotification(false);
+      }
+    },
+    [settings],
+  );
+
   const updateLanguage = useCallback(
     async (language: string) => {
       setSavingLanguage(true);
@@ -112,12 +172,16 @@ export function useSystemSettings() {
     error,
     loading,
     savingCloseToTray,
+    savingNotification,
+    savingCronNotification,
     savingLanguage,
     savingRuntimeInfo,
     settings,
     systemInfoLabel,
     loadSettings,
     updateCloseToTray,
+    updateNotificationEnabled,
+    updateCronNotificationEnabled,
     updateLanguage,
     updateRuntimeInfo,
   };

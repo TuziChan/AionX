@@ -27,6 +27,37 @@ async function replaceInputValue(selector, value) {
   });
 }
 
+async function findAgentAssistantRowByText(label) {
+  const rows = await $$('[data-testid^="agent-assistant-item-"]');
+  for (const row of rows) {
+    if ((await row.getText()).includes(label)) {
+      return row;
+    }
+  }
+  throw new Error(`Unable to locate assistant row containing "${label}"`);
+}
+
+async function hasAgentAssistantRowByText(label) {
+  const rows = await $$('[data-testid^="agent-assistant-item-"]');
+  for (const row of rows) {
+    if ((await row.getText()).includes(label)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function closeAgentDrawerIfOpen() {
+  const cancelButton = await $('.settings-agent-page__editor-modal .arco-drawer-footer .arco-btn:not(.arco-btn-primary)');
+  if (await cancelButton.isExisting()) {
+    await cancelButton.click();
+    await browser.waitUntil(async () => !(await $('[data-testid="agent-assistant-detail"]').isDisplayed()), {
+      timeout: 20000,
+      timeoutMsg: 'expected agent drawer to close before continuing',
+    }).catch(() => {});
+  }
+}
+
 export async function loginAndOpenGuide({ width, height }) {
   await browser.setWindowSize(width, height);
 
@@ -115,6 +146,103 @@ export async function expectGeminiProjectPersistence() {
     timeout: 20000,
     timeoutMsg: 'expected Gemini project binding to persist after route switches',
   });
+}
+
+export async function configureDisplaySettings() {
+  const themeCard = await $('[data-testid="display-theme-card"]');
+  await themeCard.waitForDisplayed({ timeout: 20000 });
+
+  const cssCard = await $('[data-testid="display-custom-css-card"]');
+  await cssCard.waitForDisplayed({ timeout: 20000 });
+
+  const themeLightButton = await $('[data-testid="display-theme-light"]');
+  await themeLightButton.waitForDisplayed({ timeout: 20000 });
+
+  const zoomValue = await $('[data-testid="display-zoom-value"]');
+  await zoomValue.waitForDisplayed({ timeout: 20000 });
+  assert.match(await zoomValue.getText(), /^\d+%$/);
+
+  const cssValue = ':root { --display-smoke-token: 1; }';
+  await replaceInputValue('#display-custom-css', cssValue);
+
+  const saveButton = await $('[data-testid="display-save-custom-css"]');
+  await saveButton.click();
+
+  await browser.waitUntil(
+    async () =>
+      (await browser.execute(() => document.getElementById('aionx-custom-css-theme')?.textContent ?? '')) ===
+      cssValue,
+    {
+      timeout: 20000,
+      timeoutMsg: 'expected custom CSS preview style tag to update after saving display settings',
+    },
+  );
+
+  return cssValue;
+}
+
+export async function expectDisplayPersistence(expectedCssValue) {
+  const themeCard = await $('[data-testid="display-theme-card"]');
+  await themeCard.waitForDisplayed({ timeout: 20000 });
+
+  const cssInput = await $('#display-custom-css');
+  await cssInput.waitForDisplayed({ timeout: 20000 });
+
+  await browser.waitUntil(async () => (await cssInput.getValue()) === expectedCssValue, {
+    timeout: 20000,
+    timeoutMsg: 'expected custom CSS textarea to persist after route switches',
+  });
+
+  const styleText = await browser.execute(() => document.getElementById('aionx-custom-css-theme')?.textContent ?? '');
+  assert.equal(styleText, expectedCssValue);
+}
+
+export async function configureAboutSettings() {
+  const hero = await $('[data-testid="about-hero"]');
+  await hero.waitForDisplayed({ timeout: 20000 });
+
+  const updateCard = await $('[data-testid="about-update-card"]');
+  await updateCard.waitForDisplayed({ timeout: 20000 });
+
+  const checkButton = await $('[data-testid="about-check-updates"]');
+  await checkButton.click();
+
+  const updateStatus = await $('[data-testid="about-update-status"]');
+  await updateStatus.waitForDisplayed({ timeout: 20000 });
+  assert.ok((await updateStatus.getText()).length > 0);
+
+  const prereleaseSwitch = await $('[data-testid="about-update-card"] button[role="switch"]');
+  await prereleaseSwitch.waitForDisplayed({ timeout: 20000 });
+
+  const currentValue = (await prereleaseSwitch.getAttribute('aria-checked')) === 'true';
+  const expectedValue = !currentValue;
+
+  await prereleaseSwitch.click();
+
+  await browser.waitUntil(async () => (await prereleaseSwitch.getAttribute('aria-checked')) === String(expectedValue), {
+    timeout: 20000,
+    timeoutMsg: `expected include-prerelease switch to change to ${expectedValue}`,
+  });
+
+  return expectedValue;
+}
+
+export async function expectAboutPersistence(expectedIncludePrerelease) {
+  const updateCard = await $('[data-testid="about-update-card"]');
+  await updateCard.waitForDisplayed({ timeout: 20000 });
+
+  const prereleaseSwitch = await $('[data-testid="about-update-card"] button[role="switch"]');
+  await prereleaseSwitch.waitForDisplayed({ timeout: 20000 });
+  await browser.waitUntil(
+    async () => (await prereleaseSwitch.getAttribute('aria-checked')) === String(expectedIncludePrerelease),
+    {
+      timeout: 20000,
+      timeoutMsg: `expected include-prerelease switch to persist as ${expectedIncludePrerelease}`,
+    },
+  );
+
+  const links = await $('[data-testid="about-links"]');
+  await links.waitForDisplayed({ timeout: 20000 });
 }
 
 export async function createProviderAndModel() {
@@ -223,23 +351,30 @@ export async function configureAgentAssistants() {
   const assistantList = await $('[data-testid="agent-assistant-list"]');
   await assistantList.waitForDisplayed({ timeout: 20000 });
 
-  const assistantDetail = await $('[data-testid="agent-assistant-detail"]');
-  await assistantDetail.waitForDisplayed({ timeout: 20000 });
-
   const builtinItem = await $('[data-testid="agent-assistant-item-builtin-star-office-helper"]');
   await builtinItem.waitForDisplayed({ timeout: 20000 });
   await builtinItem.click();
 
+  const assistantDetail = await $('[data-testid="agent-assistant-detail"]');
+  await assistantDetail.waitForDisplayed({ timeout: 20000 });
+
   const statusValue = await $('[data-testid="agent-status-value"]');
   await statusValue.waitForDisplayed({ timeout: 20000 });
-  assert.match(await statusValue.getText(), /已启用|已停用/);
+  await browser.waitUntil(async () => /已启用|已停用/.test(await statusValue.getText()), {
+    timeout: 20000,
+    timeoutMsg: 'expected builtin assistant status to render inside the drawer',
+  });
 
   const sourceValue = await $('[data-testid="agent-source-value"]');
   await sourceValue.waitForDisplayed({ timeout: 20000 });
-  assert.equal(await sourceValue.getText(), '内置');
+  await browser.waitUntil(async () => (await sourceValue.getText()) === '内置', {
+    timeout: 20000,
+    timeoutMsg: 'expected builtin assistant source to render as 内置',
+  });
 
-  const existingCustomItem = await $('button*=Smoke Assistant');
-  if (!(await existingCustomItem.isExisting())) {
+  await closeAgentDrawerIfOpen();
+
+  if (!(await hasAgentAssistantRowByText('Smoke Assistant'))) {
     const addAssistantButton = await $('[data-testid="agent-add-assistant"]');
     await addAssistantButton.click();
 
@@ -248,17 +383,20 @@ export async function configureAgentAssistants() {
     await replaceInputValue('#agent-assistant-avatar', '🧪');
     await replaceInputValue('#agent-assistant-prompt', 'Always summarize the next action.');
 
-    const submitButton = await $('.settings-agent-page__editor-modal .arco-modal-footer .arco-btn-primary');
+    const submitButton = await $('.settings-agent-page__editor-modal .arco-drawer-footer .arco-btn-primary');
     await submitButton.click();
   }
 
-  const customItem = await $('button*=Smoke Assistant');
+  const customItem = await findAgentAssistantRowByText('Smoke Assistant');
   await customItem.waitForDisplayed({ timeout: 20000 });
   await customItem.click();
 
   const customSourceValue = await $('[data-testid="agent-source-value"]');
   await customSourceValue.waitForDisplayed({ timeout: 20000 });
-  assert.equal(await customSourceValue.getText(), '自定义');
+  await browser.waitUntil(async () => (await customSourceValue.getText()) === '自定义', {
+    timeout: 20000,
+    timeoutMsg: 'expected custom assistant source to render as 自定义',
+  });
 
   const promptContent = await $('pre*=Always summarize the next action.');
   await promptContent.waitForDisplayed({ timeout: 20000 });
@@ -269,17 +407,28 @@ export async function expectAgentPersistence() {
   await builtinItem.waitForDisplayed({ timeout: 20000 });
   await builtinItem.click();
 
+  const assistantDetail = await $('[data-testid="agent-assistant-detail"]');
+  await assistantDetail.waitForDisplayed({ timeout: 20000 });
+
   const statusValue = await $('[data-testid="agent-status-value"]');
   await statusValue.waitForDisplayed({ timeout: 20000 });
-  assert.match(await statusValue.getText(), /已启用|已停用/);
+  await browser.waitUntil(async () => /已启用|已停用/.test(await statusValue.getText()), {
+    timeout: 20000,
+    timeoutMsg: 'expected builtin assistant status to persist in the drawer',
+  });
 
-  const customItem = await $('button*=Smoke Assistant');
+  await closeAgentDrawerIfOpen();
+
+  const customItem = await findAgentAssistantRowByText('Smoke Assistant');
   await customItem.waitForDisplayed({ timeout: 20000 });
   await customItem.click();
 
   const sourceValue = await $('[data-testid="agent-source-value"]');
   await sourceValue.waitForDisplayed({ timeout: 20000 });
-  assert.equal(await sourceValue.getText(), '自定义');
+  await browser.waitUntil(async () => (await sourceValue.getText()) === '自定义', {
+    timeout: 20000,
+    timeoutMsg: 'expected custom assistant source to persist in the drawer',
+  });
 
   const promptContent = await $('pre*=Always summarize the next action.');
   await promptContent.waitForDisplayed({ timeout: 20000 });
@@ -345,7 +494,7 @@ export async function expectSystemPersistence(expectedCloseToTray) {
 }
 
 export async function configureWebuiAndChannel() {
-  const serviceTabButton = await $('[data-testid="webui-tab-service"]');
+  const serviceTabButton = await $('[data-testid="webui-tab-webui"]');
   await serviceTabButton.waitForDisplayed({ timeout: 20000 });
 
   const serviceTab = await $('[data-testid="webui-service-tab"]');
@@ -368,23 +517,31 @@ export async function configureWebuiAndChannel() {
   const channelsTab = await $('[data-testid="webui-channels-tab"]');
   await channelsTab.waitForDisplayed({ timeout: 20000 });
 
-  const telegramButton = await $('[data-testid="webui-channel-edit-telegram"]');
-  await telegramButton.waitForDisplayed({ timeout: 20000 });
-  await telegramButton.click();
+  const telegramCard = await $('[data-testid="webui-channel-card-telegram"]');
+  await telegramCard.waitForDisplayed({ timeout: 20000 });
 
-  await replaceInputValue('#webui-channel-name', 'Telegram Smoke');
-  await replaceInputValue('#webui-channel-default-model', 'gemini-2.5-pro');
-  await replaceInputValue('#webui-channel-bot-token', 'bot-token-123');
+  const telegramModelInput = await $('#webui-channel-default-model-telegram');
+  const modelInputExists = await telegramModelInput.isExisting();
+  const modelInputVisible = modelInputExists ? await telegramModelInput.isDisplayed().catch(() => false) : false;
+  if (!modelInputExists || !modelInputVisible) {
+    await telegramCard.click();
+  }
 
-  const submitButton = await $('.settings-webui-page__channel-modal .arco-modal-footer .arco-btn-primary');
-  await submitButton.click();
+  await replaceInputValue('#webui-channel-name-telegram', 'Telegram Smoke');
+  await replaceInputValue('#webui-channel-default-model-telegram', 'gemini-2.5-pro');
+  await replaceInputValue('#webui-channel-bot-token-telegram', 'bot-token-123');
 
-  const pluginName = await $('div=Telegram Smoke');
-  await pluginName.waitForDisplayed({ timeout: 20000 });
+  const saveButton = await $('[data-testid="webui-channel-save-telegram"]');
+  await saveButton.click();
+
+  await browser.waitUntil(async () => (await telegramCard.getText()).includes('Telegram Smoke'), {
+    timeout: 20000,
+    timeoutMsg: 'expected Telegram channel summary to update after saving',
+  });
 }
 
 export async function expectWebuiPersistence() {
-  const serviceTabButton = await $('[data-testid="webui-tab-service"]');
+  const serviceTabButton = await $('[data-testid="webui-tab-webui"]');
   await serviceTabButton.waitForDisplayed({ timeout: 20000 });
   await serviceTabButton.click();
 
@@ -398,8 +555,12 @@ export async function expectWebuiPersistence() {
   const channelsTabButton = await $('[data-testid="webui-tab-channels"]');
   await channelsTabButton.click();
 
-  const pluginName = await $('div=Telegram Smoke');
-  await pluginName.waitForDisplayed({ timeout: 20000 });
+  const telegramCard = await $('[data-testid="webui-channel-card-telegram"]');
+  await telegramCard.waitForDisplayed({ timeout: 20000 });
+  await browser.waitUntil(async () => (await telegramCard.getText()).includes('Telegram Smoke'), {
+    timeout: 20000,
+    timeoutMsg: 'expected Telegram channel summary to persist after route switches',
+  });
 }
 
 export async function expectToolsResponsivePage() {
@@ -414,7 +575,7 @@ export async function expectToolsResponsivePage() {
 }
 
 export async function expectWebuiResponsivePage() {
-  const serviceTabButton = await $('[data-testid="webui-tab-service"]');
+  const serviceTabButton = await $('[data-testid="webui-tab-webui"]');
   await serviceTabButton.waitForDisplayed({ timeout: 20000 });
 
   const serviceTab = await $('[data-testid="webui-service-tab"]');
@@ -430,9 +591,6 @@ export async function expectWebuiResponsivePage() {
 export async function expectAgentResponsivePage() {
   const assistantList = await $('[data-testid="agent-assistant-list"]');
   await assistantList.waitForDisplayed({ timeout: 20000 });
-
-  const assistantDetail = await $('[data-testid="agent-assistant-detail"]');
-  await assistantDetail.waitForDisplayed({ timeout: 20000 });
 
   const addAssistantButton = await $('[data-testid="agent-add-assistant"]');
   await addAssistantButton.waitForDisplayed({ timeout: 20000 });
@@ -450,6 +608,28 @@ export async function expectSystemResponsivePage() {
 
   const systemInfoInput = await $('#system-info-label');
   await systemInfoInput.waitForDisplayed({ timeout: 20000 });
+}
+
+export async function expectDisplayResponsivePage() {
+  const themeCard = await $('[data-testid="display-theme-card"]');
+  await themeCard.waitForDisplayed({ timeout: 20000 });
+
+  const cssCard = await $('[data-testid="display-custom-css-card"]');
+  await cssCard.waitForDisplayed({ timeout: 20000 });
+
+  const cssInput = await $('#display-custom-css');
+  await cssInput.waitForDisplayed({ timeout: 20000 });
+}
+
+export async function expectAboutResponsivePage() {
+  const hero = await $('[data-testid="about-hero"]');
+  await hero.waitForDisplayed({ timeout: 20000 });
+
+  const updateCard = await $('[data-testid="about-update-card"]');
+  await updateCard.waitForDisplayed({ timeout: 20000 });
+
+  const links = await $('[data-testid="about-links"]');
+  await links.waitForDisplayed({ timeout: 20000 });
 }
 
 export async function expectMissingExtensionPage() {

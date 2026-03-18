@@ -1,5 +1,7 @@
 import {
   expectAgentResponsivePage,
+  expectAboutResponsivePage,
+  expectDisplayResponsivePage,
   expectExtensionHostPage,
   expectMissingExtensionPage,
   expectSystemResponsivePage,
@@ -23,12 +25,18 @@ describe('AionX responsive settings smoke flow', () => {
     await openSettingsPage('#/settings/agent', 'Agent');
     await expectResponsiveSettingsShell();
     await expectAgentResponsivePage();
+    await openSettingsPage('#/settings/display', '显示');
+    await expectResponsiveSettingsShell();
+    await expectDisplayResponsivePage();
     await openSettingsPage('#/settings/system', '系统');
     await expectResponsiveSettingsShell();
     await expectSystemResponsivePage();
     await openSettingsPage('#/settings/webui', 'WebUI');
     await expectResponsiveSettingsShell();
     await expectWebuiResponsivePage();
+    await openSettingsPage('#/settings/about', '关于');
+    await expectResponsiveSettingsShell();
+    await expectAboutResponsivePage();
     await openSettingsPage('#/settings/ext/host-smoke', 'E2E Host Extension');
     await expectResponsiveSettingsShell();
     await expectExtensionHostPage();

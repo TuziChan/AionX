@@ -23,7 +23,7 @@ export const settingsRoutes: RouteObject[] = [
       },
       {
         path: 'display',
-        lazy: () => import('./pages/DisplaySettings'),
+        lazy: () => import('./pages/display/page'),
       },
       {
         path: 'webui',
@@ -39,7 +39,7 @@ export const settingsRoutes: RouteObject[] = [
       },
       {
         path: 'about',
-        lazy: () => import('./pages/About'),
+        lazy: () => import('./pages/about/page'),
       },
       {
         path: 'ext/:tabId',

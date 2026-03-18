@@ -125,6 +125,22 @@ async detectAgents() : Promise<Result<DetectedAgent[], string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async listBuiltinAssistants() : Promise<Result<BuiltinAssistant[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_builtin_assistants") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async saveBuiltinAssistantPreferences(id: string, preferences: BuiltinAssistantPreferences) : Promise<Result<BuiltinAssistant, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_builtin_assistant_preferences", { id, preferences }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async listAssistantPlugins() : Promise<Result<AssistantPlugin[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("list_assistant_plugins") };
@@ -213,6 +229,38 @@ async updateExtension(id: string, updates: ExtensionUpdate) : Promise<Result<boo
     else return { status: "error", error: e  as any };
 }
 },
+async listExtensionSettingsTabs() : Promise<Result<ExtensionSettingsTab[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_extension_settings_tabs") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getExtensionSettingsTab(tabId: string) : Promise<Result<ExtensionSettingsTab, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_extension_settings_tab", { tabId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setExtensionEnabled(extensionId: string, enabled: boolean) : Promise<Result<Extension, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_extension_enabled", { extensionId, enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getExtensionHostContext(tabId: string) : Promise<Result<ExtensionSettingsHostContext | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_extension_host_context", { tabId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getSettings(category: string) : Promise<Result<JsonValue, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_settings", { category }) };
@@ -240,6 +288,54 @@ async changeLanguage(language: string) : Promise<Result<null, string>> {
 async getDefaultConfig() : Promise<Result<AppConfig, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_default_config") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getDisplaySettings() : Promise<Result<DisplaySettings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_display_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async saveDisplaySettings(settings: DisplaySettings) : Promise<Result<DisplaySettings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_display_settings", { settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getAppMetadata() : Promise<Result<AppMetadata, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_app_metadata") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getUpdatePreferences() : Promise<Result<UpdatePreferences, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_update_preferences") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async saveUpdatePreferences(preferences: UpdatePreferences) : Promise<Result<UpdatePreferences, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_update_preferences", { preferences }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async checkForUpdates() : Promise<Result<UpdateCheckResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_for_updates") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -296,6 +392,22 @@ async getWebuiSettings() : Promise<Result<WebUiSettings, string>> {
 async saveWebuiSettings(settings: WebUiSettings) : Promise<Result<WebUiSettings, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("save_webui_settings", { settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getSystemSettings() : Promise<Result<SystemSettings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_system_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async saveSystemSettings(settings: SystemSettings) : Promise<Result<SystemSettings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_system_settings", { settings }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -632,8 +744,11 @@ export type AgentStatus = "idle" | "starting" | "running" | "stopping" | "error"
  * 应用配置结构
  */
 export type AppConfig = { theme: string; language: string; zoom_factor: number; webui_port: number; webui_remote: boolean }
+export type AppMetadata = { appName: string; version: string; repositoryUrl: string; releasesUrl: string; issuesUrl: string; docsUrl: string; contactUrl: string }
 export type AssistantPlugin = { id: string; type: string; name: string; enabled: boolean; config: string | null; status: string; last_connected: number | null; created_at: number; updated_at: number }
 export type AssistantPluginUpdate = { name: string | null; enabled: boolean | null; config: string | null; status: string | null }
+export type BuiltinAssistant = { id: string; name: string; description: string; avatar: string; mainAgent: string; enabled: boolean; prompt: string }
+export type BuiltinAssistantPreferences = { mainAgent: string; enabled: boolean }
 export type ChannelPlugin = { id: string; type: string; name: string; enabled: boolean; config: string | null; status: string; created_at: number; updated_at: number }
 export type ChannelPluginUpdate = { name: string | null; enabled: boolean | null; config: string | null; status: string | null }
 /**
@@ -654,7 +769,10 @@ export type CronJobUpdate = { name: string | null; cron_expression: string | nul
  * 检测到的可用 Agent
  */
 export type DetectedAgent = { agent_type: string; name: string; command: string; version: string | null; available: boolean }
+export type DisplaySettings = { theme: string; zoomFactor: number; customCss: string }
 export type Extension = { id: string; name: string; version: string; description: string | null; path: string; enabled: boolean; config: string | null; created_at: number; updated_at: number }
+export type ExtensionSettingsHostContext = { mode: string; entry_url: string }
+export type ExtensionSettingsTab = { tab_id: string; extension_id: string; name: string; version: string; description: string | null; path: string; enabled: boolean; config: string | null; host: ExtensionSettingsHostContext | null }
 export type ExtensionUpdate = { name: string | null; version: string | null; description: string | null; enabled: boolean | null; config: string | null }
 /**
  * 文件附件（发送消息时附带）
@@ -681,7 +799,11 @@ export type PaginatedResult<T> = { items: T[]; total: number; page: number; page
 export type ResetWebUiPasswordResult = { password: string }
 export type SystemDirectories = { cache_dir: string; data_dir: string; log_dir: string }
 export type SystemInfo = { os: string; arch: string; version: string }
+export type SystemRuntimeInfo = { cacheDir: string; workDir: string; logDir: string }
+export type SystemSettings = { closeToTray: boolean; notificationEnabled: boolean; cronNotificationEnabled: boolean; runtimeInfo: SystemRuntimeInfo }
+export type UpdateCheckResult = { status: string; currentVersion: string; latestVersion: string | null; updateAvailable: boolean; notes: string | null; publishedAt: string | null; detail: string }
 export type UpdateModelProviderInput = { platform: string; name: string; baseUrl: string; apiKey: string; contextLimit: number | null }
+export type UpdatePreferences = { includePrerelease: boolean }
 /**
  * WebUI 服务器信息（返回给前端）
  */
