@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SettingsPage } from '@/shared/ui';
 import type { ModelProvider } from '../../types';
 import { ModelEditorModal } from './components/ModelEditorModal';
 import { ProviderEditorModal } from './components/ProviderEditorModal';
@@ -54,7 +55,7 @@ export function Component() {
   };
 
   return (
-    <div className="settings-panel settings-panel--wide settings-model-page">
+    <SettingsPage className="settings-model-page">
       <ProviderStackPane
         checkingModelKey={checkingModelKey}
         providers={providerSummaries}
@@ -90,7 +91,7 @@ export function Component() {
       />
 
       {loading ? <div className="settings-status-inline">正在加载模型配置...</div> : null}
-    </div>
+    </SettingsPage>
   );
 }
 

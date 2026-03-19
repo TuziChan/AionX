@@ -1,6 +1,11 @@
+import { ArrowRight, Eye, EyeOff, ShieldCheck, Sparkles, Workflow } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { FormPageFrame } from '@/app/layouts';
 import { useAuthStore } from '@/stores/authStore';
+import { Button, Input, Label, PageHeader, PageSection, Separator } from '@/shared/ui';
+import { cn } from '@/shared/lib/cn';
+import { AppLogoMark } from '@/widgets/app-frame';
 
 export function Component() {
   const navigate = useNavigate();
@@ -54,104 +59,116 @@ export function Component() {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-page__background" aria-hidden="true">
-        <div className="login-page__background-circle login-page__background-circle--lg" />
-        <div className="login-page__background-circle login-page__background-circle--md" />
-        <div className="login-page__background-circle login-page__background-circle--sm" />
-      </div>
-
-      <div className="login-page__card">
-        <div className="login-page__header">
-          <div className="login-page__logo">
-            <div className="app-mark app-mark--hero" aria-hidden="true">
-              <svg viewBox="0 0 80 80" fill="none">
-                <path d="M40 20Q38 22 25 40Q23 42 26 42H30Q32 40 40 30Q48 40 50 42H54Q57 42 55 40Q42 22 40 20Z" fill="currentColor" />
-                <circle cx="40" cy="46" r="3" fill="currentColor" />
-                <path d="M18 50Q40 70 62 50" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
-              </svg>
-            </div>
+    <FormPageFrame contentClassName="max-w-[480px]">
+      <PageSection
+        tone="elevated"
+        className="border-white/55 bg-white/88 text-slate-950 shadow-[var(--shadow-lg)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/82 dark:text-slate-50"
+      >
+        <div className="flex flex-col gap-8">
+          <div className="flex justify-center">
+            <AppLogoMark size="lg" className="shadow-[0_16px_40px_rgba(37,99,235,0.22)]" />
           </div>
-          <h1 className="login-page__title">AionX</h1>
-          <p className="login-page__subtitle">与 AionUi 视觉基线对齐的桌面智能工作台</p>
-        </div>
 
-        <form className="login-page__form" onSubmit={handleSubmit}>
-          <div className="login-page__form-item">
-            <label className="login-page__label" htmlFor="username">
-              用户名
-            </label>
-            <div className="login-page__input-wrapper">
-              <input
+          <PageHeader
+            align="center"
+            eyebrow="Workspace Access"
+            title="进入 AionX 工作台"
+            description="新的统一设计系统入口已经就位。登录后会继续进入 Guide、Conversation、Settings 与 Cron 的同一套 shared shell。"
+          />
+
+          <form className="grid gap-5" onSubmit={handleSubmit}>
+            <div className="grid gap-2">
+              <Label htmlFor="username" className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                用户名
+              </Label>
+              <Input
                 id="username"
-                className="login-page__input"
+                className="h-11 rounded-[16px] border-slate-200/90 bg-white/72 px-4 text-[15px] shadow-none dark:border-slate-700 dark:bg-slate-900/70"
                 placeholder="victory"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
               />
             </div>
-          </div>
 
-          <div className="login-page__form-item">
-            <label className="login-page__label" htmlFor="password">
-              密码
-            </label>
-            <div className="login-page__input-wrapper">
-              <input
-                id="password"
-                type={passwordVisible ? 'text' : 'password'}
-                className="login-page__input"
-                placeholder="••••••••"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                className="login-page__toggle-password"
-                onClick={() => setPasswordVisible((prev) => !prev)}
-              >
-                {passwordVisible ? '隐藏' : '显示'}
-              </button>
+            <div className="grid gap-2">
+              <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                密码
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={passwordVisible ? 'text' : 'password'}
+                  className="h-11 rounded-[16px] border-slate-200/90 bg-white/72 px-4 pr-14 text-[15px] shadow-none dark:border-slate-700 dark:bg-slate-900/70"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1.5 top-1.5 h-8 rounded-xl px-2.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                  onClick={() => setPasswordVisible((prev) => !prev)}
+                >
+                  {passwordVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  <span className="sr-only">{passwordVisible ? '隐藏密码' : '显示密码'}</span>
+                </Button>
+              </div>
             </div>
-          </div>
 
-          <div className="login-page__checkbox">
-            <input
-              type="checkbox"
-              id="remember-me"
-              checked={rememberMe}
-              onChange={(event) => setRememberMe(event.target.checked)}
-            />
-            <label htmlFor="remember-me">记住登录状态</label>
-          </div>
+            <label className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/75 px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/65 dark:text-slate-300">
+              <input
+                type="checkbox"
+                id="remember-me"
+                className="size-4 rounded border-slate-300 text-primary focus:ring-primary"
+                checked={rememberMe}
+                onChange={(event) => setRememberMe(event.target.checked)}
+              />
+              <span>记住登录状态</span>
+            </label>
 
-          <button type="submit" className="login-page__submit" disabled={submitting}>
-            <span>{submitting ? '登录中…' : '进入 AionX'}</span>
-          </button>
+            <Button type="submit" size="lg" className="h-11 w-full rounded-[16px]" disabled={submitting}>
+              <span>{submitting ? '登录中…' : '进入 AionX'}</span>
+              <ArrowRight className="size-4" />
+            </Button>
 
-          <div
-            role="alert"
-            aria-live="polite"
-            className={`login-page__message ${message ? 'login-page__message--visible' : ''} ${
-              message ? (message.type === 'success' ? 'login-page__message--success' : 'login-page__message--error') : ''
-            }`}
-            hidden={!message}
-          >
-            {message?.text}
-          </div>
-        </form>
+            <div
+              role="alert"
+              aria-live="polite"
+              className={cn(
+                'rounded-2xl border px-4 py-3 text-sm leading-6',
+                message ? 'block' : 'hidden',
+                message?.type === 'success'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'border-red-200 bg-red-50 text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300'
+              )}
+              hidden={!message}
+            >
+              {message?.text}
+            </div>
+          </form>
 
-        <div className="login-page__footer">
-          <div className="login-page__footer-content">
-            <span>Screenshot-ready Shell</span>
-            <span className="login-page__footer-divider">•</span>
-            <span>Guide / Conversation / Settings / Cron</span>
+          <Separator className="bg-slate-200/80 dark:bg-slate-800" />
+
+          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
+            <span className="inline-flex items-center gap-2 rounded-full bg-slate-100/80 px-3 py-1.5 dark:bg-slate-900/70">
+              <ShieldCheck className="size-4" />
+              Screenshot-ready Shell
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-slate-100/80 px-3 py-1.5 dark:bg-slate-900/70">
+              <Workflow className="size-4" />
+              Guide / Conversation / Settings
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-slate-100/80 px-3 py-1.5 dark:bg-slate-900/70">
+              <Sparkles className="size-4" />
+              Cron / Tools / About
+            </span>
           </div>
         </div>
-      </div>
-    </div>
+      </PageSection>
+    </FormPageFrame>
   );
 }
 

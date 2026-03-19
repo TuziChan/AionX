@@ -21,7 +21,11 @@ const FALLBACK_HISTORY: GroupedHistory = {
   earlier: [],
 };
 
-export function ChatHistory() {
+interface ChatHistoryProps {
+  onItemSelect?: () => void;
+}
+
+export function ChatHistory({ onItemSelect }: ChatHistoryProps) {
   const history = useChatStore((s) => s.history);
   const loading = useChatStore((s) => s.historyLoading);
   const loadHistory = useChatStore((s) => s.loadHistory);
@@ -34,6 +38,7 @@ export function ChatHistory() {
 
   const handleClick = (chat: HistoryChat) => {
     navigate(`/conversation/${chat.id}`);
+    onItemSelect?.();
   };
 
   if (loading && !history) {

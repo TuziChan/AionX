@@ -1,5 +1,6 @@
 import classNames from 'classnames';
 import { Outlet, useLocation } from 'react-router-dom';
+import { SettingsFrame } from '@/app/layouts';
 import { useLayoutContext } from '@/contexts/LayoutContext';
 import { useSettingsRegistryItems } from '../hooks/useSettingsRegistryItems';
 import { getSettingsRegistryItemByPath } from '../registry/settingsRegistry';
@@ -29,29 +30,24 @@ export function Component() {
   const resolvedItem = currentItem ?? getSettingsRegistryItemByPath(pathname, items) ?? FALLBACK_ITEM;
 
   return (
-    <div className="settings-layout">
-      <div className="settings-layout__surface">
-        {!isMobile ? (
-          <aside className="settings-layout__sidebar">
+    <SettingsFrame
+      sidebar={
+        !isMobile ? (
+          <>
             <div className="settings-layout__sidebar-back">
               <SettingsBackLink />
             </div>
             <SettingsNav items={items} />
-          </aside>
-        ) : null}
-
-        <main className="settings-layout__main">
-          {isMobile ? <SettingsTopbar currentItem={resolvedItem} /> : null}
-          {isMobile ? <SettingsMobileTabs items={mobileItems} /> : null}
-          <div className="settings-layout__body">
-            <SettingsHeader currentItem={resolvedItem} />
-            <div className={classNames('settings-layout__content', `settings-page--${resolvedItem.widthPreset}`)}>
-              <Outlet />
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
+          </>
+        ) : null
+      }
+      mobileTopbar={isMobile ? <SettingsTopbar currentItem={resolvedItem} /> : null}
+      mobileTabs={isMobile ? <SettingsMobileTabs items={mobileItems} /> : null}
+      header={!isMobile ? <SettingsHeader currentItem={resolvedItem} /> : null}
+      contentClassName={classNames(`settings-page--${resolvedItem.widthPreset}`)}
+    >
+      <Outlet />
+    </SettingsFrame>
   );
 }
 

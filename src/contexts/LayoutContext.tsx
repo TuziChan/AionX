@@ -17,9 +17,9 @@ export function useLayoutContext() {
   return context;
 }
 
-const DEFAULT_SIDER_WIDTH = 250;
+const DEFAULT_SIDER_WIDTH = 280;
 const MOBILE_SIDER_WIDTH_RATIO = 0.67;
-const MOBILE_SIDER_MIN_WIDTH = 260;
+const MOBILE_SIDER_MIN_WIDTH = 280;
 const MOBILE_SIDER_MAX_WIDTH = 420;
 
 const detectMobileViewport = (): boolean => {

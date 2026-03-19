@@ -1,15 +1,15 @@
 import { RouterProvider } from 'react-router-dom';
+import { AppProviders } from './app/providers';
 import { LayoutProvider } from './contexts/LayoutContext';
-import { ThemeProvider } from './theme/ThemeProvider';
 import { router } from './router';
 import './i18n'; // 初始化i18next
 
 function App() {
   return (
     <LayoutProvider>
-      <ThemeProvider>
+      <AppProviders>
         <RouterProvider router={router} />
-      </ThemeProvider>
+      </AppProviders>
     </LayoutProvider>
   );
 }

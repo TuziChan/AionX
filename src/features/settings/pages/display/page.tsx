@@ -1,4 +1,5 @@
 import { Alert } from '@arco-design/web-react';
+import { SettingsPage } from '@/shared/ui';
 import { CustomCssCard } from './components/CustomCssCard';
 import { ThemeCard } from './components/ThemeCard';
 import { useDisplaySettings } from './hooks/useDisplaySettings';
@@ -20,7 +21,7 @@ export function Component() {
   } = useDisplaySettings();
 
   return (
-    <div className="settings-panel settings-panel--regular settings-display-page">
+    <SettingsPage className="settings-display-page">
       <ThemeCard
         savingTheme={savingTheme}
         savingZoom={savingZoom}
@@ -40,7 +41,7 @@ export function Component() {
 
       {error ? <Alert type="error" content={error} /> : null}
       {loading ? <Alert type="info" content="正在加载显示设置..." /> : null}
-    </div>
+    </SettingsPage>
   );
 }
 

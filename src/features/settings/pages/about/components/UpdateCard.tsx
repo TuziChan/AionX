@@ -1,4 +1,6 @@
-import { Button, Switch, Typography } from '@arco-design/web-react';
+import { Switch } from '@arco-design/web-react';
+import { DownloadCloud } from 'lucide-react';
+import { Button, PageSection, PageSectionContent, PageSectionDescription, PageSectionHeader, PageSectionTitle } from '@/shared/ui';
 import type { UpdateCheckResult, UpdatePreferences } from '../types';
 
 interface UpdateCardProps {
@@ -10,6 +12,22 @@ interface UpdateCardProps {
   onIncludePrereleaseChange: (includePrerelease: boolean) => void;
 }
 
+function resolveStatusTone(updateResult: UpdateCheckResult | null) {
+  if (!updateResult) {
+    return 'border-border/70 bg-background/60 text-muted-foreground';
+  }
+
+  if (updateResult.status === 'error') {
+    return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300';
+  }
+
+  if (updateResult.updateAvailable) {
+    return 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-300';
+  }
+
+  return 'border-border/70 bg-background/60 text-muted-foreground';
+}
+
 export function UpdateCard({
   checking,
   preferences,
@@ -18,38 +36,58 @@ export function UpdateCard({
   onCheck,
   onIncludePrereleaseChange,
 }: UpdateCardProps) {
-  const statusTone =
-    updateResult?.status === 'error'
-      ? 'settings-about__update-status--error'
-      : updateResult?.updateAvailable
-        ? 'settings-about__update-status--highlight'
-        : 'settings-about__update-status--neutral';
-
   return (
-    <div className="settings-about__update-card" data-testid="about-update-card">
-      <Button data-testid="about-check-updates" type="primary" long loading={checking} onClick={onCheck}>
-        检查更新
-      </Button>
-      <div className="settings-about__update-row">
-        <Typography.Text className="settings-about__update-text">包含预发布版本</Typography.Text>
-        <Switch
-          size="small"
-          checked={preferences?.includePrerelease ?? false}
-          disabled={savingPreference || !preferences}
-          onChange={onIncludePrereleaseChange}
-        />
-      </div>
-      {updateResult ? (
-        <div className={`settings-about__update-status ${statusTone}`} data-testid="about-update-status">
-          <div className="settings-about__update-status-title">
-            {updateResult.updateAvailable
-              ? `发现新版本 ${updateResult.latestVersion ?? ''}`.trim()
-              : '更新检查结果'}
+    <PageSection
+      padding="md"
+      className="w-full bg-slate-50/82 dark:bg-slate-950/52"
+      data-testid="about-update-card"
+    >
+      <PageSectionHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <PageSectionTitle className="text-base">应用更新</PageSectionTitle>
+            <PageSectionDescription>检查新版本，并决定是否把预发布版本也纳入检测范围。</PageSectionDescription>
           </div>
-          <div className="settings-about__update-status-text">{updateResult.detail}</div>
-          {updateResult.notes ? <div className="settings-about__update-status-text">{updateResult.notes}</div> : null}
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <DownloadCloud className="size-5" />
+          </div>
         </div>
-      ) : null}
-    </div>
+      </PageSectionHeader>
+
+      <PageSectionContent className="space-y-4">
+        <Button
+          data-testid="about-check-updates"
+          variant="outline"
+          className="h-10 w-full rounded-2xl border-border/80 bg-background/80"
+          loading={checking}
+          onClick={onCheck}
+        >
+          检查更新
+        </Button>
+
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/65 px-4 py-3">
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-foreground">包含预发布版本</div>
+            <p className="text-xs leading-5 text-muted-foreground">开启后会一起检测 Beta、RC 等预发布渠道。</p>
+          </div>
+          <Switch
+            size="small"
+            checked={preferences?.includePrerelease ?? false}
+            disabled={savingPreference || !preferences}
+            onChange={onIncludePrereleaseChange}
+          />
+        </div>
+
+        {updateResult ? (
+          <div className={`rounded-2xl border px-4 py-3 ${resolveStatusTone(updateResult)}`} data-testid="about-update-status">
+            <div className="text-sm font-semibold text-foreground">
+              {updateResult.updateAvailable ? `发现新版本 ${updateResult.latestVersion ?? ''}`.trim() : '更新检查结果'}
+            </div>
+            <div className="mt-2 text-sm leading-6">{updateResult.detail}</div>
+            {updateResult.notes ? <div className="mt-2 text-sm leading-6">{updateResult.notes}</div> : null}
+          </div>
+        ) : null}
+      </PageSectionContent>
+    </PageSection>
   );
 }

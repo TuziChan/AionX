@@ -1,5 +1,6 @@
 import { Alert } from '@arco-design/web-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { SettingsPage } from '@/shared/ui';
 import { RuntimeDirectoriesCard } from './components/RuntimeDirectoriesCard';
 import { SystemBehaviorCard } from './components/SystemBehaviorCard';
 import { useSystemSettings } from './hooks/useSystemSettings';
@@ -56,7 +57,7 @@ export function Component() {
   };
 
   return (
-    <div className="settings-panel settings-panel--regular settings-system-page">
+    <SettingsPage className="settings-system-page">
       <section className="settings-group-card settings-system-page__card">
         <div className="settings-system-page__card-body">
           <SystemBehaviorCard
@@ -85,7 +86,7 @@ export function Component() {
 
       {error ? <Alert type="error" content={error} /> : null}
       {loading ? <Alert type="info" content="正在加载系统设置..." /> : null}
-    </div>
+    </SettingsPage>
   );
 }
 

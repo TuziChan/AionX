@@ -24,6 +24,9 @@ export function applyTheme(theme: Theme) {
   // 设置主题模式
   root.setAttribute('data-theme', theme.mode);
   root.setAttribute('data-color-scheme', theme.colorScheme);
+  root.classList.toggle('dark', theme.mode === 'dark');
+  root.classList.toggle('light', theme.mode === 'light');
+  root.style.colorScheme = theme.mode;
 
   // 设置 Arco Design 主题
   document.body.setAttribute('arco-theme', theme.mode);

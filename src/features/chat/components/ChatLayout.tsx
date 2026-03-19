@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ConversationFrame } from '@/app/layouts';
 
 interface ChatLayoutProps {
   tabs: ReactNode;
@@ -18,17 +19,13 @@ export function ChatLayout({
   mobilePanels,
 }: ChatLayoutProps) {
   return (
-    <div className="chat-page size-full">
-      <div className="chat-layout-shell">
-        <div className="chat-layout-main">
-          {tabs}
-          {header}
-          {body}
-        </div>
-        {sidebar}
-      </div>
-      {mobileOverlay}
-      {mobilePanels}
-    </div>
+    <ConversationFrame
+      tabs={tabs}
+      header={header}
+      body={body}
+      sidebar={sidebar}
+      mobileOverlay={mobileOverlay}
+      mobilePanels={mobilePanels}
+    />
   );
 }

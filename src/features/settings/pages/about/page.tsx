@@ -1,6 +1,8 @@
-import { Alert, Divider, Typography } from '@arco-design/web-react';
-import { IconGithub } from '@arco-design/web-react/icon';
+import { Alert } from '@arco-design/web-react';
+import { ArrowUpRight, Github } from 'lucide-react';
 import { openUrl as openExternal } from '@tauri-apps/plugin-opener';
+import { AppLogoMark } from '@/widgets/app-frame';
+import { Button, PageHeader, PageSection, Separator, SettingsPage, SettingsPageStack } from '@/shared/ui';
 import { UpdateCard } from './components/UpdateCard';
 import { useAboutSettings } from './hooks/useAboutSettings';
 
@@ -19,29 +21,40 @@ export function Component() {
   } = useAboutSettings();
 
   return (
-    <div className="settings-panel settings-panel--narrow">
-      <div className="settings-about__shell">
-        <div className="settings-about__hero" data-testid="about-hero">
-          <div className="settings-about__hero-copy">
-            <Typography.Title heading={3} className="settings-about__title">
-              {metadata?.appName ?? 'AionX'}
-            </Typography.Title>
-            <Typography.Text className="settings-about__desc">
-              查看当前版本、更新偏好与常用资源入口。
-            </Typography.Text>
-            <div className="settings-about__meta">
-              <span className="settings-about__version">v{metadata?.version ?? '0.0.0'}</span>
-              <button
+    <SettingsPage className="settings-about-page">
+      <SettingsPageStack>
+        <PageSection
+          className="items-center border-border/70 bg-card/78 text-center"
+          data-testid="about-hero"
+        >
+          <div className="mx-auto flex w-full max-w-[560px] flex-col items-center gap-5 text-center">
+            <AppLogoMark size="lg" />
+            <PageHeader
+              align="center"
+              title={metadata?.appName ?? 'AionX'}
+              description="查看当前版本、更新偏好与常用资源入口。"
+              titleClassName="text-[28px] md:text-[30px]"
+              descriptionClassName="max-w-[420px]"
+            />
+
+            <div className="flex items-center justify-center gap-3">
+              <span className="rounded-full border border-border/70 bg-background/65 px-3 py-1.5 text-sm font-medium text-foreground">
+                v{metadata?.version ?? '0.0.0'}
+              </span>
+              <Button
                 type="button"
-                className="settings-about__github"
+                variant="outline"
+                size="icon"
                 aria-label="打开源码仓库"
                 onClick={() => void openExternal(metadata?.repositoryUrl ?? 'https://github.com/TuziChan/AionX')}
               >
-                <IconGithub />
-              </button>
+                <Github className="size-4" />
+              </Button>
             </div>
           </div>
+        </PageSection>
 
+        <div className="mx-auto w-full max-w-[560px]">
           <UpdateCard
             checking={checking}
             preferences={preferences}
@@ -52,28 +65,38 @@ export function Component() {
           />
         </div>
 
-        <Divider className="settings-about__divider" />
+        <PageSection padding="md">
+          <div className="mx-auto w-full max-w-[560px] space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold text-foreground">常用资源</h2>
+              <p className="text-sm leading-6 text-muted-foreground">所有链接继续通过 typed metadata 注入，便于后续统一维护。</p>
+            </div>
 
-        <div className="settings-about__links" data-testid="about-links">
-          {links.map((item) => (
-            <button
-              key={item.title}
-              type="button"
-              className="settings-about__link"
-              onClick={() => void openExternal(item.url)}
-            >
-              <span>{item.title}</span>
-              <span className="settings-about__link-arrow">›</span>
-            </button>
-          ))}
-        </div>
+            <Separator />
 
-        <div className="settings-about__status-list">
+            <div className="flex flex-col gap-2" data-testid="about-links">
+              {links.map((item) => (
+                <Button
+                  key={item.title}
+                  type="button"
+                  variant="ghost"
+                  className="h-auto justify-between rounded-2xl border border-transparent px-4 py-3 text-left hover:border-border/70 hover:bg-muted/50"
+                  onClick={() => void openExternal(item.url)}
+                >
+                  <span>{item.title}</span>
+                  <ArrowUpRight className="size-4 text-muted-foreground" />
+                </Button>
+              ))}
+            </div>
+          </div>
+        </PageSection>
+
+        <div className="mx-auto flex w-full max-w-[560px] flex-col gap-3">
           {error ? <Alert type="error" content={error} /> : null}
           {loading ? <Alert type="info" content="正在加载关于页信息..." /> : null}
         </div>
-      </div>
-    </div>
+      </SettingsPageStack>
+    </SettingsPage>
   );
 }
 
