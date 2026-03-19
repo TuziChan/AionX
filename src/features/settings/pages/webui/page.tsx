@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SettingsPage, SettingsPageStack } from '@/shared/ui';
 import { ChannelsTab } from './components/ChannelsTab';
 import { WebuiServiceTab } from './components/WebuiServiceTab';
 import { useWebuiSettings } from './hooks/useWebuiSettings';
@@ -36,7 +37,7 @@ export function Component() {
   const [activeTab, setActiveTab] = useState<WebuiInnerTab>('webui');
 
   return (
-    <div className="settings-panel settings-panel--wide settings-webui-page">
+    <SettingsPage className="settings-webui-page">
       <section className="settings-group-card settings-webui-page__toolbar-card">
         <div className="settings-webui-page__toolbar">
           <div className="settings-webui-page__tab-list" role="tablist" aria-label="WebUI 设置分区">
@@ -57,37 +58,39 @@ export function Component() {
         </div>
       </section>
 
-      {activeTab === 'webui' ? (
-        <WebuiServiceTab
-          changingPassword={changingPassword}
-          loading={loading}
-          resettingPassword={resettingPassword}
-          savingSettings={savingSettings}
-          settings={settings}
-          starting={starting}
-          status={status}
-          stopping={stopping}
-          onChangePassword={submitPasswordChange}
-          onReload={load}
-          onResetPassword={resetPassword}
-          onSaveSettings={async (nextSettings) => {
-            await persistSettings(nextSettings);
-          }}
-          onSettingsChange={updateSettingsDraft}
-          onToggleRunning={toggleServer}
-        />
-      ) : (
-        <ChannelsTab
-          plugins={plugins}
-          savingPlugin={savingPlugin}
-          togglingPluginId={togglingPluginId}
-          onSavePlugin={savePlugin}
-          onTogglePlugin={setPluginEnabled}
-        />
-      )}
+      <SettingsPageStack>
+        {activeTab === 'webui' ? (
+          <WebuiServiceTab
+            changingPassword={changingPassword}
+            loading={loading}
+            resettingPassword={resettingPassword}
+            savingSettings={savingSettings}
+            settings={settings}
+            starting={starting}
+            status={status}
+            stopping={stopping}
+            onChangePassword={submitPasswordChange}
+            onReload={load}
+            onResetPassword={resetPassword}
+            onSaveSettings={async (nextSettings) => {
+              await persistSettings(nextSettings);
+            }}
+            onSettingsChange={updateSettingsDraft}
+            onToggleRunning={toggleServer}
+          />
+        ) : (
+          <ChannelsTab
+            plugins={plugins}
+            savingPlugin={savingPlugin}
+            togglingPluginId={togglingPluginId}
+            onSavePlugin={savePlugin}
+            onTogglePlugin={setPluginEnabled}
+          />
+        )}
+      </SettingsPageStack>
 
       {loading ? <div className="settings-status-inline">正在加载 WebUI 配置...</div> : null}
-    </div>
+    </SettingsPage>
   );
 }
 

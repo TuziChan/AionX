@@ -34,7 +34,25 @@ function ensureOutputDir() {
   fs.mkdirSync(outputDir, { recursive: true });
 }
 
-async function capture(name) {
+async function capture(name, focusSelector) {
+  await browser.execute(() => {
+    window.scrollTo(0, 0);
+
+    const scrollContainers = Array.from(document.querySelectorAll('.settings-layout__body, .settings-layout__main'));
+    for (const element of scrollContainers) {
+      if (element instanceof HTMLElement) {
+        element.scrollTop = 0;
+        element.scrollLeft = 0;
+      }
+    }
+  });
+
+  if (focusSelector) {
+    const target = await $(focusSelector);
+    await target.waitForDisplayed({ timeout: 20000 });
+    await target.scrollIntoView({ block: 'start', inline: 'nearest' });
+  }
+
   await browser.pause(250);
   await browser.saveScreenshot(path.join(outputDir, `${name}.png`));
 }
@@ -48,51 +66,51 @@ describe(`AionX settings visual audit (${mode})`, () => {
 
       await openSettingsPage('#/settings/gemini', 'Gemini');
       await expectResponsiveSettingsShell();
-      await capture('gemini-mobile');
+      await capture('gemini-mobile', '[data-testid="gemini-account-card"]');
 
       await openSettingsPage('#/settings/model', '模型');
       await expectResponsiveSettingsShell();
-      await capture('model-mobile');
+      await capture('model-mobile', '[data-testid="model-provider-list"]');
 
       await openSettingsPage('#/settings/tools', '工具');
       await expectResponsiveSettingsShell();
       await expectToolsResponsivePage();
-      await capture('tools-mobile');
+      await capture('tools-mobile', '[data-testid="tools-server-list"]');
 
       await openSettingsPage('#/settings/agent', 'Agent');
       await expectResponsiveSettingsShell();
       await expectAgentResponsivePage();
-      await capture('agent-mobile');
+      await capture('agent-mobile', '[data-testid="agent-assistant-list"]');
 
       await openSettingsPage('#/settings/display', '显示');
       await expectResponsiveSettingsShell();
       await expectDisplayResponsivePage();
-      await capture('display-mobile');
+      await capture('display-mobile', '[data-testid="display-theme-card"]');
 
       await openSettingsPage('#/settings/system', '系统');
       await expectResponsiveSettingsShell();
       await expectSystemResponsivePage();
-      await capture('system-mobile');
+      await capture('system-mobile', '[data-testid="system-behavior-card"]');
 
       await openSettingsPage('#/settings/webui', 'WebUI');
       await expectResponsiveSettingsShell();
       await expectWebuiResponsivePage();
-      await capture('webui-mobile');
+      await capture('webui-mobile', '[data-testid="webui-channels-tab"]');
 
       await openSettingsPage('#/settings/about', '关于');
       await expectResponsiveSettingsShell();
       await expectAboutResponsivePage();
-      await capture('about-mobile');
+      await capture('about-mobile', '[data-testid="about-hero"]');
 
       await openSettingsPage('#/settings/ext/host-smoke', 'E2E Host Extension');
       await expectResponsiveSettingsShell();
       await expectExtensionHostPage();
-      await capture('extension-host-mobile');
+      await capture('extension-host-mobile', '[data-testid="extension-host-card"]');
 
       await openSettingsPage('#/settings/ext/missing-extension', 'Extension');
       await expectResponsiveSettingsShell();
       await expectMissingExtensionPage();
-      await capture('extension-fallback-mobile');
+      await capture('extension-fallback-mobile', '[data-testid="extension-missing-state"]');
 
       return;
     }

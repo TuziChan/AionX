@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SettingsPage } from '@/shared/ui';
 import { AssistantEditorModal } from './components/AssistantEditorModal';
 import { AssistantListPane } from './components/AssistantListPane';
 import type { AssistantEditorValues } from './types';
@@ -54,7 +55,7 @@ export function Component() {
   };
 
   return (
-    <div className="settings-panel settings-panel--wide settings-agent-page">
+    <SettingsPage className="settings-agent-page">
       <AssistantListPane
         assistants={assistants}
         selectedAssistantId={selectedAssistantId}
@@ -99,7 +100,7 @@ export function Component() {
       />
 
       {loading ? <div className="settings-status-inline">正在加载助手配置...</div> : null}
-    </div>
+    </SettingsPage>
   );
 }
 

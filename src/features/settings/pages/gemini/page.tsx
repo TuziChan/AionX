@@ -1,4 +1,5 @@
 import { Input } from '@arco-design/web-react';
+import { SettingsCardBody, SettingsPage } from '@/shared/ui';
 import { PreferenceRow } from '../../components/PreferenceRow';
 import { AccountStatusCard } from './components/AccountStatusCard';
 import { ProjectBindingCard } from './components/ProjectBindingCard';
@@ -17,9 +18,9 @@ export function Component() {
   } = useGeminiSettings();
 
   return (
-    <div className="settings-panel settings-panel--narrow settings-gemini-page">
+    <SettingsPage className="settings-gemini-page">
       <section className="settings-group-card settings-gemini-page__card" data-testid="gemini-account-card">
-        <div className="settings-group-card__body settings-group-card__body--padded">
+        <SettingsCardBody className="settings-group-card__body settings-group-card__body--padded">
           <AccountStatusCard
             authPending={authPending}
             authStatus={authStatus}
@@ -40,12 +41,12 @@ export function Component() {
             cloudProject={draft.cloudProject}
             onProjectChange={(value) => queueDraftUpdate((current) => ({ ...current, cloudProject: value }))}
           />
-        </div>
+        </SettingsCardBody>
       </section>
 
       {loading ? <div className="settings-status-inline">正在加载 Gemini 配置...</div> : null}
       {!loading && saving ? <div className="settings-status-inline">Gemini 配置已进入保存队列...</div> : null}
-    </div>
+    </SettingsPage>
   );
 }
 

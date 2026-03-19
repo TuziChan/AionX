@@ -18,6 +18,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@app/*": ["src/app/*"],
+      "@widgets/*": ["src/widgets/*"],
+      "@entities/*": ["src/entities/*"],
+      "@shared/*": ["src/shared/*"],
       "@features/*": ["src/features/*"],
       "@components/*": ["src/components/*"],
       "@hooks/*": ["src/hooks/*"],

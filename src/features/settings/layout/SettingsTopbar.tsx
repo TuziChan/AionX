@@ -10,7 +10,7 @@ export function SettingsTopbar({ currentItem }: SettingsTopbarProps) {
     <div className="settings-layout__topbar">
       <SettingsBackLink />
       <div className="settings-layout__topbar-meta">
-        <div className="settings-layout__topbar-subtitle">{currentItem.title}</div>
+        <div className="settings-layout__topbar-subtitle">{currentItem.label}</div>
       </div>
     </div>
   );

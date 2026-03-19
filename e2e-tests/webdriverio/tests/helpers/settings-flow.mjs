@@ -81,12 +81,39 @@ export async function openSettingsPage(hash, expectedTitle) {
     window.location.hash = targetHash;
   }, hash);
 
-  const settingsTitle = await $('.settings-layout__title');
-  await settingsTitle.waitForDisplayed({ timeout: 20000 });
+  await browser.waitUntil(
+    async () =>
+      (await $('.settings-layout__title').isDisplayed().catch(() => false)) ||
+      (await $('.settings-layout__topbar-subtitle').isDisplayed().catch(() => false)),
+    {
+      timeout: 20000,
+      timeoutMsg: 'expected desktop title or mobile topbar title to appear after switching settings route',
+    },
+  );
+
+  const settingsTitle =
+    (await $('.settings-layout__title').isDisplayed().catch(() => false))
+      ? await $('.settings-layout__title')
+      : await $('.settings-layout__topbar-subtitle');
 
   await browser.waitUntil(async () => (await settingsTitle.getText()) === expectedTitle, {
     timeout: 20000,
     timeoutMsg: `expected settings title to switch to ${expectedTitle}`,
+  });
+
+  await browser.execute(() => {
+    window.scrollTo(0, 0);
+
+    const scrollContainers = Array.from(
+      document.querySelectorAll('.settings-layout__body, .settings-layout__main, .arco-modal-body, .arco-drawer-body')
+    );
+
+    for (const element of scrollContainers) {
+      if (element instanceof HTMLElement) {
+        element.scrollTop = 0;
+        element.scrollLeft = 0;
+      }
+    }
   });
 
   return settingsTitle;
@@ -672,10 +699,10 @@ export async function expectExtensionHostPage() {
 }
 
 export async function expectResponsiveSettingsShell() {
-  const mobileTabs = await $('.settings-mobile-tabs');
+  const mobileTabs = await $('[data-testid="settings-mobile-tabs"]');
   await mobileTabs.waitForDisplayed({ timeout: 20000 });
 
-  const mobileBackLink = await $('.settings-back-link');
+  const mobileBackLink = await $('[data-testid="settings-back-link"]');
   await mobileBackLink.waitForDisplayed({ timeout: 20000 });
 
   const settingsSidebar = await $('.settings-layout__sidebar');

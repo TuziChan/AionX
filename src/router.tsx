@@ -1,6 +1,5 @@
 import { createHashRouter, Navigate } from 'react-router-dom';
-import { MainLayout } from './components/layout/MainLayout';
-import { Sidebar } from './components/layout/Sidebar';
+import { AppFrame } from './app/layouts/AppFrame';
 import { ProtectedOutlet } from './features/auth/components/ProtectedOutlet';
 import { chatRoutes } from './features/chat';
 import { settingsRoutes } from './features/settings';
@@ -15,7 +14,7 @@ export const router = createHashRouter([
     element: <ProtectedOutlet />,
     children: [
       {
-        element: <MainLayout sider={<Sidebar />} />,
+        element: <AppFrame />,
         children: [
           {
             index: true,

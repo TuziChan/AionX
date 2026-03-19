@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { McpServer } from '@/bindings';
+import { SettingsPage, SettingsPageStack } from '@/shared/ui';
 import { ImageGenerationCard } from './components/ImageGenerationCard';
 import { McpServerEditorModal } from './components/McpServerEditorModal';
 import { McpServerListPane } from './components/McpServerListPane';
@@ -48,50 +49,52 @@ export function Component() {
       : null);
 
   return (
-    <div className="settings-panel settings-panel--wide settings-tools-page">
-      <McpServerListPane
-        searchValue={searchValue}
-        selectedServerId={selectedServerId}
-        server={selectedSummary}
-        servers={serverSummaries}
-        testingServerId={testingServerId}
-        testMessage={selectedSummary?.lastTestMessage}
-        onAddServer={openCreateServer}
-        onDeleteServer={removeServer}
-        onEditServer={openEditServer}
-        onSearchChange={setSearchValue}
-        onSelectServer={selectServer}
-        onTestServer={runConnectionTest}
-        onToggleServer={toggleServer}
-      />
+    <SettingsPage className="settings-tools-page">
+      <SettingsPageStack>
+        <McpServerListPane
+          searchValue={searchValue}
+          selectedServerId={selectedServerId}
+          server={selectedSummary}
+          servers={serverSummaries}
+          testingServerId={testingServerId}
+          testMessage={selectedSummary?.lastTestMessage}
+          onAddServer={openCreateServer}
+          onDeleteServer={removeServer}
+          onEditServer={openEditServer}
+          onSearchChange={setSearchValue}
+          onSelectServer={selectServer}
+          onTestServer={runConnectionTest}
+          onToggleServer={toggleServer}
+        />
 
-      <ImageGenerationCard
-        options={imageOptions}
-        settings={imageSettings}
-        onChangeSelection={async (value) => {
-          if (!value) {
+        <ImageGenerationCard
+          options={imageOptions}
+          settings={imageSettings}
+          onChangeSelection={async (value) => {
+            if (!value) {
+              await saveImageSettings({
+                enabled: false,
+                providerId: null,
+                modelName: null,
+              });
+              return;
+            }
+
+            const [providerId, modelName] = value.split('|');
             await saveImageSettings({
-              enabled: false,
-              providerId: null,
-              modelName: null,
+              enabled: imageSettings.enabled,
+              providerId,
+              modelName,
             });
-            return;
-          }
-
-          const [providerId, modelName] = value.split('|');
-          await saveImageSettings({
-            enabled: imageSettings.enabled,
-            providerId,
-            modelName,
-          });
-        }}
-        onToggleEnabled={async (enabled) => {
-          await saveImageSettings({
-            ...imageSettings,
-            enabled,
-          });
-        }}
-      />
+          }}
+          onToggleEnabled={async (enabled) => {
+            await saveImageSettings({
+              ...imageSettings,
+              enabled,
+            });
+          }}
+        />
+      </SettingsPageStack>
 
       <McpServerEditorModal
         server={editingServer}
@@ -104,7 +107,7 @@ export function Component() {
       />
 
       {loading ? <div className="settings-status-inline">正在加载工具配置...</div> : null}
-    </div>
+    </SettingsPage>
   );
 }
 

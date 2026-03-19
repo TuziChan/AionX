@@ -1,4 +1,5 @@
 import { Alert, Button, Input, Switch, Tag } from '@arco-design/web-react';
+import { SettingsPage } from '@/shared/ui';
 import { PreferenceRow } from '../../components/PreferenceRow';
 import { ExtensionSettingsHost } from './ExtensionSettingsHost';
 import { useExtensionTab } from './hooks/useExtensionTab';
@@ -8,18 +9,18 @@ export function Component() {
 
   if (!tab) {
     return (
-      <div className="settings-panel settings-panel--full settings-extension-page">
+      <SettingsPage className="settings-extension-page">
         <Alert
           type="warning"
           content={loading ? '正在加载扩展设置...' : '未找到对应的扩展设置页，请确认扩展仍然存在。'}
           data-testid="extension-missing-state"
         />
-      </div>
+      </SettingsPage>
     );
   }
 
   return (
-    <div className="settings-panel settings-panel--full settings-extension-page">
+    <SettingsPage className="settings-extension-page">
       {tab.host ? (
         <ExtensionSettingsHost
           extensionName={tab.name}
@@ -84,7 +85,7 @@ export function Component() {
       </section>
 
       {loading ? <div className="settings-status-inline">正在加载扩展设置...</div> : null}
-    </div>
+    </SettingsPage>
   );
 }
 
