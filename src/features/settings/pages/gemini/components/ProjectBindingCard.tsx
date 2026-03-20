@@ -1,5 +1,5 @@
-import { Input } from '@arco-design/web-react';
 import { PreferenceRow } from '@/features/settings/components/PreferenceRow';
+import { Input } from '@/shared/ui';
 import type { GeminiAuthStatus } from '../types';
 
 interface ProjectBindingCardProps {
@@ -21,7 +21,7 @@ export function ProjectBindingCard({ authStatus, cloudProject, onProjectChange }
       <Input
         id="gemini-project-id"
         value={cloudProject}
-        onChange={onProjectChange}
+        onChange={(event) => onProjectChange(event.target.value)}
         placeholder="例如 aionx-prod"
       />
     </PreferenceRow>

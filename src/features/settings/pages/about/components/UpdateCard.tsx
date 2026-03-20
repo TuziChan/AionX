@@ -1,6 +1,5 @@
-import { Switch } from '@arco-design/web-react';
-import { DownloadCloud } from 'lucide-react';
-import { Button, PageSection, PageSectionContent, PageSectionDescription, PageSectionHeader, PageSectionTitle } from '@/shared/ui';
+import { DownloadCloud, LoaderCircle } from 'lucide-react';
+import { Button, PageSection, PageSectionContent, PageSectionDescription, PageSectionHeader, PageSectionTitle, Switch } from '@/shared/ui';
 import type { UpdateCheckResult, UpdatePreferences } from '../types';
 
 interface UpdateCardProps {
@@ -58,10 +57,11 @@ export function UpdateCard({
         <Button
           data-testid="about-check-updates"
           variant="outline"
+          disabled={checking}
           className="h-10 w-full rounded-2xl border-border/80 bg-background/80"
-          loading={checking}
           onClick={onCheck}
         >
+          {checking ? <LoaderCircle className="size-4 animate-spin" /> : null}
           检查更新
         </Button>
 
@@ -71,10 +71,10 @@ export function UpdateCard({
             <p className="text-xs leading-5 text-muted-foreground">开启后会一起检测 Beta、RC 等预发布渠道。</p>
           </div>
           <Switch
-            size="small"
             checked={preferences?.includePrerelease ?? false}
             disabled={savingPreference || !preferences}
-            onChange={onIncludePrereleaseChange}
+            aria-label="包含预发布版本"
+            onCheckedChange={onIncludePrereleaseChange}
           />
         </div>
 

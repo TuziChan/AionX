@@ -1,4 +1,3 @@
-import { ConfigProvider } from '@arco-design/web-react';
 import { useEffect, type PropsWithChildren } from 'react';
 import { useThemeStore } from '@/stores/themeStore';
 import { applyTheme } from '@/theme/theme';
@@ -39,5 +38,5 @@ export function ThemeProvider({ children }: PropsWithChildren) {
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  return <ConfigProvider>{children}</ConfigProvider>;
+  return <>{children}</>;
 }

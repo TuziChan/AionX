@@ -1,6 +1,5 @@
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { LoaderCircle } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '@/shared/lib/cn';
 
@@ -9,23 +8,23 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-primary text-primary-foreground shadow-sm hover:brightness-110',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground',
+        default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
+        secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
         outline: 'border bg-transparent text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground',
         ghost: 'text-foreground hover:bg-accent hover:text-accent-foreground',
-        destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:brightness-105',
+        destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        sm: 'h-8 px-3 text-[13px]',
-        md: 'h-9 px-4 text-[13px]',
-        lg: 'h-10 px-5 text-sm',
+        default: 'h-9 px-4 py-2',
+        sm: 'h-8 rounded-md px-3 text-xs',
+        lg: 'h-10 rounded-md px-8',
         icon: 'size-9',
       },
     },
     defaultVariants: {
-      variant: 'primary',
-      size: 'md',
+      variant: 'default',
+      size: 'default',
     },
   }
 );
@@ -34,21 +33,18 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-  loading?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading = false, children, disabled, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, children, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
 
     return (
       <Comp
         className={cn(buttonVariants({ variant, size }), className)}
         ref={ref}
-        disabled={disabled || loading}
         {...props}
       >
-        {loading ? <LoaderCircle className="size-4 animate-spin" /> : null}
         {children}
       </Comp>
     );

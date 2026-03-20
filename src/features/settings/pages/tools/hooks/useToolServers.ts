@@ -1,4 +1,3 @@
-import { Message } from '@arco-design/web-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   createMcpServer,
@@ -11,6 +10,7 @@ import {
   testMcpConnection,
   updateMcpServer,
 } from '@/features/settings/api/tools';
+import { notify } from '@/shared/lib';
 import type { McpServer } from '@/bindings';
 import type { ImageGenerationDraft, ImageGenerationOption, McpServerFormValues, McpServerSummary } from '../types';
 
@@ -44,7 +44,7 @@ export function useToolServers() {
       setImageSettings(nextImageSettings);
       setImageOptions(nextImageOptions);
     } catch (error) {
-      Message.error(`加载工具配置失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`加载工具配置失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setLoading(false);
     }
@@ -109,9 +109,9 @@ export function useToolServers() {
         return current.map((server) => (server.id === nextServer.id ? nextServer : server));
       });
       setSelectedServerId(nextServer.id);
-      Message.success(editingServer ? 'MCP 服务器已更新' : 'MCP 服务器已创建');
+      notify.success(editingServer ? 'MCP 服务器已更新' : 'MCP 服务器已创建');
     } catch (error) {
-      Message.error(`保存 MCP 服务器失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`保存 MCP 服务器失败: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }, []);
@@ -132,9 +132,9 @@ export function useToolServers() {
         enabled,
       );
       setServers((current) => current.map((item) => (item.id === nextServer.id ? nextServer : item)));
-      Message.success(enabled ? 'MCP 服务器已启用' : 'MCP 服务器已停用');
+      notify.success(enabled ? 'MCP 服务器已启用' : 'MCP 服务器已停用');
     } catch (error) {
-      Message.error(`切换 MCP 服务器状态失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`切换 MCP 服务器状态失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }, []);
 
@@ -148,9 +148,9 @@ export function useToolServers() {
         delete nextMessages[serverId];
         return nextMessages;
       });
-      Message.success('MCP 服务器已删除');
+      notify.success('MCP 服务器已删除');
     } catch (error) {
-      Message.error(`删除 MCP 服务器失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`删除 MCP 服务器失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }, []);
 
@@ -162,14 +162,14 @@ export function useToolServers() {
         ...current,
         [serverId]: message,
       }));
-      Message.success('连接测试通过');
+      notify.success('连接测试通过');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setTestMessages((current) => ({
         ...current,
         [serverId]: message,
       }));
-      Message.error(`连接测试失败: ${message}`);
+      notify.error(`连接测试失败: ${message}`);
     } finally {
       setTestingServerId(null);
     }
@@ -179,9 +179,9 @@ export function useToolServers() {
     try {
       const saved = await saveImageGenerationSettings(nextSettings);
       setImageSettings(saved);
-      Message.success('图像生成设置已保存');
+      notify.success('图像生成设置已保存');
     } catch (error) {
-      Message.error(`保存图像生成设置失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`保存图像生成设置失败: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }, []);

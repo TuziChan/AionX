@@ -1,8 +1,7 @@
-import { Alert } from '@arco-design/web-react';
 import { ArrowUpRight, Github } from 'lucide-react';
 import { openUrl as openExternal } from '@tauri-apps/plugin-opener';
 import { AppLogoMark } from '@/widgets/app-frame';
-import { Button, PageHeader, PageSection, Separator, SettingsPage, SettingsPageStack } from '@/shared/ui';
+import { Alert, AlertDescription, Button, PageHeader, PageSection, Separator, SettingsPage, SettingsPageStack } from '@/shared/ui';
 import { UpdateCard } from './components/UpdateCard';
 import { useAboutSettings } from './hooks/useAboutSettings';
 
@@ -92,8 +91,16 @@ export function Component() {
         </PageSection>
 
         <div className="mx-auto flex w-full max-w-[560px] flex-col gap-3">
-          {error ? <Alert type="error" content={error} /> : null}
-          {loading ? <Alert type="info" content="正在加载关于页信息..." /> : null}
+          {error ? (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
+          {loading ? (
+            <Alert>
+              <AlertDescription>正在加载关于页信息...</AlertDescription>
+            </Alert>
+          ) : null}
         </div>
       </SettingsPageStack>
     </SettingsPage>

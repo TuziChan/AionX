@@ -1,20 +1,33 @@
-import { Button, Tag } from '@arco-design/web-react';
 import {
-  ExpandLeft,
-  ExpandRight,
+  AlertCircle,
   FolderOpen,
   History,
-  PreviewOpen,
-  SettingTwo,
-} from '@icon-park/react';
-import classNames from 'classnames';
+  MonitorUp,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings2,
+  Sparkles,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { MessageItem } from '@/features/messages';
 import type { Message } from '@/services/chat';
 import { useLayoutContext } from '@/contexts/LayoutContext';
+import { cn } from '@/shared/lib';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/shared/ui';
 import { ChatLayout } from './ChatLayout';
 import { ChatSidebar } from './ChatSidebar';
+import { AgentStatusBadge } from './AgentStatusBadge';
 import { ChatTabs } from './ChatTabs';
 import { useAgentStore } from '../stores/agentStore';
 import { useChatStore } from '../stores/chatStore';
@@ -80,6 +93,13 @@ const demoMessages: Message[] = [
 ];
 
 const previewTabs = ['Overview', 'Diff', 'HTML'];
+type PreviewTab = (typeof previewTabs)[number];
+interface ConversationLocationState {
+  seedPrompt?: string;
+  seedAgent?: string;
+  seedWorkspace?: string;
+  seedModel?: string;
+}
 
 function DemoConversation() {
   return (
@@ -97,52 +117,50 @@ function PreviewPanel({
   previewTab,
   onTabChange,
 }: {
-  previewTab: string;
+  previewTab: PreviewTab;
   onTabChange: (value: string) => void;
 }) {
   return (
-    <div className="chat-preview preview-panel">
+    <Tabs value={previewTab} onValueChange={onTabChange} className="chat-preview">
       <div className="chat-preview__header">
         <div>
           <div className="chat-preview__title">Preview</div>
           <div className="chat-preview__meta">实时查看右侧产物与布局片段</div>
         </div>
       </div>
-      <div className="chat-preview__tabs">
+      <TabsList className="chat-preview__tabs h-auto justify-start rounded-none bg-transparent p-0">
         {previewTabs.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            className={classNames('chat-preview__tab', previewTab === tab && 'chat-preview__tab--active')}
-            onClick={() => onTabChange(tab)}
-          >
+          <TabsTrigger key={tab} value={tab} className="chat-preview__tab">
             {tab}
-          </button>
+          </TabsTrigger>
         ))}
-      </div>
-      <div className="chat-preview__body">
-        <div className="chat-preview__canvas">
-          <div className="chat-preview__mini-title">{previewTab}</div>
-          <div className="chat-preview__mini-window">
-            <div className="chat-preview__mini-toolbar" />
-            <div className="chat-preview__mini-content">
-              <div className="chat-preview__mini-card" />
-              <div className="chat-preview__mini-card chat-preview__mini-card--wide" />
-              <div className="chat-preview__mini-grid">
-                <span />
-                <span />
-                <span />
+      </TabsList>
+      {previewTabs.map((tab) => (
+        <TabsContent key={tab} value={tab} className="chat-preview__body mt-0 flex-1">
+          <div className="chat-preview__canvas">
+            <div className="chat-preview__mini-title">{tab}</div>
+            <div className="chat-preview__mini-window">
+              <div className="chat-preview__mini-toolbar" />
+              <div className="chat-preview__mini-content">
+                <div className="chat-preview__mini-card" />
+                <div className="chat-preview__mini-card chat-preview__mini-card--wide" />
+                <div className="chat-preview__mini-grid">
+                  <span />
+                  <span />
+                  <span />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }
 
 export function Component() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const location = useLocation();
   const { isMobile } = useLayoutContext();
   const setCurrentChat = useChatStore((state) => state.setCurrentChat);
@@ -155,7 +173,7 @@ export function Component() {
 
   const [workspaceOpen, setWorkspaceOpen] = useState(!isMobile);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewTab, setPreviewTab] = useState(previewTabs[0]);
+  const [previewTab, setPreviewTab] = useState<PreviewTab>(previewTabs[0]);
 
   useEffect(() => {
     if (id?.startsWith('demo')) {
@@ -183,81 +201,106 @@ export function Component() {
     );
   }
 
-  const seedPrompt = (location.state as { seedPrompt?: string } | null)?.seedPrompt;
+  const locationState = location.state as ConversationLocationState | null;
+  const seedPrompt = locationState?.seedPrompt;
   const conversationTitle = currentChat?.name || seedPrompt || (id === 'demo' ? 'Landing page revamp' : `Conversation ${id}`);
-  const agentType = currentChat?.agent_type || ((location.state as { seedAgent?: string } | null)?.seedAgent ?? 'acp');
+  const agentType = currentChat?.agent_type || (locationState?.seedAgent ?? 'acp');
   const showDemoConversation = id.startsWith('demo') && messages.length === 0;
-  const statusTone =
-    agentStatus === 'running'
-      ? 'blue'
-      : agentStatus === 'error'
-        ? 'red'
-        : agentStatus === 'starting'
-          ? 'gold'
-          : 'green';
 
   const headerTags = useMemo(
     () => [
-      { label: `Agent · ${agentType}`, color: 'blue' as const },
-      { label: previewOpen ? 'Preview On' : 'Preview Off', color: previewOpen ? ('green' as const) : ('gray' as const) },
-      { label: workspaceOpen ? 'Workspace Open' : 'Workspace Closed', color: workspaceOpen ? ('purple' as const) : ('gray' as const) },
+      {
+        label: `Agent · ${agentType}`,
+        className: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/50 dark:text-sky-200',
+      },
+      {
+        label: previewOpen ? 'Preview On' : 'Preview Off',
+        className: previewOpen
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-200'
+          : 'border-border bg-muted text-muted-foreground',
+      },
+      {
+        label: workspaceOpen ? 'Workspace Open' : 'Workspace Closed',
+        className: workspaceOpen
+          ? 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/60 dark:bg-violet-950/50 dark:text-violet-200'
+          : 'border-border bg-muted text-muted-foreground',
+      },
     ],
     [agentType, previewOpen, workspaceOpen]
   );
 
+  const statusBadgeClass = cn(
+    'border-border bg-muted text-muted-foreground',
+    agentStatus === 'running' && 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-200',
+    agentStatus === 'starting' && 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-200',
+    agentStatus === 'error' && 'border-destructive/30 bg-destructive/10 text-destructive'
+  );
+
   return (
     <ChatLayout
-      tabs={<ChatTabs currentTitle={conversationTitle} />}
+      tabs={<ChatTabs chatId={id} currentTitle={conversationTitle} />}
       header={
         <div className="chat-layout-header">
-            <div className="chat-layout-header__main">
-              <div>
-                <h2 className="chat-layout-header__title">{conversationTitle}</h2>
-                <p className="chat-layout-header__subtitle">
-                  统一 Header / Tabs / Workspace / Preview 的会话页骨架，兼容桌面与移动端。
-                </p>
-              </div>
-              <div className="chat-layout-header__tags">
-                {headerTags.map((item) => (
-                  <Tag key={item.label} color={item.color}>
-                    {item.label}
-                  </Tag>
-                ))}
-                <Tag color={statusTone}>Status · {agentStatus}</Tag>
-              </div>
+          <div className="chat-layout-header__main">
+            <div>
+              <h2 className="chat-layout-header__title">{conversationTitle}</h2>
+              <p className="chat-layout-header__subtitle">
+                统一 Header / Tabs / Workspace / Preview 的会话页骨架，兼容桌面与移动端。
+              </p>
             </div>
-
-            <div className="chat-layout-header__actions">
-              <Button
-                type={workspaceOpen ? 'primary' : 'outline'}
-                size="small"
-                icon={workspaceOpen ? <ExpandRight theme="outline" size="16" /> : <ExpandLeft theme="outline" size="16" />}
-                onClick={() => setWorkspaceOpen((prev) => !prev)}
-              >
-                Workspace
-              </Button>
-              <Button
-                type={previewOpen ? 'primary' : 'outline'}
-                size="small"
-                icon={<PreviewOpen theme="outline" size="16" />}
-                onClick={() => setPreviewOpen((prev) => !prev)}
-              >
-                Preview
-              </Button>
-              <Button type="outline" size="small" icon={<SettingTwo theme="outline" size="16" />}>
-                Settings
-              </Button>
+            <div className="chat-layout-header__tags">
+              {headerTags.map((item) => (
+                <Badge key={item.label} variant="outline" className={item.className}>
+                  {item.label}
+                </Badge>
+              ))}
+              <Badge variant="outline" className={statusBadgeClass}>
+                Status · {agentStatus}
+              </Badge>
+              <AgentStatusBadge />
             </div>
           </div>
+
+          <div className="chat-layout-header__actions">
+            <Button
+              variant={workspaceOpen ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setWorkspaceOpen((prev) => !prev)}
+            >
+              {workspaceOpen ? <PanelLeftClose data-icon="inline-start" /> : <PanelLeftOpen data-icon="inline-start" />}
+              Workspace
+            </Button>
+            <Button
+              variant={previewOpen ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setPreviewOpen((prev) => !prev)}
+            >
+              <MonitorUp data-icon="inline-start" />
+              Preview
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate('/settings/agent')}>
+              <Settings2 data-icon="inline-start" />
+              Settings
+            </Button>
+          </div>
+        </div>
       }
       body={
         <>
           {error && (
-            <div className="chat-error-banner">
-              <span>{error}</span>
-              <button type="button" onClick={clearError}>
-                关闭
-              </button>
+            <div className="px-3 pt-3 md:px-4">
+              <Alert variant="destructive" className="chat-error-banner">
+                <AlertCircle />
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <AlertTitle>Agent error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                  </div>
+                  <Button type="button" variant="ghost" size="sm" className="chat-error-banner__dismiss" onClick={clearError}>
+                    关闭
+                  </Button>
+                </div>
+              </Alert>
             </div>
           )}
 
@@ -265,18 +308,30 @@ export function Component() {
             <div className="chat-thread-panel">
               {showDemoConversation ? <DemoConversation /> : <MessageList />}
               <div className="chat-sendbox-toolbar">
-                <button type="button" className="chat-sendbox-toolbar__chip">
-                  <History theme="outline" size="16" />
+                <Button type="button" variant="ghost" size="sm" className="chat-sendbox-toolbar__chip">
+                  <History data-icon="inline-start" />
                   最近上下文
-                </button>
-                <button type="button" className="chat-sendbox-toolbar__chip">
-                  <FolderOpen theme="outline" size="16" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="chat-sendbox-toolbar__chip"
+                  onClick={() => setWorkspaceOpen((prev) => !prev)}
+                >
+                  <FolderOpen data-icon="inline-start" />
                   Workspace
-                </button>
-                <button type="button" className="chat-sendbox-toolbar__chip">
-                  <PreviewOpen theme="outline" size="16" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="chat-sendbox-toolbar__chip"
+                  onClick={() => setPreviewOpen((prev) => !prev)}
+                >
+                  <Sparkles data-icon="inline-start" />
                   Preview
-                </button>
+                </Button>
               </div>
               <SendBox chatId={id} agentType={agentType} />
             </div>

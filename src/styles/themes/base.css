@@ -231,14 +231,6 @@ body {
     box-sizing: border-box !important;
   }
 
-  .layout-sider > .arco-layout-sider-children {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 1 !important;
-    min-height: 0 !important;
-    height: auto !important;
-  }
-
   .layout-sider-header {
     flex-shrink: 0 !important;
   }
@@ -286,11 +278,6 @@ body {
   overflow-x: hidden;
   box-shadow: none !important;
   border-right: 1px solid var(--border-base);
-}
-
-.layout-sider.collapsed .arco-layout-sider-children,
-.layout-sider.arco-layout-sider-collapsed .arco-layout-sider-children {
-  overflow-x: hidden;
 }
 
 .preview-panel {

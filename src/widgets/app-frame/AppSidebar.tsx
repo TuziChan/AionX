@@ -54,8 +54,8 @@ export function AppSidebar({ collapsed = false, onNavigate }: AppSidebarProps) {
 
         <Button
           type="button"
-          variant="primary"
-          size={collapsed ? 'icon' : 'md'}
+          variant="default"
+          size={collapsed ? 'icon' : 'default'}
           className={cn(
             'rounded-[18px] shadow-sm',
             collapsed ? 'size-11' : 'h-11 w-full justify-start rounded-[18px] px-4 text-sm'

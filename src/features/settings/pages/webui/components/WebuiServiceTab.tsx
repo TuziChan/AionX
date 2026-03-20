@@ -1,9 +1,21 @@
-import { Button, Input, Message, Modal, Switch, Tag } from '@arco-design/web-react';
-import { Copy, EditTwo, LinkThree, Refresh } from '@icon-park/react';
+import { Copy, ExternalLink, LoaderCircle, PencilLine, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { WebUiStatus } from '@/bindings';
 import { getWebuiAccessUrl } from '@/features/settings/api/webui';
 import { PreferenceRow } from '@/features/settings/components/PreferenceRow';
+import { notify } from '@/shared/lib';
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Switch,
+} from '@/shared/ui';
 import type { WebuiSettingsDraft } from '../types';
 
 interface WebuiServiceTabProps {
@@ -46,15 +58,15 @@ export function WebuiServiceTab({
 
   const handlePasswordSubmit = async () => {
     if (!newPassword.trim()) {
-      Message.error('请输入新密码');
+      notify.error('请输入新密码');
       return;
     }
     if (newPassword.length < 8) {
-      Message.error('新密码至少 8 位');
+      notify.error('新密码至少 8 位');
       return;
     }
     if (newPassword !== confirmPassword) {
-      Message.error('两次输入的密码不一致');
+      notify.error('两次输入的密码不一致');
       return;
     }
 
@@ -67,9 +79,9 @@ export function WebuiServiceTab({
   const handleCopy = async (value: string) => {
     try {
       await navigator.clipboard.writeText(value);
-      Message.success('已复制到剪贴板');
+      notify.success('已复制到剪贴板');
     } catch (error) {
-      Message.error(`复制失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`复制失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -97,22 +109,22 @@ export function WebuiServiceTab({
             <Input
               id="webui-port"
               value={String(settings.port)}
-              onChange={(value) =>
+              onChange={(event) =>
                 onSettingsChange((current) => ({
                   ...current,
-                  port: Number(value.replace(/[^\d]/g, '')) || 9527,
+                  port: Number(event.target.value.replace(/[^\d]/g, '')) || 9527,
                 }))
               }
             />
           </PreferenceRow>
           <PreferenceRow label="启用 WebUI" description="服务状态由运行时实时返回，启动/停止不会再依赖页面本地推断。">
             <div className="settings-webui-page__row-action">
-              <Tag color={status?.running ? 'green' : 'gray'}>{status?.running ? '运行中' : '未启动'}</Tag>
+              <Badge variant={status?.running ? 'default' : 'outline'}>{status?.running ? '运行中' : '未启动'}</Badge>
               <Switch
                 checked={Boolean(status?.running)}
-                loading={starting || stopping}
+                disabled={starting || stopping}
                 data-testid="webui-toggle-server"
-                onChange={(value) => void onToggleRunning(value)}
+                onCheckedChange={(value) => void onToggleRunning(value)}
               />
             </div>
           </PreferenceRow>
@@ -120,7 +132,7 @@ export function WebuiServiceTab({
             <Switch
               checked={settings.remote}
               disabled={Boolean(status?.running)}
-              onChange={(value) =>
+              onCheckedChange={(value) =>
                 onSettingsChange((current) => ({
                   ...current,
                   remote: value,
@@ -138,11 +150,13 @@ export function WebuiServiceTab({
           >
             <div className="settings-webui-page__url-field">
               <Input id="webui-address" value={accessUrl} readOnly />
-              <Button icon={<Copy size="14" />} onClick={() => void handleCopy(accessUrl)}>
+              <Button type="button" variant="outline" onClick={() => void handleCopy(accessUrl)}>
+                <Copy data-icon="inline-start" />
                 复制
               </Button>
               <Button
-                icon={<LinkThree size="14" />}
+                type="button"
+                variant="outline"
                 disabled={!status?.running}
                 onClick={() => {
                   if (status?.running) {
@@ -150,6 +164,7 @@ export function WebuiServiceTab({
                   }
                 }}
               >
+                <ExternalLink data-icon="inline-start" />
                 打开
               </Button>
             </div>
@@ -157,7 +172,8 @@ export function WebuiServiceTab({
           <PreferenceRow label="当前状态" description="点击刷新可以重新读取运行时状态与最新的管理员口令显示。">
             <div className="settings-webui-page__status-inline">
               <span>{loading ? '读取中' : status?.running ? '运行中' : '未启动'}</span>
-              <Button icon={<Refresh size="14" />} onClick={() => void onReload()}>
+              <Button type="button" variant="outline" onClick={() => void onReload()}>
+                <RefreshCw data-icon="inline-start" />
                 刷新
               </Button>
             </div>
@@ -165,7 +181,8 @@ export function WebuiServiceTab({
         </div>
 
         <div className="settings-webui-page__inline-actions">
-          <Button data-testid="webui-save-settings" type="primary" loading={savingSettings} onClick={() => void onSaveSettings(settings)}>
+          <Button data-testid="webui-save-settings" type="button" disabled={savingSettings} onClick={() => void onSaveSettings(settings)}>
+            {savingSettings ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : null}
             保存接入配置
           </Button>
         </div>
@@ -186,7 +203,15 @@ export function WebuiServiceTab({
             <span className="settings-webui-page__credential-label">用户名</span>
             <div className="settings-webui-page__credential-pill">
               <span>{status?.admin_username ?? 'admin'}</span>
-              <Button type="text" icon={<Copy size="14" />} onClick={() => void handleCopy(status?.admin_username ?? 'admin')} />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-6 rounded-full"
+                onClick={() => void handleCopy(status?.admin_username ?? 'admin')}
+              >
+                <Copy />
+              </Button>
             </div>
           </div>
 
@@ -194,47 +219,90 @@ export function WebuiServiceTab({
             <span className="settings-webui-page__credential-label">密码</span>
             <div className="settings-webui-page__credential-pill">
               <span>{status?.initial_password ?? '******'}</span>
-              <Button type="text" icon={<Copy size="14" />} disabled={!status?.initial_password} onClick={() => void handleCopy(status?.initial_password ?? '')} />
-              <Button type="text" icon={<EditTwo size="14" />} onClick={() => setPasswordModalVisible(true)} />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-6 rounded-full"
+                disabled={!status?.initial_password}
+                onClick={() => void handleCopy(status?.initial_password ?? '')}
+              >
+                <Copy />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-6 rounded-full"
+                onClick={() => setPasswordModalVisible(true)}
+              >
+                <PencilLine />
+              </Button>
             </div>
           </div>
         </div>
 
         <div className="settings-webui-page__inline-actions">
-          <Button loading={changingPassword} onClick={() => setPasswordModalVisible(true)}>
+          <Button type="button" disabled={changingPassword} onClick={() => setPasswordModalVisible(true)}>
+            {changingPassword ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : null}
             设置新密码
           </Button>
-          <Button loading={resettingPassword} onClick={() => void onResetPassword()}>
+          <Button type="button" variant="outline" disabled={resettingPassword} onClick={() => void onResetPassword()}>
+            {resettingPassword ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : null}
             重置随机密码
           </Button>
         </div>
       </section>
 
-      <Modal
-        visible={passwordModalVisible}
-        title="设置新的管理员密码"
-        okText="保存密码"
-        okButtonProps={{ loading: changingPassword }}
-        className="settings-webui-page__password-modal"
-        onCancel={() => {
-          setPasswordModalVisible(false);
-          setNewPassword('');
-          setConfirmPassword('');
+      <Dialog
+        open={passwordModalVisible}
+        onOpenChange={(open) => {
+          setPasswordModalVisible(open);
+          if (!open) {
+            setNewPassword('');
+            setConfirmPassword('');
+          }
         }}
-        onOk={() => void handlePasswordSubmit()}
-        unmountOnExit
       >
-        <div className="settings-webui-page__password-form">
-          <label className="settings-webui-page__channel-field">
-            <span className="settings-webui-page__channel-field-label">新密码</span>
-            <Input.Password value={newPassword} onChange={setNewPassword} placeholder="至少 8 位" />
-          </label>
-          <label className="settings-webui-page__channel-field">
-            <span className="settings-webui-page__channel-field-label">确认密码</span>
-            <Input.Password value={confirmPassword} onChange={setConfirmPassword} placeholder="再次输入新密码" />
-          </label>
-        </div>
-      </Modal>
+        <DialogContent className="settings-webui-page__password-modal">
+          <DialogHeader>
+            <DialogTitle>设置新的管理员密码</DialogTitle>
+            <DialogDescription>保存后当前随机密码会失效，之后请使用新密码登录 WebUI。</DialogDescription>
+          </DialogHeader>
+          <div className="settings-webui-page__password-form">
+            <label className="settings-webui-page__channel-field">
+              <span className="settings-webui-page__channel-field-label">新密码</span>
+              <Input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="至少 8 位" />
+            </label>
+            <label className="settings-webui-page__channel-field">
+              <span className="settings-webui-page__channel-field-label">确认密码</span>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                placeholder="再次输入新密码"
+              />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setPasswordModalVisible(false);
+                setNewPassword('');
+                setConfirmPassword('');
+              }}
+            >
+              取消
+            </Button>
+            <Button type="button" disabled={changingPassword} onClick={() => void handlePasswordSubmit()}>
+              {changingPassword ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : null}
+              保存密码
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

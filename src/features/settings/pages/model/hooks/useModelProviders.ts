@@ -1,4 +1,3 @@
-import { Message } from '@arco-design/web-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   createModelProvider,
@@ -15,6 +14,7 @@ import {
   updateModelProvider,
   upsertProviderModel,
 } from '@/features/settings/api/model';
+import { notify } from '@/shared/lib';
 import type { ModelProvider } from '@/features/settings/types';
 import type { ModelEditorDraft, ProviderFormValues } from '../types';
 
@@ -32,7 +32,7 @@ export function useModelProviders() {
       setProviders(result);
       setSelectedProviderId((current) => current ?? result[0]?.id ?? null);
     } catch (error) {
-      Message.error(`加载模型平台失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`加载模型平台失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setLoading(false);
     }
@@ -91,9 +91,9 @@ export function useModelProviders() {
 
         replaceProvider(nextProvider);
         setSelectedProviderId(nextProvider.id);
-        Message.success(editingProvider ? '平台已更新' : '平台已添加');
+        notify.success(editingProvider ? '平台已更新' : '平台已添加');
       } catch (error) {
-        Message.error(`保存平台失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`保存平台失败: ${error instanceof Error ? error.message : String(error)}`);
         throw error;
       }
     },
@@ -105,9 +105,9 @@ export function useModelProviders() {
       await deleteModelProvider(providerId);
       setProviders((current) => current.filter((provider) => provider.id !== providerId));
       setSelectedProviderId((current) => (current === providerId ? null : current));
-      Message.success('平台已删除');
+      notify.success('平台已删除');
     } catch (error) {
-      Message.error(`删除平台失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`删除平台失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }, []);
 
@@ -116,9 +116,9 @@ export function useModelProviders() {
       try {
         const nextProvider = await setModelProviderEnabled(provider.id, provider.enabled === false);
         replaceProvider(nextProvider);
-        Message.success(nextProvider.enabled === false ? '平台已停用' : '平台已启用');
+        notify.success(nextProvider.enabled === false ? '平台已停用' : '平台已启用');
       } catch (error) {
-        Message.error(`切换平台状态失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`切换平台状态失败: ${error instanceof Error ? error.message : String(error)}`);
       }
     },
     [replaceProvider],
@@ -128,19 +128,19 @@ export function useModelProviders() {
     async ({ providerId, originalName, name }: ModelEditorDraft) => {
       const nextName = name.trim();
       if (!nextName) {
-        Message.error('请输入模型名称');
+        notify.error('请输入模型名称');
         return false;
       }
 
       const provider = providers.find((item) => item.id === providerId);
       if (!provider) {
-        Message.error('未找到目标平台');
+        notify.error('未找到目标平台');
         return false;
       }
 
       const hasDuplicate = provider.model.some((model) => model === nextName && model !== originalName);
       if (hasDuplicate) {
-        Message.error('模型名称已存在');
+        notify.error('模型名称已存在');
         return false;
       }
 
@@ -148,10 +148,10 @@ export function useModelProviders() {
         const nextProvider = await upsertProviderModel(providerId, nextName, originalName);
         replaceProvider(nextProvider);
         setSelectedProviderId(providerId);
-        Message.success(originalName ? '模型已更新' : '模型已添加');
+        notify.success(originalName ? '模型已更新' : '模型已添加');
         return true;
       } catch (error) {
-        Message.error(`保存模型失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`保存模型失败: ${error instanceof Error ? error.message : String(error)}`);
         return false;
       }
     },
@@ -163,9 +163,9 @@ export function useModelProviders() {
       try {
         const nextProvider = await deleteProviderModel(providerId, modelName);
         replaceProvider(nextProvider);
-        Message.success('模型已删除');
+        notify.success('模型已删除');
       } catch (error) {
-        Message.error(`删除模型失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`删除模型失败: ${error instanceof Error ? error.message : String(error)}`);
       }
     },
     [replaceProvider],
@@ -176,9 +176,9 @@ export function useModelProviders() {
       try {
         const nextProvider = await setProviderModelEnabled(providerId, modelName, enabled);
         replaceProvider(nextProvider);
-        Message.success(enabled ? '模型已启用' : '模型已停用');
+        notify.success(enabled ? '模型已启用' : '模型已停用');
       } catch (error) {
-        Message.error(`切换模型状态失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`切换模型状态失败: ${error instanceof Error ? error.message : String(error)}`);
       }
     },
     [replaceProvider],
@@ -194,9 +194,9 @@ export function useModelProviders() {
 
         const nextProvider = await setProviderModelProtocol(providerId, modelName, getNextModelProtocol(provider, modelName));
         replaceProvider(nextProvider);
-        Message.success('协议已切换');
+        notify.success('协议已切换');
       } catch (error) {
-        Message.error(`切换协议失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`切换协议失败: ${error instanceof Error ? error.message : String(error)}`);
       }
     },
     [providers, replaceProvider],
@@ -219,9 +219,9 @@ export function useModelProviders() {
             : provider,
         ),
       );
-      Message.success('健康检查已完成');
+      notify.success('健康检查已完成');
     } catch (error) {
-      Message.error(`健康检查失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`健康检查失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setCheckingModelKey(null);
     }

@@ -1,4 +1,3 @@
-import { Message } from '@arco-design/web-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { ChannelPlugin, WebUiStatus } from '@/bindings';
 import {
@@ -16,6 +15,7 @@ import {
   toggleChannelPlugin,
   updateChannelPlugin,
 } from '@/features/settings/api/webui';
+import { notify } from '@/shared/lib';
 import type { ChannelPluginFormValues, WebuiSettingsDraft } from '../types';
 
 export function useWebuiSettings() {
@@ -44,7 +44,7 @@ export function useWebuiSettings() {
       setStatus(nextStatus);
       setPlugins(nextPlugins);
     } catch (error) {
-      Message.error(`加载 WebUI 设置失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`加载 WebUI 设置失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setLoading(false);
     }
@@ -59,10 +59,10 @@ export function useWebuiSettings() {
     try {
       const saved = await saveWebuiSettings(nextSettings);
       setSettings(saved);
-      Message.success(successMessage);
+      notify.success(successMessage);
       return saved;
     } catch (error) {
-      Message.error(`保存 WebUI 配置失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`保存 WebUI 配置失败: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     } finally {
       setSavingSettings(false);
@@ -99,7 +99,7 @@ export function useWebuiSettings() {
             port: info.port,
             remote: info.remote,
           }));
-          Message.success('WebUI 已启动');
+          notify.success('WebUI 已启动');
         } catch {
           // errors are already surfaced in helper functions
         } finally {
@@ -129,9 +129,9 @@ export function useWebuiSettings() {
                 initial_password: null,
               },
         );
-        Message.success('WebUI 已停止');
+        notify.success('WebUI 已停止');
       } catch (error) {
-        Message.error(`停止 WebUI 失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`停止 WebUI 失败: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         setStopping(false);
       }
@@ -144,9 +144,9 @@ export function useWebuiSettings() {
     try {
       await changeWebuiPassword(newPassword);
       setStatus((current) => (current ? { ...current, initial_password: null } : current));
-      Message.success('管理员密码已更新');
+      notify.success('管理员密码已更新');
     } catch (error) {
-      Message.error(`修改密码失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`修改密码失败: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     } finally {
       setChangingPassword(false);
@@ -165,9 +165,9 @@ export function useWebuiSettings() {
             }
           : current,
       );
-      Message.success('已生成新的随机密码');
+      notify.success('已生成新的随机密码');
     } catch (error) {
-      Message.error(`重置密码失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`重置密码失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setResettingPassword(false);
     }
@@ -178,15 +178,15 @@ export function useWebuiSettings() {
     try {
       if (editingPlugin) {
         await updateChannelPlugin(editingPlugin.id, values);
-        Message.success('频道插件已更新');
+        notify.success('频道插件已更新');
       } else {
         await createChannelPlugin(values);
-        Message.success('频道插件已创建');
+        notify.success('频道插件已创建');
       }
 
       setPlugins(await listChannelPlugins());
     } catch (error) {
-      Message.error(`保存频道插件失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`保存频道插件失败: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     } finally {
       setSavingPlugin(false);
@@ -198,9 +198,9 @@ export function useWebuiSettings() {
     try {
       await deleteChannelPlugin(pluginId);
       setPlugins((current) => current.filter((plugin) => plugin.id !== pluginId));
-      Message.success('频道插件已删除');
+      notify.success('频道插件已删除');
     } catch (error) {
-      Message.error(`删除频道插件失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`删除频道插件失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setDeletingPluginId(null);
     }
@@ -221,9 +221,9 @@ export function useWebuiSettings() {
             : item,
         ),
       );
-      Message.success(enabled ? '频道插件已启用' : '频道插件已停用');
+      notify.success(enabled ? '频道插件已启用' : '频道插件已停用');
     } catch (error) {
-      Message.error(`更新频道插件失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`更新频道插件失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setTogglingPluginId(null);
     }

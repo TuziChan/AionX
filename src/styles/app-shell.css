@@ -93,13 +93,18 @@
 }
 
 .guid-agent-bar {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 18px;
 }
 
 .guid-agent-pill {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
   border: 1px solid var(--border-base);
   background: var(--color-guid-agent-bar);
   border-radius: 18px;
@@ -118,6 +123,7 @@
   box-shadow: 0 12px 24px rgba(31, 41, 55, 0.08);
 }
 
+.guid-agent-pill[data-state='on'],
 .guid-agent-pill--active {
   background: var(--fill-0);
   border-color: rgba(22, 93, 255, 0.25);
@@ -190,7 +196,7 @@
   min-width: 180px;
 }
 
-.guid-input-card__textarea textarea {
+.guid-input-card__textarea {
   border-radius: 24px !important;
   padding: 20px !important;
   font-size: 15px !important;
@@ -878,123 +884,43 @@
   padding-top: 0;
 }
 
-.settings-inline-actions--compact .arco-input-wrapper {
+.settings-inline-actions--compact > input {
   flex: 1;
 }
 
-.settings-preference-row__control .arco-input-wrapper,
-.settings-preference-row__control .arco-select-view,
-.settings-preference-row__control .arco-picker,
-.settings-preference-row__control .arco-input-group-wrapper {
+.settings-preference-row__control > :is(input, textarea, button[role='combobox']),
+.settings-preference-row__control > .settings-inline-actions,
+.settings-preference-row__control > .settings-inline-actions--compact {
   width: min(320px, 100%);
 }
 
-.settings-preference-row__control .arco-btn,
-.settings-inline-actions--compact .arco-btn {
-  border-radius: 999px;
-}
-
-.settings-preference-row__control .arco-switch {
+.settings-preference-row__control > button[role='switch'] {
   flex-shrink: 0;
 }
 
-.settings-layout__content .arco-input-wrapper,
-.settings-layout__content .arco-select-view,
-.settings-layout__content .arco-picker,
-.settings-layout__content .arco-input-group-wrapper,
-.settings-layout__content .arco-textarea-wrapper {
-  border-radius: 12px;
-  background: #ffffff;
-  border-color: rgba(15, 23, 42, 0.08);
-  box-shadow: none;
-}
-
-.settings-layout__content .arco-input-wrapper,
-.settings-layout__content .arco-select-view,
-.settings-layout__content .arco-picker,
-.settings-layout__content .arco-input-group-wrapper {
-  min-height: 34px;
-}
-
-.settings-layout__content .arco-input,
-.settings-layout__content .arco-textarea,
-.settings-layout__content .arco-select-view-value {
-  font-size: 12px;
-}
-
-.settings-layout__content .arco-textarea {
-  line-height: 1.6;
-}
-
-.settings-layout__content .arco-btn {
-  height: 34px;
-  min-height: 34px;
-  border-radius: 999px;
-  padding-inline: 14px;
-  font-size: 12px;
-  line-height: 1;
-  font-weight: 500;
-  box-shadow: none;
-}
-
-.settings-layout__content .arco-btn .arco-btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.settings-layout__content .arco-btn.arco-btn-primary:not(.arco-btn-text) {
-  border-color: var(--primary);
-  background: var(--primary);
-}
-
-.settings-layout__content .arco-btn.arco-btn-outline:not(.arco-btn-text) {
-  border-color: #86909c;
-  color: var(--text-secondary);
-  background: transparent;
-}
-
-[data-theme='dark'] .settings-layout__content .arco-btn.arco-btn-outline:not(.arco-btn-text) {
-  border-color: rgba(255, 255, 255, 0.16);
-  color: var(--text-secondary);
-}
-
-.settings-preference-row__control .arco-btn:not(.settings-display-page__zoom-step):not(.arco-btn-text),
-.settings-inline-actions .arco-btn:not(.arco-btn-text),
-.settings-model-page__pane-header .arco-btn:not(.arco-btn-text),
-.settings-model-page__stack-header .arco-btn:not(.arco-btn-text),
-.settings-tools-page__detail-actions .arco-btn:not(.arco-btn-text),
-.settings-tools-page__pane-header .arco-btn:not(.arco-btn-text),
-.settings-webui-page__inline-actions .arco-btn:not(.arco-btn-text),
-.settings-extension-page__hero-side .arco-btn:not(.arco-btn-text) {
+.settings-preference-row__control > button:not(.settings-display-page__zoom-step):not([role='switch']),
+.settings-inline-actions > button,
+.settings-model-page__pane-header > button,
+.settings-model-page__stack-header > button,
+.settings-tools-page__detail-actions > button,
+.settings-tools-page__pane-header > button,
+.settings-webui-page__inline-actions > button,
+.settings-extension-page__hero-side > button {
   min-height: 34px;
   border-radius: 999px;
   padding-inline: 14px;
 }
 
-.settings-layout__content .arco-btn-size-mini {
-  height: 28px;
-  min-height: 28px;
-  padding-inline: 10px;
-  font-size: 12px;
-}
-
-.settings-layout__content .arco-btn-size-small {
-  height: 30px;
-  min-height: 30px;
-  padding-inline: 12px;
-}
-
-.settings-model-page__provider-tools .arco-btn,
-.settings-model-page__model-actions .arco-btn,
-.settings-tools-page__server-actions .arco-btn,
-.settings-webui-page__credential-pill .arco-btn.arco-btn-text {
+.settings-model-page__provider-tools > button,
+.settings-model-page__model-actions > button,
+.settings-tools-page__server-actions > button,
+.settings-webui-page__credential-pill > button {
   border-radius: 999px;
 }
 
-.settings-model-page__provider-tools .arco-btn,
-.settings-model-page__model-actions .arco-btn,
-.settings-tools-page__server-actions .arco-btn {
+.settings-model-page__provider-tools > button,
+.settings-model-page__model-actions > button,
+.settings-tools-page__server-actions > button {
   width: 28px;
   min-width: 28px;
   height: 28px;
@@ -1002,26 +928,26 @@
   padding: 0;
 }
 
-.settings-model-page__provider-tools .arco-btn:not(.arco-btn-primary):not(.arco-btn-outline),
-.settings-model-page__model-actions .arco-btn:not(.arco-btn-primary):not(.arco-btn-outline),
-.settings-tools-page__server-actions .arco-btn:not(.arco-btn-primary):not(.arco-btn-outline) {
+.settings-model-page__provider-tools > button,
+.settings-model-page__model-actions > button,
+.settings-tools-page__server-actions > button {
   color: var(--text-secondary);
   background: transparent;
   border-color: transparent;
 }
 
-.settings-model-page__provider-tools .arco-btn:not(.arco-btn-primary):not(.arco-btn-outline):hover,
-.settings-model-page__provider-tools .arco-btn:not(.arco-btn-primary):not(.arco-btn-outline):focus-visible,
-.settings-model-page__model-actions .arco-btn:not(.arco-btn-primary):not(.arco-btn-outline):hover,
-.settings-model-page__model-actions .arco-btn:not(.arco-btn-primary):not(.arco-btn-outline):focus-visible,
-.settings-tools-page__server-actions .arco-btn:not(.arco-btn-primary):not(.arco-btn-outline):hover,
-.settings-tools-page__server-actions .arco-btn:not(.arco-btn-primary):not(.arco-btn-outline):focus-visible {
+.settings-model-page__provider-tools > button:hover,
+.settings-model-page__provider-tools > button:focus-visible,
+.settings-model-page__model-actions > button:hover,
+.settings-model-page__model-actions > button:focus-visible,
+.settings-tools-page__server-actions > button:hover,
+.settings-tools-page__server-actions > button:focus-visible {
   background: var(--fill-0);
   border-color: var(--border-base);
   color: var(--text-primary);
 }
 
-.settings-webui-page__credential-pill .arco-btn.arco-btn-text {
+.settings-webui-page__credential-pill > button {
   width: 24px;
   min-width: 24px;
   height: 24px;
@@ -1030,14 +956,14 @@
   color: var(--text-secondary);
 }
 
-.settings-webui-page__credential-pill .arco-btn.arco-btn-text:hover,
-.settings-webui-page__credential-pill .arco-btn.arco-btn-text:focus-visible {
+.settings-webui-page__credential-pill > button:hover,
+.settings-webui-page__credential-pill > button:focus-visible {
   background: rgba(15, 23, 42, 0.06);
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .settings-webui-page__credential-pill .arco-btn.arco-btn-text:hover,
-[data-theme='dark'] .settings-webui-page__credential-pill .arco-btn.arco-btn-text:focus-visible {
+[data-theme='dark'] .settings-webui-page__credential-pill > button:hover,
+[data-theme='dark'] .settings-webui-page__credential-pill > button:focus-visible {
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -1258,7 +1184,7 @@
   color: var(--text-primary);
 }
 
-.settings-display-page__css-editor .arco-textarea-wrapper {
+.settings-display-page__css-editor textarea {
   width: 100%;
 }
 
@@ -1280,28 +1206,6 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.settings-model__collapse {
-  background: transparent !important;
-  border: none !important;
-}
-
-.settings-model__collapse .arco-collapse-item {
-  border: 1px solid var(--border-base) !important;
-  border-radius: 12px !important;
-  overflow: hidden;
-  background: var(--fill-0);
-}
-
-.settings-model__collapse .arco-collapse-item-header {
-  padding: 10px 12px !important;
-  background: var(--fill-0) !important;
-}
-
-.settings-model__collapse .arco-collapse-item-content-box {
-  padding: 8px 12px !important;
-  background: var(--bg-2);
 }
 
 .settings-model__collapse-header {
@@ -1868,7 +1772,7 @@
   flex-shrink: 0;
 }
 
-.settings-tools-page__server-actions .arco-btn {
+.settings-tools-page__server-actions button {
   color: var(--text-secondary);
 }
 
@@ -2075,7 +1979,7 @@
   width: 100%;
 }
 
-.settings-gemini-page__auth-row .arco-input-wrapper {
+.settings-gemini-page__auth-row > input {
   width: min(260px, 100%);
 }
 
@@ -2230,7 +2134,8 @@
   width: min(520px, 100%);
 }
 
-.settings-webui-page__url-field .arco-input-wrapper {
+.settings-webui-page__url-field > input {
+  min-width: 0;
   flex: 1;
 }
 
@@ -2473,11 +2378,11 @@
   gap: 10px;
 }
 
-.settings-system-page__directory-control .arco-input-wrapper {
+.settings-system-page__directory-control > :first-child {
   width: 100%;
 }
 
-.settings-system-page__directory-control .arco-btn {
+.settings-system-page__directory-action {
   flex: 0 0 auto;
   min-width: 72px;
 }
@@ -2778,9 +2683,7 @@
   color: var(--color-primary-light-4);
 }
 
-.settings-agent-page__editor-modal .arco-drawer-header,
-.settings-agent-page__editor-modal .arco-drawer-body,
-.settings-agent-page__editor-modal .arco-drawer-footer {
+.settings-agent-page__editor-modal {
   background: var(--bg-1);
 }
 
@@ -3048,6 +2951,7 @@
   flex-shrink: 0;
 }
 
+.conversation-tab[data-state='active'],
 .conversation-tab--active {
   background: var(--bg-base);
   color: var(--text-primary);
@@ -3231,6 +3135,7 @@
   cursor: pointer;
 }
 
+.chat-preview__tab[data-state='active'],
 .chat-preview__tab--active {
   background: rgba(22, 93, 255, 0.1);
   color: var(--text-primary);
@@ -3411,7 +3316,7 @@
   color: var(--danger);
 }
 
-.chat-error-banner button {
+.chat-error-banner__dismiss {
   border: none;
   background: transparent;
   color: inherit;
@@ -3582,10 +3487,9 @@
   }
 
   .settings-inline-actions--compact,
-  .settings-preference-row__control .arco-input-wrapper,
-  .settings-preference-row__control .arco-select-view,
-  .settings-preference-row__control .arco-picker,
-  .settings-preference-row__control .arco-input-group-wrapper {
+  .settings-preference-row__control > input,
+  .settings-preference-row__control > textarea,
+  .settings-preference-row__control > button[role='combobox'] {
     width: 100%;
   }
 

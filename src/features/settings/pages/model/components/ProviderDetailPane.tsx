@@ -1,7 +1,19 @@
-import { Button, Popconfirm, Switch, Tag } from '@arco-design/web-react';
-import { DeleteFour, Heartbeat, Plus, Write } from '@icon-park/react';
-import classNames from 'classnames';
+import { Activity, LoaderCircle, PencilLine, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { MODEL_PROTOCOL_OPTIONS, getModelProtocol, isModelEnabled } from '@/features/settings/api/model';
+import { cn } from '@/shared/lib';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Switch,
+} from '@/shared/ui';
 import type { ModelProvider } from '@/features/settings/types';
 
 interface ProviderDetailPaneProps {
@@ -42,6 +54,9 @@ export function ProviderDetailPane({
   onToggleProviderEnabled,
   onToggleProtocol,
 }: ProviderDetailPaneProps) {
+  const [deleteProviderOpen, setDeleteProviderOpen] = useState(false);
+  const [deletingModelName, setDeletingModelName] = useState<string | null>(null);
+
   if (!provider) {
     return (
       <section className="settings-group-card settings-split-view__detail settings-model-page__detail" data-testid="model-provider-detail">
@@ -64,18 +79,38 @@ export function ProviderDetailPane({
           </div>
         </div>
         <div className="settings-model-page__detail-actions">
-          <Switch checked={provider.enabled !== false} onChange={() => onToggleProviderEnabled(provider)} />
-          <Button data-testid="model-add-model" icon={<Plus size="16" />} onClick={() => onAddModel(provider.id)}>
+          <Switch checked={provider.enabled !== false} onCheckedChange={() => onToggleProviderEnabled(provider)} />
+          <Button data-testid="model-add-model" type="button" variant="outline" onClick={() => onAddModel(provider.id)}>
+            <Plus data-icon="inline-start" />
             添加模型
           </Button>
-          <Button icon={<Write size="16" />} onClick={() => onEditProvider(provider)}>
+          <Button type="button" variant="outline" onClick={() => onEditProvider(provider)}>
+            <PencilLine data-icon="inline-start" />
             编辑平台
           </Button>
-          <Popconfirm title="确认删除该平台？" onOk={() => onDeleteProvider(provider.id)}>
-            <Button status="danger" icon={<DeleteFour size="16" />}>
+          <AlertDialog open={deleteProviderOpen} onOpenChange={setDeleteProviderOpen}>
+            <Button type="button" variant="destructive" onClick={() => setDeleteProviderOpen(true)}>
+              <Trash2 data-icon="inline-start" />
               删除平台
             </Button>
-          </Popconfirm>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认删除该平台？</AlertDialogTitle>
+                <AlertDialogDescription>删除后会同时移除该平台下的模型配置与健康检查记录。</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setDeleteProviderOpen(false);
+                    onDeleteProvider(provider.id);
+                  }}
+                >
+                  确认删除
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
@@ -117,7 +152,7 @@ export function ProviderDetailPane({
                 <div key={modelName} className="settings-model-page__model-row">
                   <div className="settings-model-page__model-main">
                     <span
-                      className={classNames('settings-model__health', {
+                      className={cn('settings-model__health', {
                         'settings-model__health--healthy': health?.status === 'healthy',
                         'settings-model__health--unhealthy': health?.status === 'unhealthy',
                       })}
@@ -130,22 +165,71 @@ export function ProviderDetailPane({
 
                   <div className="settings-model-page__model-actions">
                     {protocol ? (
-                      <Tag color={protocol.color} className="settings-model__protocol" onClick={() => onToggleProtocol(provider.id, modelName)}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="settings-model__protocol rounded-full"
+                        onClick={() => onToggleProtocol(provider.id, modelName)}
+                      >
                         {protocol.label}
-                      </Tag>
+                      </Button>
                     ) : null}
-                    <Switch checked={isModelEnabled(provider, modelName)} onChange={(value) => onToggleModel(provider.id, modelName, value)} />
-                    <Button
-                      size="mini"
-                      data-testid={`model-health-check-${modelName}`}
-                      loading={checkingModelKey === modelKey}
-                      icon={<Heartbeat size="16" />}
-                      onClick={() => onRunHealthCheck(provider.id, modelName)}
+                    <Switch
+                      checked={isModelEnabled(provider, modelName)}
+                      onCheckedChange={(value) => onToggleModel(provider.id, modelName, value)}
                     />
-                    <Button size="mini" icon={<Write size="16" />} onClick={() => onEditModel(provider.id, modelName)} />
-                    <Popconfirm title="确认删除该模型？" onOk={() => onDeleteModel(provider.id, modelName)}>
-                      <Button size="mini" icon={<DeleteFour size="16" />} />
-                    </Popconfirm>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 rounded-full"
+                      data-testid={`model-health-check-${modelName}`}
+                      disabled={checkingModelKey === modelKey}
+                      onClick={() => onRunHealthCheck(provider.id, modelName)}
+                    >
+                      {checkingModelKey === modelKey ? <LoaderCircle className="animate-spin" /> : <Activity />}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 rounded-full"
+                      onClick={() => onEditModel(provider.id, modelName)}
+                    >
+                      <PencilLine />
+                    </Button>
+                    <AlertDialog
+                      open={deletingModelName === modelName}
+                      onOpenChange={(open) => setDeletingModelName(open ? modelName : null)}
+                    >
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 rounded-full"
+                        onClick={() => setDeletingModelName(modelName)}
+                      >
+                        <Trash2 />
+                      </Button>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>确认删除该模型？</AlertDialogTitle>
+                          <AlertDialogDescription>删除后该模型将从当前平台移除，健康检查状态也会一并清空。</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>取消</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                              setDeletingModelName(null);
+                              onDeleteModel(provider.id, modelName);
+                            }}
+                          >
+                            确认删除
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               );

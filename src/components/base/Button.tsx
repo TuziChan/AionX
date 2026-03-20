@@ -1,7 +1,7 @@
-import { Button as ArcoButton, ButtonProps as ArcoButtonProps } from '@arco-design/web-react';
+import { Button as SharedButton, type ButtonProps as SharedButtonProps } from '@/shared/ui/button';
 
-export interface ButtonProps extends ArcoButtonProps {}
+export interface ButtonProps extends SharedButtonProps {}
 
 export function Button(props: ButtonProps) {
-  return <ArcoButton {...props} />;
+  return <SharedButton {...props} />;
 }

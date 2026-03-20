@@ -1,6 +1,6 @@
-import { Message } from '@arco-design/web-react';
 import { useEffect, useMemo, useState } from 'react';
 import { checkForUpdates, getAppMetadata, getUpdatePreferences, saveUpdatePreferences } from '@/features/settings/api/about';
+import { notify } from '@/shared/lib';
 import type { AboutMetadata, UpdateCheckResult, UpdatePreferences } from '../types';
 
 export function useAboutSettings() {
@@ -64,10 +64,10 @@ export function useAboutSettings() {
     try {
       const saved = await saveUpdatePreferences(nextPreferences);
       setPreferences(saved);
-      Message.success('更新偏好已保存');
+      notify.success('更新偏好已保存');
     } catch (caughtError) {
       setPreferences(previous);
-      Message.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
+      notify.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
     } finally {
       setSavingPreference(false);
     }
@@ -81,11 +81,11 @@ export function useAboutSettings() {
       setUpdateResult(result);
 
       if (result.updateAvailable) {
-        Message.success('检测到可用更新');
+        notify.success('检测到可用更新');
       } else if (result.status === 'up-to-date') {
-        Message.info('当前已经是最新版本');
+        notify.info('当前已经是最新版本');
       } else {
-        Message.warning(result.detail);
+        notify.warning(result.detail);
       }
     } catch (caughtError) {
       const detail = caughtError instanceof Error ? caughtError.message : String(caughtError);
@@ -98,7 +98,7 @@ export function useAboutSettings() {
         publishedAt: null,
         detail,
       });
-      Message.error(`检查更新失败: ${detail}`);
+      notify.error(`检查更新失败: ${detail}`);
     } finally {
       setChecking(false);
     }

@@ -1,6 +1,6 @@
-import { Message } from '@arco-design/web-react';
 import { useEffect, useState } from 'react';
 import { applyDisplayCustomCss, getDisplaySettings, saveDisplaySettings } from '@/features/settings/api/display';
+import { notify } from '@/shared/lib';
 import { useThemeStore } from '@/stores/themeStore';
 import {
   clampDisplayZoom,
@@ -76,11 +76,11 @@ export function useDisplaySettings() {
       const saved = await saveDisplaySettings(nextSettings);
       setSettings(saved);
       setTheme(saved.theme);
-      Message.success('主题已保存');
+      notify.success('主题已保存');
     } catch (caughtError) {
       setSettings(previous);
       setTheme(previous.theme);
-      Message.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
+      notify.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
     } finally {
       setSavingTheme(false);
     }
@@ -103,10 +103,10 @@ export function useDisplaySettings() {
     try {
       const saved = await saveDisplaySettings(nextSettings);
       setSettings(saved);
-      Message.success('界面缩放已保存');
+      notify.success('界面缩放已保存');
     } catch (caughtError) {
       setSettings(previous);
-      Message.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
+      notify.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
     } finally {
       setSavingZoom(false);
     }
@@ -136,12 +136,12 @@ export function useDisplaySettings() {
       setSettings(saved);
       setCustomCssDraft(saved.customCss);
       applyDisplayCustomCss(saved.customCss);
-      Message.success('自定义 CSS 已保存');
+      notify.success('自定义 CSS 已保存');
     } catch (caughtError) {
       setSettings(previous);
       setCustomCssDraft(previous.customCss);
       applyDisplayCustomCss(previous.customCss);
-      Message.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
+      notify.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
     } finally {
       setSavingCustomCss(false);
     }

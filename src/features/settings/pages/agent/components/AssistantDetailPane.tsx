@@ -1,6 +1,18 @@
-import { Button, Popconfirm, Tag } from '@arco-design/web-react';
-import { DeleteFour, Write } from '@icon-park/react';
+import { PencilLine, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { getAssistantSourceLabel } from '@/features/settings/api/agent';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+} from '@/shared/ui';
 import type { AssistantEntry } from '../types';
 
 interface AssistantDetailPaneProps {
@@ -18,6 +30,8 @@ export function AssistantDetailPane({
   onEditAssistant,
   resolveStatusLabel,
 }: AssistantDetailPaneProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
   if (!assistant) {
     return (
       <section className="settings-group-card settings-split-view__detail settings-assistants__detail" data-testid="agent-assistant-detail">
@@ -40,22 +54,46 @@ export function AssistantDetailPane({
           </div>
         </div>
         <div className="settings-model-page__detail-actions">
-          <Tag color={assistant.source === 'builtin' ? 'arcoblue' : 'green'}>{getAssistantSourceLabel(assistant.source)}</Tag>
-          <Tag color={assistant.enabled ? 'green' : 'gray'}>{resolveStatusLabel(assistant)}</Tag>
-          <Button data-testid="agent-edit-assistant" icon={<Write size="16" />} onClick={() => onEditAssistant(assistant)}>
+          <Badge variant={assistant.source === 'builtin' ? 'info' : 'outline'}>
+            {getAssistantSourceLabel(assistant.source)}
+          </Badge>
+          <Badge variant={assistant.enabled ? 'default' : 'outline'}>{resolveStatusLabel(assistant)}</Badge>
+          <Button data-testid="agent-edit-assistant" type="button" variant="outline" onClick={() => onEditAssistant(assistant)}>
+            <PencilLine data-icon="inline-start" />
             编辑
           </Button>
           {assistant.source === 'custom' ? (
-            <Popconfirm title="确认删除这个自定义助手？" onOk={() => onDeleteAssistant(assistant)}>
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
               <Button
                 data-testid="agent-delete-assistant"
-                status="danger"
-                loading={deleting}
-                icon={<DeleteFour size="16" />}
+                type="button"
+                variant="destructive"
+                disabled={deleting}
+                onClick={() => setDeleteDialogOpen(true)}
               >
+                <Trash2 data-icon="inline-start" />
                 删除
               </Button>
-            </Popconfirm>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>确认删除这个自定义助手？</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    删除后将移除该助手的自定义配置，当前列表会立即刷新。
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>取消</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      setDeleteDialogOpen(false);
+                      onDeleteAssistant(assistant);
+                    }}
+                  >
+                    确认删除
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           ) : null}
         </div>
       </div>

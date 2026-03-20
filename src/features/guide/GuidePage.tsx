@@ -1,10 +1,36 @@
-import { Button, Input, Message, Select, Tag } from '@arco-design/web-react';
-import { CompassOne, CodeBrackets, ListView, PreviewOpen } from '@icon-park/react';
-import classNames from 'classnames';
-import { useMemo, useState } from 'react';
+import {
+  Bot,
+  Code2,
+  Compass,
+  LoaderCircle,
+  MonitorUp,
+  Sparkles,
+  Workflow,
+} from 'lucide-react';
+import { startTransition, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContentPageFrame } from '@/app/layouts';
-import { PageHeader } from '@/shared/ui';
+import { cn, notify } from '@/shared/lib';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Input,
+  PageHeader,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+  ToggleGroup,
+  ToggleGroupItem,
+} from '@/shared/ui';
 import { useChatStore } from '../chat/stores/chatStore';
 
 const agentOptions = [
@@ -58,7 +84,7 @@ export function Component() {
   const handleLaunchConversation = async () => {
     const text = prompt.trim();
     if (!text) {
-      Message.warning('请输入一个任务，再进入会话。');
+      notify.warning('请输入一个任务，再进入会话。');
       return;
     }
 
@@ -102,105 +128,136 @@ export function Component() {
         descriptionClassName="guid-page__subtitle"
       />
 
-      <div className="guid-agent-bar">
+      <ToggleGroup
+        type="single"
+        value={selectedAgent}
+        onValueChange={(value) => {
+          if (!value) {
+            return;
+          }
+
+          startTransition(() => setSelectedAgent(value));
+        }}
+        className="guid-agent-bar"
+      >
         {agentOptions.map((agent) => (
-          <button
+          <ToggleGroupItem
             key={agent.key}
-            type="button"
-            className={classNames('guid-agent-pill', selectedAgent === agent.key && 'guid-agent-pill--active')}
-            onClick={() => setSelectedAgent(agent.key)}
+            value={agent.key}
+            aria-label={`选择 ${agent.label}`}
+            className="guid-agent-pill h-auto"
           >
             <span className="guid-agent-pill__title">{agent.label}</span>
             <span className="guid-agent-pill__meta">{agent.description}</span>
-          </button>
+          </ToggleGroupItem>
         ))}
-      </div>
+      </ToggleGroup>
 
-      <div className="guid-input-card">
-        <div className="guid-input-card__header">
+      <Card className="guid-input-card border-white/60 bg-white/85 shadow-[0_28px_72px_rgba(17,24,39,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-950/90">
+        <CardHeader className="guid-input-card__header p-0">
           <div>
             <div className="guid-input-card__label">当前 Agent</div>
             <div className="guid-input-card__agent">
-              <Tag color={selectedAgentInfo.tone}>{selectedAgentInfo.label}</Tag>
+              <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/50 dark:text-sky-200">
+                {selectedAgentInfo.label}
+              </Badge>
               <span className="text-sm text-t-secondary">{selectedAgentInfo.description}</span>
             </div>
           </div>
           <div className="guid-input-card__selectors">
-            <Select
-              className="guid-select"
-              size="large"
-              value={selectedModel}
-              onChange={(value) => setSelectedModel(String(value))}
-              options={modelOptions.map((item) => ({ label: item, value: item }))}
-            />
+            <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <SelectTrigger className="guid-select">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {modelOptions.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
             <Input
               className="guid-input-card__workspace"
-              size="large"
               value={workspace}
-              onChange={setWorkspace}
+              onChange={(event) => setWorkspace(event.target.value)}
               placeholder="Workspace path"
             />
           </div>
-        </div>
+        </CardHeader>
 
-        <Input.TextArea
-          className="guid-input-card__textarea"
-          value={prompt}
-          onChange={setPrompt}
-          placeholder={`给 ${selectedAgentInfo.label} 一个清晰任务，例如：对比 AionUi 与 AionX 的 Conversation 页面结构并给出实施顺序`}
-          autoSize={{ minRows: 6, maxRows: 10 }}
-        />
+        <CardContent className="p-0 pt-6">
+          <Textarea
+            className="guid-input-card__textarea"
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            placeholder={`给 ${selectedAgentInfo.label} 一个清晰任务，例如：对比 AionUi 与 AionX 的 Conversation 页面结构并给出实施顺序`}
+            rows={7}
+          />
+        </CardContent>
 
-        <div className="guid-input-card__footer">
+        <CardFooter className="guid-input-card__footer p-0 pt-6">
           <div className="guid-input-card__actions">
-            <button type="button" className="guid-chip">
-              <CompassOne theme="outline" size="16" />
+            <Badge variant="outline" className="guid-chip">
+              <Compass data-icon="inline-start" />
               工作区已连接
-            </button>
-            <button type="button" className="guid-chip">
-              <CodeBrackets theme="outline" size="16" />
+            </Badge>
+            <Badge variant="outline" className="guid-chip">
+              <Code2 data-icon="inline-start" />
               模型: {selectedModel}
-            </button>
-            <button type="button" className="guid-chip">
-              <PreviewOpen theme="outline" size="16" />
+            </Badge>
+            <Badge variant="outline" className="guid-chip">
+              <MonitorUp data-icon="inline-start" />
               预览面板默认可用
-            </button>
+            </Badge>
           </div>
-          <Button type="primary" size="large" loading={submitting} onClick={handleLaunchConversation}>
+          <Button type="button" size="lg" onClick={handleLaunchConversation} disabled={submitting}>
+            {submitting ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : <Sparkles data-icon="inline-start" />}
             开始会话
           </Button>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
 
       <div className="guid-assistant-grid">
         {agentOptions.map((agent) => (
-          <div key={agent.key} className={classNames('guid-assistant-card', selectedAgent === agent.key && 'guid-assistant-card--selected')}>
-            <div className="guid-assistant-card__title">{agent.label}</div>
-            <p className="guid-assistant-card__text">{agent.description}</p>
-            <button
-              type="button"
-              className="guid-assistant-card__action"
-              onClick={() => setSelectedAgent(agent.key)}
-            >
-              设为当前入口
-            </button>
-          </div>
+          <Card
+            key={agent.key}
+            className={cn('guid-assistant-card', selectedAgent === agent.key && 'guid-assistant-card--selected')}
+          >
+            <CardHeader className="p-0">
+              <CardTitle className="guid-assistant-card__title">{agent.label}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 pt-3">
+              <p className="guid-assistant-card__text">{agent.description}</p>
+            </CardContent>
+            <CardFooter className="p-0">
+              <Button type="button" variant="link" className="guid-assistant-card__action h-auto" onClick={() => setSelectedAgent(agent.key)}>
+                <Bot data-icon="inline-start" />
+                设为当前入口
+              </Button>
+            </CardFooter>
+          </Card>
         ))}
       </div>
 
       <div className="guid-quick-actions">
         {quickActions.map((action) => (
-          <button
+          <Button
             key={action.title}
             type="button"
-            className="guid-quick-actions__item"
-            onClick={() => setPrompt(action.prompt)}
+            variant="outline"
+            className="guid-quick-actions__item h-auto justify-start whitespace-normal"
+            onClick={() => {
+              startTransition(() => setPrompt(action.prompt));
+            }}
           >
             <span className="guid-quick-actions__icon">
-              <ListView theme="outline" size="16" />
+              <Workflow />
             </span>
             <span className="guid-quick-actions__title">{action.title}</span>
-          </button>
+          </Button>
         ))}
       </div>
     </ContentPageFrame>

@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback } from 'react';
-import { PauseOne, Send } from '@icon-park/react';
+import { useCallback, useRef, useState } from 'react';
+import { SendHorizontal, Square } from 'lucide-react';
+import { Button, Textarea } from '@/shared/ui';
 import { useAgentStore } from '../stores/agentStore';
 import { getAgentAdapter } from '../adapters';
 
@@ -22,6 +23,9 @@ export function SendBox({ chatId, agentType }: Props) {
     if (!text || isRunning) return;
 
     setInput('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
     await sendMessage(chatId, agentType, text, adapter.getDefaultConfig());
   }, [input, isRunning, chatId, agentType, sendMessage]);
 
@@ -46,11 +50,11 @@ export function SendBox({ chatId, agentType }: Props) {
 
   return (
     <div className="chat-sendbox border-t border-b-base px-4 py-3">
-      <div className="max-w-3xl mx-auto">
+      <div className="mx-auto max-w-3xl">
         <div className="chat-sendbox__inner">
-          <textarea
+          <Textarea
             ref={textareaRef}
-            className="chat-sendbox__textarea"
+            className="chat-sendbox__textarea min-h-0 border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0"
             rows={1}
             placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
             value={input}
@@ -59,22 +63,27 @@ export function SendBox({ chatId, agentType }: Props) {
             disabled={isRunning}
           />
           {isRunning ? (
-            <button
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
               className="chat-sendbox__button chat-sendbox__button--danger"
               onClick={handleStop}
               title="Stop"
             >
-              <PauseOne theme="filled" size="16" />
-            </button>
+              <Square data-icon="inline-start" />
+            </Button>
           ) : (
-            <button
+            <Button
+              type="button"
+              size="icon"
               className="chat-sendbox__button"
               onClick={handleSend}
               disabled={!input.trim()}
               title="Send"
             >
-              <Send theme="outline" size="16" />
-            </button>
+              <SendHorizontal data-icon="inline-start" />
+            </Button>
           )}
         </div>
       </div>

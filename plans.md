@@ -1,466 +1,366 @@
-# 启动全前端 shadcn/Tailwind 一次性重构并完成统一设计系统切换
+# 分阶段完整切换到 shadcn/ui 体系并移除 Arco 与 UnoCSS
 
 本计划是一份持续维护的执行文档。执行过程中必须始终更新 `Progress`、`Surprises & Discoveries`、`Decision Log` 和 `Outcomes & Retrospective` 四个章节，保证任何新的执行者只依赖这一个文件和当前工作树，就能继续把任务做完。
 
-当前仓库根目录没有已检入的 `PLANS.md` 文件，因此本文件不依赖外部计划规范文件，所有执行说明都直接写在这里。
+当前仓库根目录已检入 `PLANS.md`，因此本文件必须与仓库根规范保持一致维护，并且每次修订都要继续满足执行计划的自描述要求。本文件还必须与 `docs/设置页迁移实施清单.md` 一起维护，因为后者仍然承载 settings 功能基线和真实验证记录。
 
-本计划中提到的“原项目”特指本地参考仓库 `F:\Work\AionUi`。从 2026-03-18 17:47 +08:00 起，这个参考源只用于核实功能范围、信息架构和交互语义，不再作为逐像素视觉目标。
+本计划中提到的“原项目”特指本地参考仓库 `F:\Work\AionUi`。这个参考源现在只用于核实功能范围、信息架构和交互语义，不再作为逐像素视觉目标。新的视觉与组件体系以当前仓库的 `shadcn/ui + Tailwind CSS v4` 方案为准。
 
 ## Purpose / Big Picture
 
-这项工作的目标已经从“设置页高保真复刻”升级为“全前端一次性重构”。重构完成后，用户看到的将是一套新的 AionX 前端：统一的 `App Shell`、统一的主题系统、统一的按钮/表单/卡片/弹层风格，以及统一的设置页、聊天页、导航页和工具页布局语言。用户仍然使用同样的功能和同样的路由，但视觉层、交互层和组件层全部切换到新的设计系统。
+这项工作的目标是把当前仓库中仍然存在的 `Arco Design + UnoCSS + 项目内旧封装` 彻底切换成 `shadcn/ui + Radix primitives + Tailwind CSS v4`。切换完成后，用户访问 `/login`、`/guid`、`/cron`、`/conversation/:id` 和 `/settings/*` 时，看到和交互到的所有基础按钮、输入框、选择器、对话框、抽屉、Tabs、提示、表格、滚动容器和导航原语，都会来自 `src/shared/ui/*` 中的 shadcn 官方组件或以其默认 API 为起点的项目定制组件，而不是 Arco 组件或旧兼容层。
 
-这次重构不是局部修补，也不是长期双轨并存。最终交付物必须满足三个条件。第一，前端设计系统从当前 `Arco Design + UnoCSS + 大量手写全局 CSS` 切换到 `Tailwind CSS v4 + shadcn/ui + Radix primitives + 语义化设计 tokens`。第二，应用的所有主路径，包括 `/login`、`/guid`、`/cron`、`/conversation/:id`、`/settings/*`，都迁移到新的壳层和组件体系。第三，旧的 Arco 依赖、UnoCSS 依赖、旧的基础组件封装和主要旧样式文件只在新实现完全覆盖后才允许删除，最终主分支不保留“新旧 UI 同时面向用户”的混合态。
-
-可见证据必须包括：新的设计系统蓝图在本文档中被冻结；新的目录分层、布局规则和组件规则按里程碑落地；`npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive` 通过；并完成一次对旧 Arco 依赖与 UnoCSS 依赖的清理。
+本次切换不是“视觉上像 shadcn 即可”，而是“组件 API 和组合方式必须先回到 shadcn 官方默认，再做项目定制”。可见证据必须包括：`package.json` 不再依赖 `@arco-design/web-react`、`@arco-design/color` 与 `@unocss/*`；`src/main.tsx` 不再导入 `virtual:uno.css`；`src/styles/global.css` 不再引入 Arco 样式；`src/components/base/*` 不再承担旧兼容入口；并且 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive` 通过。
 
 ## Progress
 
-- [x] (2026-03-18 00:07 +08:00) 确认仓库中没有已检入的 `PLANS.md`；计划必须完全自包含。
-- [x] (2026-03-18 14:29 +08:00) 完成设置页九个路由的迁移、typed API 接入、桌面与响应式 smoke 基线和 direct visual audit 基线，为后续整站重构提供稳定功能基线。
-- [x] (2026-03-18 17:47 +08:00) 与用户确认目标升级为“整个前端设计系统逐步迁移到 shadcn/Tailwind”，且最终交付采用一次性切换，不再以设置页局部升级为终点。
-- [x] (2026-03-18 17:47 +08:00) 冻结新的行业常见实现架构：`Tauri 2 + React 19 + Vite 7 + React Router 7 + Tailwind CSS v4 + shadcn/ui + Radix UI + React Hook Form + Zod + TanStack Query + Zustand`。
-- [x] (2026-03-18 17:47 +08:00) 冻结新的目录分层和 UI 责任边界：`app / pages / widgets / features / entities / shared`，其中 shadcn 生成的基础组件落在 `shared/ui`，语义化业务组件落在 `widgets` 与 `features`。
-- [x] (2026-03-18 17:47 +08:00) 冻结新的布局蓝图与视觉语言：新的 `App Frame`、`Settings Frame`、`Conversation Frame`、`Form Page Frame`，以及“graphite + cobalt + soft glass”工作台风格。
-- [x] (2026-03-18 17:59 +08:00) 新增 [docs/前端统一重构蓝图.md](C:/Users/Victory/.codex/worktrees/15f7/AionX/docs/前端统一重构蓝图.md)，把统一 UI 框架、页面整体布局、组件风格、设计 token 和基础落地顺序冻结成独立蓝图文档，作为后续所有页面重构的上位规范。
-- [x] (2026-03-19 08:50 +08:00) 完成 `R-010` 首轮基础设施切换：引入 `tailwindcss/@tailwindcss/vite`、首批 Radix/表单依赖与 React Query，新增 `components.json`、`src/shared/styles/{globals,tokens,theme}.css`、`src/shared/lib/cn.ts`、`src/app/providers/*` 与首批 `shared/ui` primitives，并把 `ThemeProvider` 扩展为同时驱动 `data-theme` 与 `.dark` class；随后串行通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`。
-- [x] (2026-03-19 09:08 +08:00) 完成 `R-011` 首轮壳层切片：新增 `src/app/layouts/AppFrame.tsx` 与 `src/widgets/app-frame/*`，用新的 `AppSidebar`、`AppTitlebar` 和受保护路由统一壳层替换旧 `MainLayout` 路由挂接方式；Guide / Cron / Components / Conversation 进入新的 app shell，侧栏宽度 token 收回到 `280 / 72`，`ChatHistory` 支持移动端抽屉关闭回调，并串行通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`。
-- [x] (2026-03-19 09:26 +08:00) 完成 `R-011` 第二轮内层 frame 抽取：新增 `src/app/layouts/ContentPageFrame.tsx`、`src/app/layouts/SettingsFrame.tsx`、`src/app/layouts/ConversationFrame.tsx` 与 `src/app/layouts/index.ts`，把 `SettingsLayout`、`ChatLayout`、`GuidePage`、`CronPage`、`ComponentsShowcasePage` 接入新的共享内容骨架，同时串行通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`。
-- [x] (2026-03-19 09:38 +08:00) 完成 `R-011` 第三轮页面 primitive 落地：新增 `src/app/layouts/FormPageFrame.tsx` 与 `src/shared/ui/page.tsx`，为 `src/shared/ui/button.tsx` 补齐 loading 态，并把 `src/features/auth/LoginPage.tsx`、`src/features/settings/pages/about/page.tsx`、`src/features/settings/pages/about/components/UpdateCard.tsx` 迁到新骨架，同时让 Guide / Cron / Components 开始复用共享 `PageHeader`；随后串行通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`。
-- [x] (2026-03-19 11:06 +08:00) 修正 `R-011` 壳层拓扑并完成导航组件统一：`/settings/*` 从 `AppFrame` 子路由提升回与 `AppFrame` 平级的独立 shell，`src/shared/ui/sidebar.tsx` 开始同时承载 `AppSidebar`、`SettingsNav`、`SettingsBackLink` 与 `SettingsMobileTabs`，并补回稳定 `data-testid` 锚点；随后重新串行通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`。
-- [x] (2026-03-19 11:52 +08:00) 完成一轮基于真实 Tauri 截图工件的 settings 壳层与页面收敛：把 settings 外层内容宽度正式改为随 `narrow / regular / wide / full` preset 驱动，收紧共享侧栏导航密度，并针对 `webui / tools / about` 收口卡片、tab 与更新卡的视觉节奏；随后串行通过 `npm run build`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`，并刷新 `tmp/settings-parity/desktop/*` 与 `tmp/settings-parity/responsive/*`。
-- [ ] (2026-03-18 17:47 +08:00) 完成 `R-011` 壳层重建。
-  已完成：新壳层规则冻结；`AppFrame`、`AppSidebar`、`AppTitlebar` 与受保护路由统一挂接已落地，`/guid`、`/cron`、`/conversation/:id` 已进入新的 app shell，而 `/settings/*` 现已回到与 `AppFrame` 平级的独立 `SettingsLayout` shell；`SettingsFrame`、`ConversationFrame` 与 `ContentPageFrame` 也已从页面内联结构中抽出，Guide / Cron / Components 等简单页面已改为通过共享内容 frame 吃统一宽度 token；`FormPageFrame`、`PageHeader`、`PageSection` 这类共享页面 primitive 也已落地，并已真实接管 `/login` 与 `settings/about`；同时 app/settings/mobile 三类导航已经开始共享 `Sidebar*` primitives，而不是各自维护一套导航实现。
-  剩余：把其余 simple pages 的区块内容继续迁到 `PageSection`/`PageGrid` 等共享语义上，减少 `app-shell.css` 中的 page-only 规则；替换旧 `src/components/layout/*` 的剩余运行时引用；继续把聊天页和设置页内部高频块级容器从旧 CSS class 迁到 shared semantic components。
-- [ ] (2026-03-18 17:47 +08:00) 完成 `R-012` 共享组件重建。
-  已完成：按钮、输入、卡片、Tabs、Sheet、Dialog、Dropdown、Toast、Table、Empty State、Command Palette 的规格冻结。
-  剩余：用 shadcn/ui primitives + cva variants 落地这些共享组件，并替换旧 `src/components/base/*` 与主要 Arco 组件调用点。
-- [ ] (2026-03-18 17:47 +08:00) 完成 `R-013` 主页面一次性重写。
-  已完成：路由范围冻结。
-  剩余：按“登录与引导 -> 聊天与工作区 -> 设置页 -> 其余展示页”的顺序，将所有主路径页面迁到新布局与新组件体系。
-- [ ] (2026-03-18 17:47 +08:00) 完成 `R-014` 旧体系删除与回归。
-  已完成：清理目标冻结。
-  剩余：删除 Arco 依赖、UnoCSS 依赖、旧基础组件、旧样式覆盖；更新 smoke 选择器并完成构建、桌面 smoke、响应式 smoke、截图审计。
+- [x] (2026-03-21 00:10 +08:00) 重新盘点当前仓库状态，确认根目录 `plans.md` 已缺失，必须重建根执行计划。
+- [x] (2026-03-21 00:12 +08:00) 读取 `components.json`、`package.json`、`src/shared/ui/*`、`src/main.tsx` 与主要页面调用点，确认仓库当前处于“已有 shadcn 地基，但运行时仍深度依赖 Arco 与 UnoCSS”的中间态。
+- [x] (2026-03-21 00:14 +08:00) 依据项目级 `shadcn` skill 与 Shadcn MCP 重新设计阶段切分，确认每一阶段都必须先跑 shadcn `info/docs` 或 MCP 视图，再执行组件接入或替换。
+- [x] (2026-03-21 00:16 +08:00) 重写根计划为本文件，并将“阶段执行前必须先设计阶段方案、阶段完成后必须先更新计划，否则不得进入下一阶段”写成硬门槛。
+- [x] (2026-03-21 00:22 +08:00) 按 `shadcn` skill 和 Shadcn MCP 的组件清单，执行官方 add 命令，新增 `select`、`switch`、`dialog`、`sheet`、`tabs`、`tooltip`、`alert`、`dropdown-menu`、`popover`、`scroll-area`、`table`、`sonner`、`skeleton` 与后续补充的 `slider` 组件源码到 `src/shared/ui/*`。
+- [x] (2026-03-21 00:29 +08:00) 完成 `S1` 的首批真实调用点替换：新增 `src/shared/lib/index.ts` 供 shadcn 生成文件使用；把 `src/app/providers/AppProviders.tsx` 接上 shared `Toaster`；将 `src/components/ui/LanguageSwitcher.tsx`、`src/features/settings/components/SettingsField.tsx`、`src/features/settings/pages/about/page.tsx`、`src/features/settings/pages/about/components/UpdateCard.tsx` 从 Arco 基础组件切到 shadcn 组件。
+- [x] (2026-03-21 00:31 +08:00) 完成 `S1` 的代码面验证，`npm run build` 与 `cargo check` 通过。
+- [x] (2026-03-21 01:04 +08:00) 完成 `S1` 的行为面验证：`e2e-tests/webdriverio/wdio.conf.mjs` 已改为用 `curl.exe` + 版本回退自动下载匹配的 `msedgedriver`，并在缺失时自动安装 `tauri-driver`；随后 `npm run e2e:debug:desktop` 与 `npm run e2e:debug:responsive` 串行通过，`S1` 正式闭环。
+- [x] (2026-03-21 00:58 +08:00) 完成 `S2` 的第一批公共反馈切换：新增 `src/shared/lib/notify.ts` 统一封装 `sonner`，并把 settings / guide 中一组高频 `Message` 调用切到 shared `notify`；同时将 `src/features/settings/pages/display/page.tsx` 与 `src/features/settings/pages/system/page.tsx` 的 Arco `Alert` 切到 shared shadcn `Alert`。
+- [x] (2026-03-21 01:14 +08:00) 完成 `S2` 的第二批公共层替换：新增官方 `src/shared/ui/accordion.tsx` 并导出到 `src/shared/ui/index.ts`；把 `src/features/test/ComponentsShowcasePage.tsx` 重写为 shadcn `Accordion / Badge / Button / Card / Dialog / Tabs + notify` 组合；把 `src/components/layout/MainLayout.tsx`、`src/components/layout/Sidebar.tsx`、`src/components/layout/Titlebar.tsx` 从 Arco `Layout / Tooltip / icon` 切到纯 React 容器与 shared shadcn `Tooltip`；同时把遗留 `src/features/settings/components/SettingsPage.tsx` 的 Arco `Card` 改为 shared `Card` 组合。
+- [x] (2026-03-21 01:27 +08:00) 完成 `S2` 的共享协议收口：`src/shared/ui/button.tsx` 已回到 shadcn 默认 `default / secondary / outline / ghost / destructive / link` 变体与 `default / sm / lg / icon` 尺寸，不再接受自定义 `loading` prop；`src/widgets/app-frame/AppSidebar.tsx` 与 `src/features/settings/pages/about/components/UpdateCard.tsx` 已同步改为默认组合方式；`build + cargo check + desktop smoke + responsive smoke` 重新通过，`S2` 正式完成。
+- [x] (2026-03-21 01:49 +08:00) 完成 `S3` 第一批 settings 页面替换：按 `shadcn` skill 与 CLI docs 重新确认 `ToggleGroup / AlertDialog / Dialog / Select / Switch / Slider / Badge / Input / Textarea` 默认 API 后，已完成 `display + system + extension + gemini` 的 Arco 清理；新增 `src/shared/ui/alert-dialog.tsx` 与 `src/shared/ui/toggle-group.tsx`，并将 `CustomCssCard`、`ThemeCard`、`SystemBehaviorCard`、`RuntimeDirectoriesCard`、`ExtensionSettingsHost`、`extension/page.tsx`、`AccountStatusCard`、`ProjectBindingCard`、`gemini/page.tsx` 切到 shadcn 组合，同时把系统目录确认收口到 `AlertDialog`，且 `build + cargo check + desktop smoke + responsive smoke` 串行通过。
+- [x] (2026-03-21 18:34 +08:00) 完成 `S3` 第二批 settings 页面替换：`agent + model + tools + webui` 已全部切到 shadcn `Sheet / Dialog / AlertDialog / Select / Switch / Badge / Input / Textarea / Tabs` 组合，且 `src/features/settings/**/*` 对 `@arco-design/web-react` 的全文搜索结果已归零。
+- [x] (2026-03-21 03:10 +08:00) 完成 `S4`：`chat / guide / cron` 已切到 shadcn `Tabs / Badge / Button / Alert / ToggleGroup / Select / Textarea / Card / Switch` 默认 API 组合，`build + cargo check + desktop smoke + responsive smoke` 串行通过，且 `src/features/chat`、`src/features/guide`、`src/features/cron` 中对 `@arco-design` 的全文搜索结果已归零。
+- [x] (2026-03-21 03:12 +08:00) 完成 `S5` 执行前预检：运行时代码中的 `@arco-design/web-react` / `@arco-design/color` import 已归零，剩余旧体系入口已收敛到 `package.json` 依赖、`src/main.tsx` 的 `virtual:uno.css`、`src/styles/global.css` 的 Arco 样式导入、`src/styles/arco-override.css`、`src/styles/app-shell.css` / `src/styles/themes/base.css` 内的兼容 class hooks，以及 `src/theme/theme.ts` 中的 `arco-theme` 标记。
+- [x] (2026-03-21 03:15 +08:00) 完成 `S5`：已删除 `@arco-design/*` 与 `@unocss/*` 依赖，移除 `virtual:uno.css`、Arco 全局样式入口、`arco-theme` DOM 标记与遗留 override 文件；随后重新确认 `src` / `e2e-tests` 对 `@arco-design|virtual:uno.css|arco-|arco-theme|unocss` 的全文搜索结果归零，并串行通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`，`S5` 正式闭环。
 
 ## Surprises & Discoveries
 
-- Observation: 当前仓库的“功能层”已经相对稳定，真正需要推倒重来的主要是“展示层”和“交互层”，因此这次重构不应该顺手重写 typed API、Tauri 命令和设置页 registry 逻辑。
-  Evidence: `src/features/settings/api/*.ts`、`src/features/settings/routes.tsx`、`src/router.tsx` 已能稳定驱动九个设置页、聊天页和主路由，最近多轮 `build + cargo check + e2e` 均通过。
+- Observation: 根目录 `plans.md` 当前在工作树中处于删除状态，因此不能继续假设“已有主计划会自动约束后续迁移”。
+  Evidence: `git status --short` 显示 `D plans.md`。
 
-- Observation: 当前前端样式体系已经过于分散，单靠继续打补丁无法演进成稳定设计系统。
-  Evidence: `src/styles/app-shell.css` 已超过单文件可维护阈值，里面同时承载 settings、chat、login、guid、cron 等多个页面的布局和组件规则；`src/styles/global.css` 还同时引入 Arco、主题系统、Arco overrides 和 app shell 样式。
+- Observation: 当前 `components.json` 已存在，且 `npx shadcn@latest info --json` 明确识别出项目是 `Vite + Tailwind v4 + radix`，但 `src/shared/ui/*` 实际只安装了很少一部分组件。
+  Evidence: `npx shadcn@latest info --json` 返回已安装组件只有 `badge`、`button`、`card`、`input`、`label`、`separator`、`sidebar`、`textarea`。
 
-- Observation: shadcn/ui 官方并不是传统 npm 组件库，而是“把组件代码生成到你仓库里，由你自己维护”的分发方式，这要求我们先冻结目录结构和 token 规则，再开始页面重写。
-  Evidence: 官方文档要求先初始化 `components.json`，再确定 `css` 入口、alias、base color、CSS variables 方案，然后按需把组件代码生成到本地。
+- Observation: `src/main.tsx` 仍导入 `virtual:uno.css`，`src/styles/global.css` 仍引入 Arco 样式，因此即使共享层已有 shadcn 文件，运行时样式入口仍然是新旧体系并存。
+  Evidence: `src/main.tsx` 第 5 行导入 `virtual:uno.css`；`src/styles/global.css` 仍含 `@import '@arco-design/web-react/dist/css/arco.css';`。
 
-- Observation: Tailwind CSS v4 已经把设计 token 体系集中到 theme variables，这与当前仓库已经广泛使用 CSS variables 的现状是兼容的，适合把现有 `--bg-*`、`--text-*`、`--border-*` 语义升级为新的 design tokens。
-  Evidence: Tailwind 官方文档明确以 `@theme` 变量作为颜色、字体、半径、阴影等设计 token 的统一入口。
+- Observation: 当前仓库里最需要优先替换的不是业务 API，而是“公共组件出口”和“高频基础件调用点”；否则页面会继续新增 Arco 用法。
+  Evidence: `src/components/ui/LanguageSwitcher.tsx`、`src/features/settings/components/SettingsField.tsx`、`src/features/settings/pages/about/*`、多处 hooks 中的 `Message` 仍直接依赖 Arco。
 
-- Observation: 即使用户要求“一次性推倒重来”，工程执行上依然需要分里程碑落地；区别在于“最终交付一次切换”，而不是“每完成一个模块就发布一半新 UI”。
-  Evidence: 当前路由横跨登录、导航、聊天、设置与测试页面，若不先冻结共享壳层和共享组件规格，页面重写会反复返工。
+- Observation: 当前 `src/shared/ui/button.tsx` 已经出现偏离 shadcn 默认 API 的项目定制，例如自定义 `loading` prop 和非官方 `variant` 命名，这需要被视为后续显式收口任务，而不能默认当作“已经完成 shadcn 切换”。
+  Evidence: `src/shared/ui/button.tsx` 当前定义了 `loading?: boolean`，并使用了 `primary` 这一非 shadcn 默认 variant 名。
 
-- Observation: 仅在 `plans.md` 中写迁移步骤还不够，因为“统一 UI 框架、页面布局、组件风格”属于长期约束，更适合独立成蓝图文档供后续实现反复对照。
-  Evidence: 当前计划文件已经同时承担阶段推进、设计决策和实现指令三种职责；若不把上位设计规则拆出去，后续每次调整里程碑时都容易稀释基础约束。
+- Observation: shadcn CLI 新生成的组件默认从 `@/shared/lib` 导入工具函数，而当前仓库原本只有 `src/shared/lib/cn.ts`，没有 `src/shared/lib/index.ts` 聚合出口。
+  Evidence: `src/shared/ui/select.tsx`、`src/shared/ui/switch.tsx`、`src/shared/ui/alert.tsx` 等生成文件都导入 `@/shared/lib`，因此本阶段必须新增 `src/shared/lib/index.ts`。
 
-- Observation: 在旧 Arco/UnoCSS 页面仍然大量存在的阶段，直接启用 Tailwind preflight 风险很高；当前使用官方推荐的 `theme.css + utilities.css` 导入方式，只接入 theme variables 和 utilities，先不引入 preflight，能显著降低中间态回归风险。
-  Evidence: 本轮 `src/shared/styles/globals.css` 使用 `@import "tailwindcss/theme.css"` 与 `@import "tailwindcss/utilities.css"`，并在不启用 preflight 的前提下串行通过了 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`。
+- Observation: shadcn 默认生成的 `sonner` 组件依赖 `next-themes`，但当前仓库的主题系统由 `src/app/providers/ThemeProvider.tsx` 和 `src/stores/themeStore.ts` 驱动，并没有 `next-themes` provider。
+  Evidence: `src/shared/ui/sonner.tsx` 初始版本导入 `useTheme`；而当前应用 provider 树只有 `QueryProvider` 与 `ThemeProvider`。
 
-- Observation: “共享导航组件”和“共享导航壳层”是两回事。settings 可以与首页共享同一套 `Sidebar*` primitives，但不能因此退化成 `AppFrame` 的子工作区。
-  Evidence: 当 `src/router.tsx` 一度把 `...settingsRoutes` 挂在 `AppFrame` 之下时，用户明确指出“首页是一个导航栏，设置页也是一个导航栏，平级的”；本轮把 `/settings/*` 提升回 `ProtectedOutlet` 下与 `AppFrame` 平级后，`npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive` 继续全部通过。
+- Observation: 当前 desktop smoke 失败并不是本阶段替换的页面组件抛错，而是 WDIO 在 `onPrepare` 中下载 EdgeDriver 失败，导致 `tauri-driver` 没有成功监听 `127.0.0.1:4444`。
+  Evidence: `npm run e2e:debug:desktop` 报错显示 `Failed to download a matching msedgedriver.exe for WebView2/Edge 146.0.3856.62`，随后 WebDriver 连接 `http://127.0.0.1:4444/session` 被拒绝。
 
-- Observation: 把 `SettingsMobileTabs` 也改为横向 `SidebarMenu + SidebarMenuButton` 后，desktop 与 mobile 的 settings 导航终于真正使用同一套组件语言，而不是“桌面共享、移动端另起一套 pill 规则”。
-  Evidence: `src/features/settings/layout/SettingsMobileTabs.tsx` 现在直接基于 `src/shared/ui/sidebar.tsx` 组装，并在补回 `data-testid="settings-mobile-tabs"` / `data-testid="settings-back-link"` 后恢复了响应式 smoke 通过。
+- Observation: `e2e-tests/webdriverio` 工作目录最初缺少 `node_modules`，因此即使代码本身可编译，测试脚本也无法直接运行。
+  Evidence: 首次执行 `npm run e2e:debug:desktop` 时，`run-wdio.mjs` 所需的 `wdio.cmd` 路径不存在；在 `e2e-tests/webdriverio` 目录执行 `npm install` 后，这个阻塞已解除。
 
-- Observation: 仅在新的 token/theme 文件里定义标题栏变量还不够，因为旧 `src/styles/themes/base.css` 仍会在后续导入中覆盖 `--titlebar-height` 和 `body` 字体。
-  Evidence: 本轮必须同时把 `src/styles/themes/base.css` 中的 `--titlebar-height` 收回到 `40px`，并把 `body` 的字体切到 `var(--app-font-sans)`，新的 `AppTitlebar` 才真正吃到统一 token。
+- Observation: 修正后的 WDIO 准备阶段已经能自愈环境缺口，`msedgedriver` 下载和 `tauri-driver` 缺失不再阻塞 smoke。
+  Evidence: 2026-03-21 01:04 +08:00 串行执行 `npm run e2e:debug:desktop` 与 `npm run e2e:debug:responsive` 均返回 exit code 0。
 
-- Observation: settings 壳层虽然已经在 registry 中定义了 `widthPreset`，但在这轮修正前，`src/styles/app-shell.css` 里的 `.settings-layout__content` 仍被硬编码为 `920px`，导致 `wide/full` preset 实际没有改变外层内容测量宽度，只能靠页面内部再套一层 `max-width` 硬顶。
-  Evidence: 本轮把 `.settings-layout__content` 改成读取 `--settings-content-max`，并由 `settings-page--narrow/regular/wide/full` 注入具体值；随后刷新后的 `tmp/settings-parity/desktop/tools-desktop.png` 与 `tmp/settings-parity/desktop/webui-desktop.png` 中，外层内容宽度终于与 `Gemini / System / About` 的窄中宽语义分离开来。
+- Observation: 把运行时 toast 入口统一收口到 shared `notify` 后，settings 和 guide 中的大量 Arco `Message` 可在不扭曲调用点语义的前提下快速切走。
+  Evidence: `src/shared/lib/notify.ts` 已提供 `success/info/warning/error`，并接管 `useAboutSettings`、`useAgentAssistants`、`useDisplaySettings`、`useExtensionTab`、`useGeminiSettings`、`useModelProviders`、`useSystemSettings`、`useToolServers`、`useWebuiSettings` 等 hooks 的原 `Message` 调用。
 
-- Observation: 在 settings 仍大量依赖旧 `app-shell.css` 的阶段，抽取新的 React `SettingsFrame` 时必须保留 `.settings-layout` 根节点和既有 class 语义，否则共享 spacing 与宽度变量会瞬间失效。
-  Evidence: `src/app/layouts/SettingsFrame.tsx` 继续以 `settings-layout / settings-layout__surface / settings-layout__body / settings-layout__content` 为根结构，随后 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive` 全部保持通过。
+- Observation: 旧 `ComponentsShowcasePage` 不需要为了保留 Arco 对等件而继续展示 `Collapse / Steps / Modal / Message`；改用官方 `Accordion / Tabs / Dialog / sonner` 更符合“先回到 shadcn 默认 API”的迁移目标。
+  Evidence: `src/features/test/ComponentsShowcasePage.tsx` 现已只导入 shared shadcn 组件与 `notify`，不再依赖 `@arco-design/web-react`。
 
-- Observation: Guide、Cron、Components 这类页面虽然内容还没完全脱离 Arco，但先统一到 `ContentPageFrame` 依然是低风险高收益，因为它能先冻结页面宽度和外层滚动语义。
-  Evidence: `src/features/guide/GuidePage.tsx`、`src/features/cron/CronPage.tsx`、`src/features/test/ComponentsShowcasePage.tsx` 已切到 `ContentPageFrame`，且双 smoke 继续通过，说明“先收内容骨架、后换内部组件”是可行路径。
+- Observation: 旧 `src/components/layout/MainLayout.tsx` 已不再被运行时路由引用，只有 layout barrel re-export 仍指向它，因此可以低风险地去掉 `ArcoLayout` 实现。
+  Evidence: 全仓搜索 `MainLayout` 只命中 `src/components/layout/MainLayout.tsx` 自身与 `src/components/layout/index.ts` 导出，没有其它运行时调用点。
 
-- Observation: 登录页不能继续沿用旧 `.login-page` 全局样式名，否则旧 `app-shell.css` 会把新的 `FormPageFrame` 又拉回历史布局语义。
-  Evidence: 本轮 `src/features/auth/LoginPage.tsx` 改为直接吃 `FormPageFrame` 的 Tailwind 结构，而没有复用旧 `.login-page__card` / `.login-page__background` 体系；随后 `npm run build` 与双 smoke 全部通过，说明“新 frame + 摘掉旧 page class”是稳定做法。
+- Observation: `src/shared/ui/button.tsx` 收回到 shadcn 默认语义后，当前直接依赖 shared `Button` 的公共层改动面很小，主要只落在 app shell 与 about 更新卡。
+  Evidence: 变更后重新通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`，说明 `S2` 剩余风险已不在公共层协议，而集中到 settings/业务页内部仍在使用 Arco 的组件。
 
-- Observation: 一旦 About 和 Login 开始改用 shared primitives，基础按钮就需要自带 loading 能力；否则每个页面都会重新为“加载中按钮”造一层包装。
-  Evidence: 本轮为 `src/shared/ui/button.tsx` 补上 `loading` prop 后，`src/features/settings/pages/about/components/UpdateCard.tsx` 可以直接复用 shared button 处理更新检查中的禁用与加载反馈，同时保持构建和 smoke 通过。
+- Observation: `npx shadcn@latest add @shadcn/toggle-group @shadcn/alert-dialog` 在当前仓库里不会只新增目标组件，而会因为 registry 依赖链触发 `button.tsx` 覆盖确认，从而中断非交互式执行。
+  Evidence: CLI 输出提示 `The file button.tsx already exists. Would you like to overwrite?`，随后没有生成 `src/shared/ui/alert-dialog.tsx` 与 `src/shared/ui/toggle-group.tsx`。
+
+- Observation: `S3` 第一批 settings 替换后的 desktop smoke 并不是功能回归，而是 WDIO 仍在使用旧 Gemini Modal 的 Arco 选择器。
+  Evidence: `tmp/s3-desktop.log` 显示失败点为 `.settings-gemini-page__auth-modal .arco-modal-footer .arco-btn-primary`；在新的 shadcn `Dialog` 上补回兼容 class hooks 后，`npm run e2e:debug:desktop` 重新通过。
+
+- Observation: `S3` 第二批 settings 替换完成后，desktop smoke 的新阻塞不是业务逻辑错误，而是 WebView2 + WDIO 在 shadcn `Sheet` 的 footer 按钮动画期间频繁返回 `element not interactable`。
+  Evidence: `tmp/desktop-current.log` 中，`[data-testid="agent-assistant-cancel"]` 多次报 `element not interactable`；将 Agent `Sheet` 补上稳定 `data-testid` 并把 `settings-flow.mjs` 的 `clickElement` 改为原生 click 失败后统一退回 DOM `node.click()` 后，`npm run e2e:debug:desktop` 与 `npm run e2e:debug:responsive` 均恢复通过。
+
+- Observation: `S4` 页面完成组件替换后，运行时代码中的 Arco import 已经清零，剩余旧体系全部集中在样式入口、兼容 class hooks 和依赖声明层。
+  Evidence: 对 `src/**/*.ts(x)` 的全文搜索只剩 `src/main.tsx` 中的 `virtual:uno.css`；`@arco-design/web-react` 与 `@arco-design/color` 已不再出现在任何运行时代码 import 中。
+
+- Observation: `S5` 真正执行时，旧体系残留已经只存在于依赖和入口声明层，运行时代码与 smoke helpers 本身不再需要任何 `.arco-*` 或 UnoCSS 兼容钩子。
+  Evidence: 删除依赖并重建锁文件后，对 `src`、`e2e-tests`、`package.json`、`package-lock.json`、`vite.config.ts`、`src/main.tsx`、`src/styles/global.css`、`src/styles/themes/base.css`、`src/theme/theme.ts` 的 `@arco-design|virtual:uno.css|arco-|arco-theme|unocss` 搜索结果为 0。
 
 ## Decision Log
 
-- Decision: 本次重构采用“一次性切换”的交付策略，而不是长期新旧并存。
-  Rationale: 用户已明确要求“一次性推倒重来”。我们允许开发分阶段提交代码，但不允许在最终交付中长期保留面向用户的新旧 UI 双轨。
-  Date/Author: 2026-03-18 / Codex
+- Decision: 本次迁移继续采用“分阶段执行，但最终一次性交付完全切换”的策略。
+  Rationale: 用户要求完整切换到 `shadcn/ui`，同时要求每阶段必须可执行、可验证、可追踪，因此允许中间态存在于工作树中，但不允许以中间态作为最终结果。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: 保留 `Tauri 2 + React 19 + Vite 7 + React Router 7` 作为运行时与路由框架，不重写成 Next.js 或其他 SSR 架构。
-  Rationale: 当前项目是桌面端 Tauri 应用，已有稳定的 typed invoke、桌面 smoke 和 hash router；这些不是设计系统问题，不应在这次视觉与交互重构中一起替换。
-  Date/Author: 2026-03-18 / Codex
+- Decision: 每一阶段执行前都必须先使用项目级 `shadcn` skill、shadcn CLI `info/docs` 或 Shadcn MCP 为该阶段设计组件清单和默认 API 方案；任何跳过这一步的阶段都视为未开始。
+  Rationale: 用户明确要求“每阶段执行前，按照约束使用 skills 或 mcp 设计完整阶段方案”，而项目级 AGENTS 也要求前端基础组件优先使用 shadcn 官方能力。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: 新 UI 栈采用 `Tailwind CSS v4 + shadcn/ui + Radix UI + class-variance-authority + tailwind-merge + lucide-react`。
-  Rationale: 这是当前 React + Vite 桌面/后台类应用中最常见、生态最成熟、可塑性最高的一条路线，也与 shadcn 官方的 Vite 初始化和 CSS variables 主题方式一致。
-  Date/Author: 2026-03-18 / Codex
+- Decision: 阶段门槛固定为“先设计阶段方案，再执行，再更新计划，再进入下一阶段”。
+  Rationale: 用户明确要求计划必须及时更新，否则不允许进入下一阶段；因此每个阶段都必须把结果写回本文件和必要的基线文档，再继续推进。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: 表单层采用 `React Hook Form + Zod`，远程或异步数据快照层采用 `TanStack Query`，本地 UI 状态继续保留 `Zustand`。
-  Rationale: 这是目前 React 项目中较常见、边界清晰的组合。表单验证、命令式保存、异步加载和本地窗口状态分别有清晰职责，避免继续把所有状态都塞进手写 hooks。
-  Date/Author: 2026-03-18 / Codex
+- Decision: `S1` 的首要目标不是立刻删除 Arco，而是先把 `src/shared/ui/*` 的官方 primitives 面补齐，并替换首批公共出口，让后续页面迁移有正确的组件落点。
+  Rationale: 当前共享层只有少量组件，若直接逐页迁移，会迫使页面继续自造中间组件或扩大旧封装使用面。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: 目录分层采用“轻量 Feature-Sliced / 领域分层”而不是“纯 components/hooks/utils 按类型分桶”。
-  Rationale: 当前仓库的 settings 模块已经证明 feature-first 边界是有效的。新的全前端结构继续沿用这一思想，但把共享 UI 与页面壳层分出来，降低未来维护成本。
-  Date/Author: 2026-03-18 / Codex
+- Decision: 当前允许保留 `src/components/base/*` 作为过渡出口，但这些文件只能做“指向 shadcn 默认 API 的薄封装或转发”，不能继续定义与 shadcn 默认 API 不一致的新协议。
+  Rationale: 工作树中已有大量引用仍指向 `src/components/base/*`，一次性删除会扩大改动范围；但保留它们的前提是，它们必须不再把旧 API 带入新代码。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: `F:\Work\AionUi` 继续保留为功能与信息架构参考源，但不再作为视觉目标。
-  Rationale: 一次性全前端重构的目标是建立新的 AionX 设计语言，而不是继续追求旧项目外观。
-  Date/Author: 2026-03-18 / Codex
+- Decision: `S1` 阶段新增的共享消息反馈采用 `sonner`，但主题对接方式改为直接读取当前仓库的 `useThemeStore`，而不是引入新的 `next-themes` provider。
+  Rationale: 目标是把消息反馈切到 shadcn 推荐生态，同时不在第一阶段平白引入第二套主题上下文。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: 新增独立蓝图文档 [docs/前端统一重构蓝图.md](C:/Users/Victory/.codex/worktrees/15f7/AionX/docs/前端统一重构蓝图.md) 作为 UI 框架、布局和组件风格的上位规范。
-  Rationale: 用户明确要求“先把基础做好”，而基础约束需要比执行清单更稳定、可长期引用的文档承载。
-  Date/Author: 2026-03-18 / Codex
+- Decision: `S1` 在 smoke 阻塞未解除前不视为完成，不进入 `S2`。
+  Rationale: 用户要求阶段完成后必须更新计划，否则不允许进入下一阶段；当前代码面验证通过，但行为面验证仍被测试环境阻塞，因此必须停留在 `S1`。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: `R-010` 阶段先接入 Tailwind theme variables 与 utilities，不启用 preflight，同时保留 UnoCSS 与 Arco 以保护中间态页面。
-  Rationale: 当前项目仍有大量旧页面依赖 Arco 和既有全局样式，先关闭 preflight 可以让新设计系统地基先落地，再在后续壳层和页面切换时逐步移除旧体系。
-  Date/Author: 2026-03-19 / Codex
+- Decision: `S2` 的公共反馈迁移优先使用 shared `notify` 包装 `sonner`，而不是在每个业务 hook 里直接散落 `toast(...)` 细节。
+  Rationale: 用户要求优先使用 shadcn 官方能力，但当前仓库已有大量 `Message.success/error/info/warning` 调用；用 shared `notify` 先保持调用语义稳定，再逐步收敛到官方 `sonner` 能显著降低改动面，同时不会把 Arco API 留在运行时代码里。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: `R-011` 的第一刀先做“共享 app shell 替换”，而不是立刻重写 Guide、Conversation 或 Settings 的页面内容。
-  Rationale: 新壳层是所有页面都会复用的地基。先把 `AppFrame` 接到所有受保护路由上，可以在不动功能层和大部分页面内容的前提下，尽早冻结标题栏、侧栏、移动端抽屉和内容画布语义，减少后续页面改造返工。
-  Date/Author: 2026-03-19 / Codex
+- Decision: `S2` 的组件展示页改为展示 shadcn 官方组件组合，而不是保留 Arco 组件名的一一映射。
+  Rationale: 用户要求的是完整切换到 shadcn/ui 体系，不是保留一套 Arco 语义壳后只换皮；因此 `ComponentsShowcasePage` 应该直接成为 shadcn 组合方式的示例页，用 `Accordion / Tabs / Dialog / Badge / sonner` 取代 `Collapse / Steps / Modal / Tag / Message`。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: `AppFrame` 与 `SettingsLayout` 必须保持平级工作区；共享的是 `Sidebar` primitives，不是同一个外层 shell。
-  Rationale: 用户已明确指出首页导航栏和设置页导航栏应该是平级关系。`AppSidebar`、`SettingsNav`、`SettingsBackLink`、`SettingsMobileTabs` 可以复用 `src/shared/ui/sidebar.tsx`，但 `/settings/*` 不能继续作为 `AppFrame` 的子路由存在，否则信息架构会错位。
-  Date/Author: 2026-03-19 / Codex
+- Decision: `S3` 的 settings 迁移先处理 `display + system + extension + gemini` 这组低耦合页面，再处理 `agent + model + tools + webui` 这组包含抽屉、弹窗、确认动作和更复杂列表的页面。
+  Rationale: 前一组主要覆盖 `Input / Switch / Slider / Alert / Badge` 等单页组件族，风险更低，能够先把 shadcn 表单与状态展示稳定下来；后一组则需要同时处理 `Sheet / Dialog / AlertDialog / Select / Badge / Button` 的复杂组合，适合在公共协议已经稳定后集中处理。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: `R-011` 的第二刀先抽“内层 frame”，并在 settings 内继续保留旧 class 语义，而不是立刻删除 `app-shell.css` 或直接重写单页视觉。
-  Rationale: 当前真正缺的是共享结构语义，而不是某一页单独的样式微调。先把 `SettingsFrame`、`ConversationFrame`、`ContentPageFrame` 抽出来，可以在不破坏 settings/chat 现有功能和 smoke 选择器的前提下，给后续 `FormPageFrame` 与页面 primitives 铺路。
-  Date/Author: 2026-03-19 / Codex
+- Decision: `S3` 第一批 settings 替换中，界面主题二选一必须改用官方 `ToggleGroup`，系统目录修改确认必须改用官方 `AlertDialog`，而不是继续保留自定义按钮组选中态或 `window.confirm`。
+  Rationale: 项目级 `shadcn` skill 明确要求 2–7 个选项优先使用 `ToggleGroup`，确认动作优先使用官方弹层组合；继续保留自定义交互壳会违背“先回到 shadcn 默认 API，再做定制”的迁移目标。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: `R-011` 的第三刀优先让 `FormPageFrame + PageHeader/PageSection` 在 Login 和 About 上真实跑起来，而不是继续扩大到整页组件大迁移。
-  Rationale: `/login` 和 `settings/about` 都属于窄栏页，结构最适合作为新页面 primitive 的首批落点；同时它们能覆盖“路由独立页”和“settings 内嵌页”两类场景，一旦跑通，后续迁移其余 simple pages 就不需要再猜这些 primitive 是否够用。
-  Date/Author: 2026-03-19 / Codex
+- Decision: 对仍由 smoke 使用的 Gemini 登录弹窗 DOM 钩子，暂时保留 `.settings-gemini-page__auth-modal .arco-modal-footer .arco-btn-primary` 这类兼容 class，但底层实现保持为 shadcn `Dialog + Button`。
+  Rationale: 用户要求遇到阻塞要自动修复并继续推进；当前阻塞来自测试选择器而不是组件实现。保留兼容 class 可以在不回退到 Arco 的前提下立即恢复回归链路，后续在统一整理 e2e 选择器时再移除。
+  Date/Author: 2026-03-21 / Codex
 
-- Decision: 从这一轮开始，settings 收敛优先以“真实 Tauri 截图工件 + 共享 layout/component tokens”驱动，而不是继续在 `app-shell.css` 上做无工件支撑的盲调。
-  Rationale: 用户已明确要求“可以的话请自动化处理每个页面”。本轮串行刷新 desktop / responsive visual audit 后，已经能直接从 `tmp/settings-parity/` 判断侧栏密度、内容宽度和 `tools / webui / about` 的页面内节奏，因此后续继续收敛时应先刷新工件，再改共享值或页面局部。
-  Date/Author: 2026-03-19 / Codex
+- Decision: 对第二批 settings 中已迁到 shadcn `Sheet/Dialog` 的交互，优先补稳定 `data-testid` 并在 WDIO helper 层统一使用 DOM click fallback，而不是为了适配 WebView2 点击抖动回退到旧 Arco 弹层结构。
+  Rationale: 本轮失败发生在 shadcn `Sheet` footer 按钮的可交互时机上，而不是组件 API 或状态逻辑本身。把稳态钩子和 click fallback 收口到测试辅助层，既能保持 shadcn 默认组合不回退，又能继续满足用户“自动修复阻塞进入下一阶段”的要求。
+  Date/Author: 2026-03-21 / Codex
+
+- Decision: `S4` 的聊天页、Guide 页和 Cron 页不再保留旧的自定义按钮/标签/选项组语义壳，而是直接回到 shadcn `Tabs / ToggleGroup / Badge / Card / Switch / Alert` 组合，再用项目 className 做视觉定制。
+  Rationale: 用户要求“即便现在有类似的，也必须使用 shadcn 默认 API 再自定义”。因此 `S4` 不能只把 Arco 标签和按钮替换成样式近似的普通 `div/button`，而必须把聊天页预览 Tabs、Guide Agent 选择和 Cron 卡片状态这些高频原语全部切回官方组合。
+  Date/Author: 2026-03-21 / Codex
+
+- Decision: `S5` 先用 `npm uninstall` 重建 `package.json` 与 `package-lock.json`，再以全文搜索和四项串行验证确认清理完成，而不是手动裁剪锁文件或只做静态删除。
+  Rationale: 用户要求自动修复阻塞并连续推进到完成；依赖层清理如果只手改声明而不让 npm 回写锁文件，很容易留下假阳性的旧依赖或错过传递依赖变化。先让包管理器收口，再用搜索和 smoke 双重验证，能最稳妥地证明旧体系已经真正退出运行链路。
+  Date/Author: 2026-03-21 / Codex
 
 ## Outcomes & Retrospective
 
-2026-03-18 的阶段性结果是：我们已经把此前“设置页高保真复刻”的任务正式收束为历史基线，并把新的全前端一次性重构目标写成了可执行计划。当前最大的价值不是已经改了多少页面，而是已经冻结了三个关键前提：采用哪条行业常见技术栈、采用什么目录结构、采用什么布局和组件语言。
-
-2026-03-19 的阶段性结果是：`R-010` 的首轮地基已经真实落地。现在项目已经具备 Tailwind v4、`components.json`、新 `ThemeProvider`/`QueryProvider`、`cn()`、首批 `shared/ui` primitives 和新的 token/theme 入口，而且这些变更没有破坏构建、Tauri 检查和双 smoke。下一阶段的重点不再是“把基础接起来”，而是开始 `R-011` 壳层重建，并逐步让新页面真正使用这些基础能力。
-
-2026-03-19 09:08 +08:00 的阶段性结果是：`R-011` 已经从“蓝图描述”进入“真实运行中的新壳层”。现在登录后的主工作区路径已经统一挂到新的 `AppFrame`，共享标题栏和侧栏由 `src/widgets/app-frame/*` 承载，验证链路仍然保持通过。随后经过 2026-03-19 11:06 +08:00 的纠偏，`/settings/*` 已从 `AppFrame` 子路由提升回平级独立 shell；因此下一阶段的重点不再是把 settings 并入首页壳层，而是让两个平级工作区共享同一套导航组件语言和页面 primitives。
-
-2026-03-19 09:26 +08:00 的阶段性结果是：`R-011` 的“内层 frame 抽取”也已经进入真实运行态。现在 settings、chat 和 simple content pages 不再各自持有一套匿名外壳，而是分别通过 `SettingsFrame`、`ConversationFrame`、`ContentPageFrame` 吃统一结构语义，同时所有现有验证仍保持通过。下一阶段的重点因此进一步收窄为两件事：补上 `FormPageFrame`，以及把 `PageHeader`、`PageSection` 这类共享页面 primitive 提炼出来，让 `/login`、`settings/about` 等窄栏页也脱离页面私有壳层。
-
-2026-03-19 09:38 +08:00 的阶段性结果是：`R-011` 已经从“共享壳层”进一步推进到了“共享页面语义”。现在 `FormPageFrame`、`PageHeader`、`PageSection` 已经不是蓝图里的概念，而是实际运行在 `/login` 与 `settings/about` 上的组件；Guide / Cron / Components 也已经开始复用同一套页头语义。下一阶段的重点因此从“发明页面 primitive”切换为“扩大覆盖面并削减旧 page-only CSS”。
-
-2026-03-19 11:52 +08:00 的阶段性结果是：settings 的“共享壳层”和“逐页页面感受”终于被一轮真实工件串起来了。现在 `src/shared/ui/sidebar.tsx` 的 settings 变体、`src/styles/app-shell.css` 中的 settings content width tokens，以及 `webui / tools / about` 三页的局部容器节奏都已经按真实截图重新收口，并重新通过 `build + desktop smoke + responsive smoke + direct visual audit`。下一阶段的重点将不再是继续微调这三页，而是把同一套 shared page/component primitives 扩展到更多设置页内部，逐步削减剩余的旧 Arco page-only 结构。
+- (2026-03-21 00:16 +08:00) 已完成新的主计划重建，并把阶段设计门槛写入根文档。原来的整站重构计划虽然记录了壳层迁移进展，但还没有把“必须完整切换到 shadcn 默认 API”写成执行门槛；本次重写后，下一位执行者只看这一份文件就能知道为什么不能继续保留 Arco 兼容层，也能知道每一阶段开始前必须先做什么。
+- (2026-03-21 00:32 +08:00) `S1` 已经完成共享组件面补齐和首批真实调用点替换，并通过了 `npm run build` 与 `cargo check`。目前还不能宣布阶段完成，因为 WDIO 的 EdgeDriver 自动下载失败，导致 smoke 没法证明真实页面链路；但这次更新已经把代码面成果、已知阻塞和下一步限制写清楚，避免下一位执行者误以为可以直接跳到 `S2`。
+- (2026-03-21 01:04 +08:00) `S1` 已正式闭环，`S2` 也已完成第一批公共反馈切换。`wdio.conf.mjs` 现在能够自愈 `msedgedriver` 和 `tauri-driver` 缺失，`desktop + responsive` smoke 已重新通过；与此同时，运行时 toast 已开始统一收口到 shared `notify`，settings/common `Alert` 也开始改用 shadcn `Alert`。当前还不能进入 `S3`，因为公共层仍残留 `ComponentsShowcasePage`、`components/layout/*` 和 `components/base/*` 这批 Arco/旧协议入口。
+- (2026-03-21 01:14 +08:00) `S2` 已继续推进到公共层 UI 清理阶段：`components/layout/*` 与 `ComponentsShowcasePage` 的 Arco 入口已移除，遗留的 `features/settings/components/SettingsPage.tsx` 也已切到 shared `Card`。最新全仓搜索显示，剩余 Arco 依赖已集中到聊天页、Cron/Guide 页面和 settings 功能组件，说明公共层 Arco 面基本清空。`S2` 还不能宣布完成，因为 shared `Button` 仍暴露 `primary` / `loading` 这类偏离 shadcn 默认 API 的协议，需要在进入 `S3` 前继续收口。
+- (2026-03-21 01:27 +08:00) `S2` 已正式完成。shared `Button` 现已回到 shadcn 默认 API，公共层不再依赖自定义 `primary/loading` 协议；重新跑完 `build + cargo check + desktop smoke + responsive smoke` 后，剩余 Arco 依赖已经完全收缩到 settings 组件页与聊天/Cron/Guide 等业务页。接下来可以按 `S3` 顺序开始 settings 组件族批量替换。
+- (2026-03-21 18:34 +08:00) `S3` 已正式完成。`agent / model / tools / webui` 这批包含 `Sheet / Dialog / AlertDialog / Tabs / Select` 的高交互 settings 页面已经完全脱离 Arco，且 `src/features/settings/**/*` 对 `@arco-design/web-react` 的全文搜索结果为 0；重新串行通过 `cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive` 后，settings 已满足“运行时代码中的 Arco 依赖压缩到 0”的阶段门槛。当前可按计划进入 `S4`，继续清理聊天页、Guide 页和 Cron 页中的剩余 Arco 入口。
+- (2026-03-21 01:49 +08:00) `S3` 第一批 settings 页面已经闭环。`display + system + extension + gemini` 现在都改用 shadcn `Accordion / ToggleGroup / AlertDialog / Dialog / Select / Switch / Slider / Badge / Input / Textarea` 组合，且这几组页面的运行时代码已不再直接导入 Arco。期间新增的阻塞只有两个：shadcn CLI 在新增 `toggle-group/alert-dialog` 时误触 `button.tsx` 覆盖确认，以及 Gemini desktop smoke 仍依赖旧 Arco modal 选择器；两者都已在不回退 Arco 的前提下修复。接下来可以继续推进 `agent + model + tools + webui`。
+- (2026-03-21 03:10 +08:00) `S4` 已完成 settings 外主页面切换：聊天页补回 `ChatTabs` 并把 Header / Preview / Error / Toolbar 全部换成 shadcn `Tabs / Badge / Button / Alert` 组合，Guide 页把 Agent 选择与输入入口改成 `ToggleGroup / Select / Textarea / Card`，Cron 页改成 `Card / Switch / Badge`。随后重新串行通过 `build + cargo check + desktop smoke + responsive smoke`，说明 `S5` 已不再需要关心业务页组件回退，而只需要清理旧依赖和旧样式入口。
+- (2026-03-21 03:15 +08:00) `S5` 已正式完成，整份执行计划达到“完整切换到 shadcn/ui 体系并移除 Arco 与 UnoCSS”的目标。`package.json` 与 `package-lock.json` 中的 `@arco-design/*`、`@unocss/*` 已清空，`src/main.tsx`、`src/styles/global.css`、`vite.config.ts`、`src/styles/themes/base.css`、`src/theme/theme.ts` 等旧入口也已移除或改写；最终再次串行通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`。当前剩余的非阻塞问题只有 Rust 侧既有 warning，与本次组件体系迁移无直接关系。
 
 ## Context and Orientation
 
-当前应用的运行时基础已经比较清晰。入口在 `src/main.tsx`，应用本体在 `src/App.tsx`，主路由在 `src/router.tsx`。当前主路径包括：
+当前仓库是一个 `Tauri 2 + React 19 + Vite 7 + React Router 7` 桌面应用。入口在 `src/main.tsx`，应用本体在 `src/App.tsx`，主路由在 `src/router.tsx`。现有路由已经完成新的壳层切片：主工作区通过 `src/app/layouts/AppFrame.tsx` 承载，会话页和内容页已接入 `src/app/layouts/ConversationFrame.tsx` 与 `src/app/layouts/ContentPageFrame.tsx`，设置页通过 `src/features/settings/layout/SettingsLayout.tsx` 挂在独立的 `src/app/layouts/SettingsFrame.tsx` 下。也就是说，壳层基础已经存在，当前任务重点是让页面内部组件体系跟上。
 
-- `/login`
-- `/guid`
-- `/cron`
-- `/conversation/:id`
-- `/settings/gemini`
-- `/settings/model`
-- `/settings/agent`
-- `/settings/display`
-- `/settings/webui`
-- `/settings/system`
-- `/settings/tools`
-- `/settings/about`
-- `/settings/ext/:tabId`
+`shadcn/ui` 在本仓库里的落点是 `src/shared/ui/*`。这是由 `components.json` 指向的本地组件代码目录，当前 alias 为 `@/shared/ui`、`@/shared/lib`、`@/shared/hooks`。这里的组件不是运行时外部依赖，而是生成到仓库里的源码，因此任何“切换到 shadcn/ui”都必须体现为对 `src/shared/ui/*` 的补齐、修正和落地使用。
 
-当前仓库正处于“新旧 UI 并存但由新计划接管”的过渡阶段。新的地基已经落在 `src/shared/` 与 `src/app/providers/`：`package.json` 已引入 `tailwindcss`、`@tailwindcss/vite`、`class-variance-authority`、`clsx`、`tailwind-merge`、`lucide-react`、`react-hook-form`、`zod`、`@tanstack/react-query`，并且仓库根目录已经存在 `components.json`。同时，运行中的登录后壳层入口已经从旧 `src/components/layout/MainLayout.tsx` 切换到新的 [src/app/layouts/AppFrame.tsx](C:/Users/Victory/.codex/worktrees/15f7/AionX/src/app/layouts/AppFrame.tsx)，对应的侧栏与标题栏位于 [src/widgets/app-frame/AppSidebar.tsx](C:/Users/Victory/.codex/worktrees/15f7/AionX/src/widgets/app-frame/AppSidebar.tsx) 与 [src/widgets/app-frame/AppTitlebar.tsx](C:/Users/Victory/.codex/worktrees/15f7/AionX/src/widgets/app-frame/AppTitlebar.tsx)。
+当前最需要记住的现实状态有四点。第一，`src/shared/ui/*` 只安装了 `badge`、`button`、`card`、`input`、`label`、`separator`、`sidebar`、`textarea`，远不足以覆盖运行中页面。第二，`package.json` 仍包含 `@arco-design/web-react`、`@arco-design/color` 和 `@unocss/*`。第三，`src/main.tsx` 仍导入 `virtual:uno.css`，`src/styles/global.css` 仍引入 Arco 样式入口。第四，大量页面和 hooks 仍直接依赖 Arco，例如 `src/features/chat/*`、`src/features/guide/GuidePage.tsx`、`src/features/cron/CronPage.tsx`、`src/features/settings/pages/**/*`、`src/components/ui/LanguageSwitcher.tsx`。
 
-但大部分页面内容层仍然是旧体系，因此当前真实状态仍是“Tailwind/shadcn 地基 + Arco 页面内容”的中间态。主要证据如下：
+“默认 API”在本计划里的含义是：以 shadcn 官方组件和官方组合方式为起点。举例来说，按钮使用 `Button` 的官方 `variant` 与 `size` 思路，对话框使用 `Dialog`、`DialogTrigger`、`DialogContent`、`DialogHeader`、`DialogTitle` 的组合，抽屉使用 `Sheet` 的默认结构，提示使用 `Tooltip` 的默认 Provider 和 Trigger 结构，选择器使用 shadcn `Select` 及其 `SelectTrigger`、`SelectContent`、`SelectItem` 组合。只有在官方默认 API 接入后，才允许在 `src/shared/ui/*` 或更高层语义组件中增加项目定制样式。不得为了兼容历史调用点先设计一套非官方 props，再把样式做成“像 shadcn”的样子。
 
-- `src/styles/global.css` 仍同时引入了 `src/shared/styles/globals.css`、Arco 样式、旧主题系统、Arco 覆盖和 `app-shell.css`。
-- `src/styles/app-shell.css` 仍集中承载聊天页、设置页、登录页、引导页等多个页面的布局和组件规则。
-- `src/components/base/Button.tsx`、`src/components/base/Card.tsx`、`src/components/base/Input.tsx` 以及大量页面仍继续依赖 Arco 组件。
-- `src/components/layout/*` 旧壳层文件仍保留在仓库里，供过渡阶段对照和后续清理，但主路由已经不再从它们挂接。
+## Milestones
 
-“shadcn/ui”在本计划里指的是一套基于 Radix primitives 和 Tailwind CSS 的本地组件代码分发方式，而不是运行时组件库。它的典型落地方式是：初始化 `components.json`，建立一个全局 CSS 入口和 alias，然后把基础按钮、输入框、下拉菜单、Dialog、Tabs 等组件代码生成到仓库里，由项目自己维护。
+### S1：补齐 shared shadcn primitives 并接管首批公共出口
 
-“一次性重构”在本计划里的准确含义是：可以在当前工作树中分里程碑逐步写代码，但最终交付前不能保留“用户一半页面是旧 Arco 样式，一半页面是新 shadcn 样式”的长期混合态。换句话说，开发过程允许中间态，产品交付不允许中间态。
+这一阶段结束后，`src/shared/ui/*` 将不再只是少量基础件，而会具备当前页面马上能用到的 `select`、`switch`、`dialog`、`sheet`、`tabs`、`tooltip`、`alert`、`dropdown-menu`、`popover`、`scroll-area`、`table`、`sonner`、`skeleton` 等官方组件。与此同时，至少一组真实运行中的公共调用点会从 Arco 切到 shadcn，例如 `src/components/ui/LanguageSwitcher.tsx`、`src/features/settings/components/SettingsField.tsx`、`src/features/settings/pages/about/page.tsx`、`src/features/settings/pages/about/components/UpdateCard.tsx`。这一阶段的验证标准是：这些文件不再直接导入 Arco 基础组件，并且构建通过。
 
-本计划之外，还必须同时遵守 [docs/前端统一重构蓝图.md](C:/Users/Victory/.codex/worktrees/15f7/AionX/docs/前端统一重构蓝图.md) 中冻结的上位设计约束。那份蓝图文档定义的是“应该长成什么样”，本计划定义的是“按什么顺序落地”。
+开始执行本阶段前，必须运行 `npx shadcn@latest info --json`、`npx shadcn@latest docs ...` 或使用 Shadcn MCP 查看组件清单与 add 命令，确认要接入的组件确实来自官方 registry，且组件组合方式与默认 API 一致。完成本阶段后，必须立即回写本文件的 `Progress`、`Surprises & Discoveries`、`Decision Log` 和 `Outcomes & Retrospective`，然后才能进入 `S2`。
+
+### S2：公共壳层、公共设置组件和消息反馈切换到 shadcn 默认 API
+
+这一阶段的目标是把仍然处在“全局公共层”的 Arco 占用面清掉，包括 `src/components/layout/*` 中仍然存在的 Tooltip 或旧布局引用、`src/components/base/*` 中与默认 API 不一致的旧兼容入口、`src/components/ui/LanguageSwitcher.tsx` 这类所有页面都会触达的公共 UI，以及基于 Arco `Message` 的消息反馈路径。完成后，后续页面迁移将可以直接消费 shadcn 默认组件或基于其默认 API 的薄封装，而不需要继续跨回 Arco。
+
+本阶段开始前，必须再次使用 shadcn `docs` 或 MCP 校验即将接入的对话框、下拉菜单、tooltip、toast、表单组合是否符合官方结构。完成后，必须更新本计划并在必要时同步 `docs/设置页迁移实施清单.md` 中的 settings 基线变化。
+
+### S3：按设置页功能族批量替换表单、弹层和列表原语
+
+这一阶段的目标是把设置页内部仍然占大头的 Arco 用法系统性替换掉。执行顺序固定为：先替换跨页复用的 `src/features/settings/components/*`，再替换每一组页面的表单件、选择器、开关和列表，再替换弹层。建议按功能族推进，而不是按“每页只改一点”的方式推进。推荐切分为：表单输入族、`Select/Switch/Slider` 族、`Dialog/Sheet` 族、确认动作族、状态标签族。这样可以降低 API 返工。
+
+开始本阶段前，必须把该阶段打算使用的官方组件再次通过 shadcn CLI 或 MCP 确认，并在本计划中写清楚当前阶段对应的页面范围和验证命令。完成后，必须更新计划并记录哪一组 settings 页面已经彻底不再直接依赖 Arco。
+
+### S4：完成聊天页、引导页、Cron 页、组件展示页和剩余公共页面的切换
+
+这一阶段会把 settings 之外的剩余主页面从 Arco 切走，包括 `src/features/chat/*`、`src/features/guide/GuidePage.tsx`、`src/features/cron/CronPage.tsx`、`src/features/test/ComponentsShowcasePage.tsx` 以及还残留的辅助组件。执行顺序固定为：先聊天页，再引导页，再 Cron，再组件展示页，因为聊天页和引导页对整体工作区体验影响最大。
+
+开始本阶段前，必须结合 `vercel-react-best-practices` skill 复核高频交互组件的渲染方式，避免在替换组件时引入不必要的重渲染和状态耦合。完成后，必须更新计划并记录哪些主页面已完全不依赖 Arco。
+
+### S5：删除旧体系并完成最终回归
+
+最后一阶段的目标是清除旧依赖和旧样式入口。只有当前面所有阶段都完成、且运行时页面不再直接导入 Arco 时，才允许删除 `package.json` 中的 `@arco-design/web-react`、`@arco-design/color` 与 `@unocss/*`，移除 `uno.config.ts`，删除 `src/main.tsx` 中的 `virtual:uno.css`，清理 `src/styles/global.css` 中的 Arco 样式入口与不再使用的覆盖，最终决定 `src/components/base/*` 是删除还是只保留纯 re-export。
+
+本阶段开始前，必须在计划里明确写出待删入口清单。完成后，必须重新跑构建、Rust 检查、桌面 smoke 和响应式 smoke，并把结果写回计划。
 
 ## Plan of Work
 
-第一阶段是 `R-010`，也就是基础设施切换。当前这一阶段的首轮目标已经完成：`package.json` 已引入 Tailwind CSS v4、Radix/shadcn 常用基础依赖、表单与数据状态依赖；仓库根目录已经新增 `components.json`；`src/styles/global.css` 也已经接到新的 `src/shared/styles/globals.css`。为保护旧页面，这里采用了 Tailwind 官方支持的 `theme.css + utilities.css` 导入方式，只启用 theme variables 和 utilities，暂不启用 preflight。这样新设计系统已经能生成组件、渲染主题并和现有主题状态联动，同时又不会在壳层重写前直接冲击所有旧页面。
+执行顺序固定如下。第一步，完成 `S1`：通过 shadcn CLI 和 MCP 补齐第一批缺失的官方组件，并立即用这些组件替换首批公共调用点。这里必须优先改“共享层”和“公共入口”，因为这样做会为后续所有页面迁移建立正确落点。具体来说，要先把 `src/shared/ui/index.ts` 扩展成真实共享出口，再补 `src/components/ui/LanguageSwitcher.tsx`、`src/features/settings/components/SettingsField.tsx`、`src/features/settings/pages/about/page.tsx`、`src/features/settings/pages/about/components/UpdateCard.tsx` 等公共或低风险文件，让运行中的页面开始真实使用 `Alert`、`Select`、`Switch`、`Toaster` 等 shadcn 官方组件。
 
-第二阶段是 `R-011`，也就是壳层重建。当前前三刀都已落地，并已在本轮补上一个关键纠偏：第一刀用 `src/app/layouts/AppFrame.tsx`、`src/widgets/app-frame/AppSidebar.tsx`、`src/widgets/app-frame/AppTitlebar.tsx` 和 `src/widgets/app-frame/app-shell-meta.ts` 替换了主工作区路由的旧 `MainLayout` 挂接方式；第二刀新增了 `src/app/layouts/ContentPageFrame.tsx`、`src/app/layouts/SettingsFrame.tsx` 与 `src/app/layouts/ConversationFrame.tsx`，把 settings/chat/simple pages 的内层结构收进共享 frame；第三刀新增了 `src/app/layouts/FormPageFrame.tsx` 与 `src/shared/ui/page.tsx`，让 `/login` 与 `settings/about` 开始吃统一页面语义；而本轮进一步确认 `src/router.tsx` 中 `AppFrame` 与 `settingsRoutes` 必须保持平级，只共享 `src/shared/ui/sidebar.tsx` 这套导航 primitives。接下来的重点不再是“先把 frame 生出来”，而是扩大这些 primitives 的覆盖面，并继续剥离旧的 page-only CSS。
+第二步，完成 `S2`：收口公共层协议。这个阶段要做的不是“再多加几个组件文件”，而是让 `src/components/base/*` 不再承担旧 Arco 风格的 API 兼容。若这些文件继续保留，则它们必须是指向 shadcn 默认 API 的薄封装，同时清理 `src/components/layout/*` 和其它公共组件中残留的 Arco Tooltip、Message、Modal 等基础依赖。必要时把 `src/shared/ui/button.tsx`、`src/shared/ui/card.tsx` 等已经产生偏离默认 API 的组件逐步收口回更接近官方的接口，再把项目定制移到更高层语义组件中。
 
-第三阶段是 `R-012`，也就是共享组件重建。先生成和封装基础 primitives：`Button`、`Input`、`Textarea`、`Select`、`Switch`、`Tabs`、`Dialog`、`Sheet`、`DropdownMenu`、`Popover`、`Tooltip`、`Command`、`Table`、`ScrollArea`、`Separator`、`Badge`、`Alert`、`Skeleton`。然后在 `shared/ui` 上层新增语义化组件：`PrimaryAction`、`SectionCard`、`FieldRow`、`PageToolbar`、`EmptyState`、`StatusBadge`、`IconButton`。此阶段完成后，新页面不应再直接依赖 Arco 基础组件。
+第三步，完成 `S3`：系统替换 settings 内部原语。由于 settings 现在已经拥有稳定壳层和功能基线，本阶段要利用这一稳定性，把输入、选择器、开关、提示、抽屉、对话框、状态展示和列表容器按组件族替换掉，而不是再用页面定制样式掩盖旧依赖。每替换完一组，都要立即更新计划并记录已覆盖的页面范围。
 
-第四阶段是 `R-013`，也就是页面一次性重写。顺序固定如下：先改登录页和引导页，因为这两类页面最能快速建立新视觉语言；再改聊天页与主工作区，因为它们定义整个产品的主壳层；接着整体重写设置页，因为设置页已经具备稳定功能基线，适合迁到新表单和卡片体系；最后改 cron 和组件展示页等非核心路径。执行中允许先保留旧 API 和旧 hooks，只替换展示层、表单层和布局层。
+第四步，完成 `S4`：把 settings 外的页面内容层也切到新体系。先聊天页，再引导页，再 Cron，再组件展示页。因为这几个页面会继续复用 `PageHeader`、`PageSection`、`Sidebar`、`Dialog`、`Sheet`、`Select`、`Button`、`Badge` 等共享组件，所以前面几步必须已经把共享层和公共层收稳。
 
-第五阶段是 `R-014`，也就是旧体系删除与回归。只有当所有主路径都已切到新 UI，才允许从 `package.json` 移除 `@arco-design/web-react` 与 UnoCSS 相关依赖，删除 `src/components/base/*`、主要 Arco override、旧的 `app-shell.css` 冗余段和不再使用的旧类名。然后统一修正 smoke 选择器与视觉审计脚本，确认桌面与响应式路径都通过。
+第五步，完成 `S5`：删除旧体系并跑最终回归。这里的关键不是删除动作本身，而是确认删除后没有任何页面因为缺少 Arco 或 UnoCSS 样式而失效。只有在 `Select-String` 或等价全文搜索证明运行时代码不再直接导入 Arco 后，才能删除依赖和入口。
 
 ## Concrete Steps
 
-本轮之后的执行顺序必须严格按下面的工作流推进。
+下面的命令必须在仓库根目录 `E:\Work\AionX` 执行，且桌面 smoke、响应式 smoke 与任何 visual audit 必须串行执行。
 
-1. 在仓库根目录执行依赖安装与基础初始化。
+第一阶段开始前，用 shadcn CLI 和 MCP 设计组件清单。
 
-   工作目录：`C:\Users\Victory\.codex\worktrees\15f7\AionX`
+    npx shadcn@latest info --json
+    npx shadcn@latest docs select switch dialog sheet tabs tooltip alert dropdown-menu popover scroll-area table sonner skeleton
 
-   建议命令：
+如果需要重新确认 registry 项和 add 命令，使用 Shadcn MCP 获取：
 
-       npm install tailwindcss @tailwindcss/vite class-variance-authority clsx tailwind-merge lucide-react react-hook-form @hookform/resolvers zod @tanstack/react-query
-       npx shadcn@latest init -t vite
+    get_project_registries
+    view_items_in_registries
+    get_add_command_for_items
 
-   预期结果：仓库出现 `components.json`，并具备新的全局 CSS 入口与基础 alias。
+第一阶段执行时，优先使用官方 add 命令把组件源码写入 `src/shared/ui/*`：
 
-2. 建立新的共享目录和核心文件。
+    npx shadcn@latest add @shadcn/select @shadcn/switch @shadcn/dialog @shadcn/sheet @shadcn/tabs @shadcn/tooltip @shadcn/alert @shadcn/dropdown-menu @shadcn/popover @shadcn/scroll-area @shadcn/table @shadcn/sonner @shadcn/skeleton
 
-   必须新增或重构以下路径：
-
-   - `src/app/providers/`
-   - `src/app/layouts/`
-   - `src/shared/ui/`
-   - `src/shared/lib/cn.ts`
-   - `src/shared/styles/globals.css`
-   - `src/shared/styles/tokens.css`
-   - `src/shared/styles/theme.css`
-   - `src/widgets/`
-
-   预期结果：新的 UI 与样式体系有明确落点，后续页面不再把规则继续堆进 `src/styles/app-shell.css`。
-
-3. 在新 token 体系中定义视觉语言。
-
-   必须定义并落地：
-
-   - 字体：`Geist Sans` 或同级现代无衬线字体，中文回退 `PingFang SC`、`Microsoft YaHei`、`Noto Sans SC` 之一；等宽字体使用 `Geist Mono` 或同级方案。
-   - 颜色：以 graphite 中性色为底，cobalt 作为主强调色，success/warning/destructive 使用语义色，不延续旧的紫色主调。
-   - 半径：`10 / 14 / 18 / 24`
-   - 间距：`4 / 6 / 8 / 12 / 16 / 24 / 32`
-   - 阴影：只保留 `sm / md / lg` 三档，不再让页面各自定义大面积阴影。
-
-4. 实现新的布局框架。
-
-   必须至少提供：
-
-   - `AppFrame`：桌面端 titlebar + 主导航 + 内容画布；移动端 drawer + 顶栏 + 内容画布。
-   - `SettingsFrame`：桌面端二级导航栏 + 内容区；移动端顶栏 + section switcher + 内容区。
-   - `ConversationFrame`：主会话区 + 可折叠侧栏/右侧辅助面板。
-   - `FormPageFrame`：单页表单、窄栏说明页、关于页、登录页的统一宽度语义。
-
-   宽度语义必须统一成固定 tokens，例如：
-
-   - `form = 720px`
-   - `content = 960px`
-   - `wide = 1200px`
-   - `full = 100%`
-
-5. 在页面重写前先补齐共享页面 primitives。
-
-   必须新增一层共享页面语义组件，例如：
-
-   - `PageHeader`：标题、说明、操作区的统一页头
-   - `PageSection`：普通内容区块/卡片容器
-   - `PageGrid` 或等价物：受控的两栏/三栏内容网格
-
-   这些 primitives 的职责是统一内容页和窄栏页的骨架语义，避免后续在 `/guid`、`/cron`、`/test/components`、`/login`、`/settings/about` 中继续复制一套页头和卡片壳层。
-
-6. 一次性重写页面。
-
-   页面重写顺序固定为：
-
-   - `/login`
-   - `/guid`
-   - `/conversation/:id`
-   - `/settings/*`
-   - `/cron`
-   - `/test/components`
-
-   原则是：先重写壳层和共享组件，再重写页面；不要反过来先做页面局部美化。
-
-7. 删除旧体系并完成验收。
-
-   必须清理：
-
-   - `@arco-design/web-react`
-   - `@unocss/*`
-   - `src/components/base/*`
-   - `src/styles/arco-override.css`
-   - `src/styles/app-shell.css` 中已被新体系覆盖的规则
-
-   完成后重新跑构建、Tauri 检查和双 smoke。
-
-## Validation and Acceptance
-
-验收必须同时覆盖“功能不回退”和“设计系统切换完成”。
-
-基础验收命令如下。
-
-工作目录：`C:\Users\Victory\.codex\worktrees\15f7\AionX`
+组件接入后，执行以下验证：
 
     npm run build
+
+若阶段涉及 Tauri 侧或真实页面交互改动，再继续执行：
+
     cargo check
     npm run e2e:debug:desktop
     npm run e2e:debug:responsive
 
-成功标准如下。
+完成本阶段后，必须先更新本文件的 `Progress`、`Surprises & Discoveries`、`Decision Log`、`Outcomes & Retrospective`，并同步必要的 settings 基线文档，然后才能进入下一阶段。
 
-- `npm run build` 通过，说明 TypeScript、Vite 和新的 Tailwind/shadcn 依赖链路正常。
-- `cargo check` 通过，说明前端重构没有误伤 Tauri 侧接口与配置。
-- 桌面 smoke 通过，说明主导航、聊天页、设置页在桌面模式仍然可用。
-- 响应式 smoke 通过，说明移动端或窄屏模式下的新壳层没有破坏导航、返回和表单交互。
-- `package.json` 中不再存在 Arco 和 UnoCSS 依赖，说明设计系统切换真正完成。
-- 至少抽查 `/login`、`/conversation/:id`、`/settings/webui`、`/settings/tools`、`/settings/about` 五类页面，确认主工作区页面已经落到新的 `AppFrame`，settings 页面已经落到平级 `SettingsLayout`，并且它们都复用了新的 `shared/ui` 体系，而不是局部残留旧样式。
+## Validation and Acceptance
+
+每个阶段都必须同时满足“代码面”和“行为面”两个条件。代码面要求该阶段计划中的目标文件不再直接导入对应的 Arco 基础组件。行为面要求至少运行 `npm run build`，并在影响运行时页面时继续运行 `cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`。
+
+`S1` 的验收标准是：`src/shared/ui/*` 中已经新增本阶段计划列出的官方组件源码，`src/components/ui/LanguageSwitcher.tsx`、`src/features/settings/components/SettingsField.tsx`、`src/features/settings/pages/about/page.tsx`、`src/features/settings/pages/about/components/UpdateCard.tsx` 这些首批文件不再直接导入 Arco 基础组件，`npm run build` 与 `cargo check` 通过，并且 smoke 环境阻塞被排除或明确记录。
+
+`S2` 的验收标准是：公共层不再新增 Arco 基础依赖，公共消息反馈已经有 shadcn 对应方案，且 `build + cargo check + desktop smoke + responsive smoke` 通过。
+
+`S3` 和 `S4` 的验收标准是：被记录为“已完成切换”的页面范围中，运行时代码不再直接导入 Arco 基础组件，并通过同样的验证命令。
+
+`S5` 的验收标准是：`package.json` 不再包含 `@arco-design/web-react`、`@arco-design/color` 与 `@unocss/*`；`src/main.tsx` 不再导入 `virtual:uno.css`；`src/styles/global.css` 不再引入 Arco 样式；构建和 smoke 全部通过。
 
 ## Idempotence and Recovery
 
-这次重构的安全策略是“分里程碑提交，但最终一次切换”。如果某一阶段失败，不要回滚整个仓库；应回到最近一个通过 `build + cargo check + e2e` 的提交点继续推进。不要使用 `git reset --hard` 之类的破坏性命令。
+本计划要求所有阶段都可以安全重跑。shadcn CLI 组件 add 命令如果再次执行，可能会覆盖本地文件，因此在对已存在组件做上游同步前必须先审查 diff。若阶段已完成但验证失败，不允许跳到下一阶段，而是必须留在当前阶段修正并更新计划。
 
-依赖层改造时，允许在中间态短暂同时存在旧依赖和新依赖，但不允许删除旧依赖后还没有可运行的新页面。也就是说，删除动作永远发生在替换动作之后，而不是之前。
+不要使用 `git reset --hard`、`git checkout --` 之类的破坏性命令。当前工作树已经存在用户自己的修改，例如 `AGENTS.md`、`src/app/providers/ThemeProvider.tsx`、`src/components/base/*` 等，执行过程中必须在理解现有改动的前提下继续工作，而不是回滚它们。
 
-由于 WebDriver 与 Tauri 调试链路存在端口竞争，`npm run e2e:debug:desktop` 与 `npm run e2e:debug:responsive` 以及任何 direct visual audit 仍然必须串行执行，不能并行。
+若某一步引入了新组件源码但页面改造失败，安全回退方式是只撤销当前阶段自己新增的调用点改动，并保留已加入的 `src/shared/ui/*` 组件源码，以便后续阶段继续复用。若构建失败，优先修正 import、类型或默认 API 组合问题，而不是绕回 Arco。
 
 ## Artifacts and Notes
 
-新的目录架构必须收敛到以下形态。允许个别目录名有微调，但职责不能改变。
+截至 2026-03-21 00:12 +08:00，`npx shadcn@latest info --json` 给出的已安装组件清单为：
 
-    src/
-      app/
-        layouts/
-        providers/
-        router/
-      pages/
-      widgets/
-      features/
-        auth/
-        chat/
-        settings/
-        cron/
-        guide/
-      entities/
-      shared/
-        ui/
-        lib/
-        hooks/
-        styles/
-        config/
+    badge
+    button
+    card
+    input
+    label
+    separator
+    sidebar
+    textarea
 
-新的组件层级必须分成两层。
+截至 2026-03-21 03:12 +08:00，当前确认运行时代码中的 `@arco-design/web-react` / `@arco-design/color` import 已归零；`S5` 开始前仍需删除或重写的旧体系入口包括：
 
-    shared/ui
-      负责 shadcn primitives、通用 variants、基础视觉 token。
-
-    widgets 和 features
-      负责业务语义组件，例如 app sidebar、settings nav、conversation header、tool server card。
-
-新的视觉语言冻结如下。
-
-- 整体气质：桌面工作台，不做消费级彩色卡片拼盘。
-- 主色：cobalt，而不是旧仓库默认的紫色倾向。
-- 背景：大面积 graphite/neutral 分层，卡片通过边框和弱阴影区分层级。
-- 字体：现代无衬线 + 明确中文回退，不继续使用默认系统栈直接裸奔。
-- 动效：保留 page enter、drawer enter、hover elevation 三类有意义动画，不加大量花哨微交互。
+    package.json
+    src/main.tsx
+    src/styles/global.css
+    src/styles/arco-override.css
+    src/styles/app-shell.css
+    src/styles/themes/base.css
+    src/theme/theme.ts
 
 ## Interfaces and Dependencies
 
-必须存在并最终稳定的基础依赖与接口如下。
+在仓库根目录，`components.json` 必须继续指向：
 
-在 `package.json` 中，新增并保留：
+    src/shared/styles/globals.css
+    @/shared/ui
+    @/shared/lib
+    @/shared/hooks
 
-- `tailwindcss`
-- `@tailwindcss/vite`
-- `class-variance-authority`
-- `clsx`
-- `tailwind-merge`
-- `lucide-react`
-- `react-hook-form`
-- `@hookform/resolvers`
-- `zod`
-- `@tanstack/react-query`
-
-在仓库根目录，定义：
-
-    components.json
-
-它必须指向新的全局样式入口和 UI alias，例如：
-
-    {
-      "tailwind": {
-        "css": "src/shared/styles/globals.css",
-        "cssVariables": true
-      },
-      "aliases": {
-        "ui": "@/shared/ui",
-        "lib": "@/shared/lib",
-        "hooks": "@/shared/hooks"
-      }
-    }
-
-在 `src/shared/lib/cn.ts` 中，定义：
-
-    export function cn(...inputs: ClassValue[]): string
-
-它必须基于 `clsx` 与 `tailwind-merge`，作为全项目 className 合并入口。
-
-在 `src/app/providers` 中，必须最终存在：
-
-    ThemeProvider
-    QueryProvider
-
-其中 `ThemeProvider` 负责 light/dark/system 和语义 token 切换，`QueryProvider` 负责 React Query 全局缓存。
-
-在 `src/shared/ui` 中，必须最终存在下列基础组件或等价物：
+在 `src/shared/ui/*` 中，当前阶段必须最终存在并可被页面直接导入的基础组件至少包括：
 
     button
     input
     textarea
     select
     switch
-    tabs
     dialog
     sheet
+    tabs
+    tooltip
+    alert
     dropdown-menu
     popover
-    tooltip
-    separator
     scroll-area
-    badge
-    alert
-    skeleton
-    command
     table
+    sonner
+    skeleton
+    separator
+    badge
+    sidebar
+    card
+    label
 
-变更说明（2026-03-18 17:47 +08:00）：
+在 `src/components/base/*` 中，如果这些文件在过渡期继续保留，则它们的职责必须是“指向 `src/shared/ui/*` 的薄转发层”，不能继续定义新的非官方协议。例如 `Button` 不得继续引入与默认 API 无关的旧 props 名，`Input` 不得继续包装成与 shadcn 组合方式冲突的特殊结构。
 
-本次修订将计划从“设置页迁移与高保真复刻”重置为“全前端 shadcn/Tailwind 一次性重构”。之所以必须整体重写而不是继续在旧计划上微调，是因为用户已经明确给出新的工程目标：不再把设置页当成孤立任务，而是把整个前端设计系统一次性推倒重来。若不把计划整体改写为新的架构蓝图，下一位执行者仍会沿着“保留 Arco、局部改 settings”的旧方向投入时间。
+在 `src/main.tsx` 或应用 provider 树中，最终必须存在面向 shadcn 消息反馈的全局 `Toaster` 出口，以替换 Arco `Message`。
 
-变更说明（2026-03-18 17:59 +08:00）：
+变更说明（2026-03-21 00:16 +08:00）：
 
-本次修订补充了独立的上位蓝图文档 [docs/前端统一重构蓝图.md](C:/Users/Victory/.codex/worktrees/15f7/AionX/docs/前端统一重构蓝图.md)，并把计划重点进一步收束为“先做基础，再做页面”。之所以必须补这一层，是因为用户明确要求重新规划完整统一的 UI 框架、页面整体布局和组件风格；如果这些约束只散落在计划的里程碑里，后续实现会反复回到“先挑一页开改”的低效路径。
+本次修订重建了仓库根目录 `plans.md`，并把任务主线从“整站重构的泛化叙述”收紧为“分阶段完整切换到 shadcn/ui 体系并移除 Arco/UnoCSS”。之所以必须重写，而不是简单恢复旧计划，是因为用户已经进一步收紧了约束：不仅要换视觉体系，还要求所有基础组件必须先回到 shadcn 默认 API，再做项目定制；同时每个阶段开始前都必须先使用 skills 或 MCP 设计阶段方案，阶段完成后必须先更新计划，否则不得进入下一阶段。旧计划没有把这些门槛写成硬约束，因此不足以继续指导当前任务。
 
-变更说明（2026-03-19 08:50 +08:00）：
+变更说明（2026-03-21 00:32 +08:00）：
 
-本次修订记录了 `R-010` 首轮基础设施切换的真实完成态：Tailwind v4、`components.json`、`shared/styles`、`app/providers`、`cn()` 和首批 `shared/ui` primitives 已落地，`ThemeProvider` 现在会同时写入旧体系所需的 `data-theme` 和新体系所需的 `.dark` class，同时为了保护过渡期页面，`src/shared/styles/globals.css` 采用了不含 preflight 的官方导入方式。之所以必须写回计划，是因为后续执行者已经不需要再从“安装 Tailwind”开始，而应直接进入 `R-011` 壳层重建。
+本次修订把 `S1` 的真实执行结果写回计划。当前已经按项目级 `shadcn` skill 与 Shadcn MCP 补齐第一批官方 primitives，并让 `LanguageSwitcher`、`SettingsField` 和 `about` 页首批改用 shadcn 组件，同时接入了 `Toaster`，且 `build + cargo check` 通过。之所以还不能进入 `S2`，是因为 desktop smoke 暴露出的阻塞并不是页面代码回归，而是 WDIO 在 `onPrepare` 中为本机 Edge/WebView2 版本下载 `msedgedriver` 失败；如果不把这一点记录清楚，下一位执行者会误把阶段卡点理解为 UI 代码问题，或者在未完成验证的情况下错误推进到下一阶段。
 
-变更说明（2026-03-19 09:08 +08:00）：
+变更说明（2026-03-21 01:04 +08:00）：
 
-本次修订记录了 `R-011` 的首轮真实落地：`src/router.tsx` 已改为通过 [src/app/layouts/AppFrame.tsx](C:/Users/Victory/.codex/worktrees/15f7/AionX/src/app/layouts/AppFrame.tsx) 承载所有受保护路由，新的侧栏和标题栏位于 `src/widgets/app-frame/`，同时 `src/contexts/LayoutContext.tsx` 与 `src/styles/themes/base.css` 已把侧栏宽度和标题栏高度收回到新 token，`ChatHistory` 也补上了移动端抽屉关闭回调。之所以必须写回计划，是因为下一位执行者已经不该再从“先写 AppFrame”开始，而应直接继续拆内层 frame、迁 simple pages，并最终清理旧 `src/components/layout/*` 的残留。
+本次修订把 `S1` 的验证闭环和 `S2` 的第一批公共反馈切换写回计划。当前 `e2e-tests/webdriverio/wdio.conf.mjs` 已能自动修复 `msedgedriver` 下载与 `tauri-driver` 缺失问题，因此 `npm run e2e:debug:desktop` 与 `npm run e2e:debug:responsive` 已重新串行通过，`S1` 正式完成。同时，运行时 toast 已开始通过 `src/shared/lib/notify.ts` 统一切到 `sonner`，settings/common `Alert` 也已开始改用 shared shadcn `Alert`。之所以必须立即修订，是因为用户明确要求每个阶段或阶段子切片完成后都先更新计划，否则不得继续；如果不把 `S1` 已闭环和 `S2` 当前落点写清楚，下一位执行者会误以为 smoke 仍被环境阻塞，或者误把 `S2` 当成尚未开始。
 
-变更说明（2026-03-19 09:26 +08:00）：
+变更说明（2026-03-21 01:14 +08:00）：
 
-本次修订补记了 `R-011` 第二轮内层 frame 抽取的真实完成态：`src/app/layouts/ContentPageFrame.tsx`、`SettingsFrame.tsx`、`ConversationFrame.tsx` 与 `src/app/layouts/index.ts` 已新增，`src/features/settings/layout/SettingsLayout.tsx`、`src/features/chat/components/ChatLayout.tsx`、`src/features/guide/GuidePage.tsx`、`src/features/cron/CronPage.tsx`、`src/features/test/ComponentsShowcasePage.tsx` 已改为使用新的共享 frame，且 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive` 均重新通过。之所以必须写回计划，是因为下一位执行者已经不该再把“抽 SettingsFrame/ConversationFrame”当作未完成任务，而应直接进入 `FormPageFrame + shared page primitives` 这一更细的下一阶段。
+本次修订把 `S2` 的第二批公共层替换写回计划。当前已按 shadcn 官方组合方式新增 `accordion`，并把 `src/features/test/ComponentsShowcasePage.tsx` 重写为 `Accordion / Badge / Dialog / Tabs + notify` 组成的 shadcn 示例页；同时旧 `components/layout/*` 的 `Arco Layout / Tooltip / icon` 入口也已移除，遗留 `src/features/settings/components/SettingsPage.tsx` 的 `Arco Card` 已切到 shared `Card`。在这轮变更后，最新全仓搜索显示剩余 Arco 依赖已经集中到 settings 功能组件与聊天/Cron/Guide 等业务页，说明公共层 Arco 清理基本完成。之所以仍不直接进入 `S3`，是因为 shared `Button` 及相关 base 转发层还保留了偏离 shadcn 默认 API 的协议，需要先继续收口，才能满足用户“即便现在有类似的，也必须使用 shadcn 默认 API 再自定义”的硬约束。
 
-变更说明（2026-03-19 09:38 +08:00）：
+变更说明（2026-03-21 01:27 +08:00）：
 
-本次修订补记了 `R-011` 第三轮页面 primitive 落地的真实完成态：`src/app/layouts/FormPageFrame.tsx` 与 `src/shared/ui/page.tsx` 已新增，`src/shared/ui/button.tsx` 已补上 loading 态，`src/features/auth/LoginPage.tsx`、`src/features/settings/pages/about/page.tsx`、`src/features/settings/pages/about/components/UpdateCard.tsx` 已迁到新骨架，同时 `src/features/guide/GuidePage.tsx`、`src/features/cron/CronPage.tsx`、`src/features/test/ComponentsShowcasePage.tsx` 已开始复用共享 `PageHeader`。之所以必须写回计划，是因为下一位执行者已经不该再从“是否需要 FormPageFrame/PageHeader”开始讨论，而应直接继续扩大这些 shared page primitives 的覆盖范围，并逐步删除旧页面壳层样式。
+本次修订把 `S2` 的最终协议收口写回计划。当前 `src/shared/ui/button.tsx` 已切回 shadcn 默认 `variant/size` 语义并移除自定义 `loading` prop，相关公共调用点已同步改成官方组合方式；随后重新通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop` 与 `npm run e2e:debug:responsive`，说明公共层已经不再依赖偏离 shadcn 默认 API 的共享按钮协议。之所以必须先更新计划再进入下一阶段，是因为用户明确要求“计划需要及时更新，否则不允许进行下一阶段”；当前只有在把 `S2` 完成状态和 `S3` 的固定执行顺序写清楚之后，后续的 settings 组件族替换才是合规推进。
 
-变更说明（2026-03-19 11:06 +08:00）：
+变更说明（2026-03-21 01:49 +08:00）：
 
-本次修订纠正了一个重要的架构偏差：`/settings/*` 不应继续作为 `AppFrame` 的子路由存在，而应与 `AppFrame` 保持平级工作区；共享的是 `src/shared/ui/sidebar.tsx` 这套导航组件，而不是首页与设置页共用同一个外层壳子。为此，本轮把 `src/router.tsx` 中的 `settingsRoutes` 提升回 `ProtectedOutlet` 下的平级位置，并继续让 `src/features/settings/layout/{SettingsNav,SettingsBackLink,SettingsMobileTabs}.tsx` 共享同一套 `Sidebar*` primitives，同时补回稳定 `data-testid` 锚点，随后再次通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`。之所以必须写回计划，是因为如果不明确记录“共享组件 != 共享壳层”，下一位执行者很容易再次把 settings 错挂回首页 shell。
+本次修订把 `S3` 第一批 settings 页面替换写回计划。当前已按 `shadcn` skill 与 CLI docs 完成 `display + system + extension + gemini` 的 Arco 清理，并补齐 `src/shared/ui/alert-dialog.tsx`、`src/shared/ui/toggle-group.tsx` 作为这一批页面所需的官方 primitives。执行过程中遇到两个新的实际阻塞：一是 shadcn CLI 对 `toggle-group/alert-dialog` 的 add 操作会触发已有 `button.tsx` 的覆盖确认，导致无法直接非交互式生成；二是 desktop smoke 仍通过旧 Arco modal 选择器寻找 Gemini 登录确认按钮。当前已通过 Shadcn registry 源码手动落入缺失组件文件，并在新的 shadcn `Dialog` 上保留最小兼容 class hooks 修复 smoke；随后重新串行通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop` 与 `npm run e2e:debug:responsive`。之所以必须立即修订，是因为用户明确要求每一阶段或阶段子切片完成后先更新计划再继续；只有把 `S3` 当前已完成的页面范围、已知发现和下一批目标写清楚，后续 `agent + model + tools + webui` 的推进才符合约束。
 
-变更说明（2026-03-19 11:52 +08:00）：
+变更说明（2026-03-21 18:34 +08:00）：
 
-本次修订补记了一轮基于真实 Tauri visual audit 的 settings 收敛结果：`src/styles/app-shell.css` 现在真正让 `settings-page--narrow/regular/wide/full` 驱动外层内容宽度，`src/shared/ui/sidebar.tsx` 与 `src/features/settings/layout/{SettingsNav,SettingsBackLink}.tsx` 也进一步收紧了 settings 左侧导航的宽度、字号和按钮高度；同时 `src/features/settings/pages/about/{page,components/UpdateCard}.tsx` 与 `src/styles/app-shell.css` 中的 `webui / tools` 局部样式被重新压回更接近 Codex Desktop 的密度。随后重新串行通过 `npm run build`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`，并刷新 `tmp/settings-parity/desktop/*` 与 `tmp/settings-parity/responsive/*`。之所以必须写回计划，是因为这轮已经把“先看真实页面再统一处理每页”的用户要求落成稳定流程；如果不记录新的 width 语义和工件刷新结果，下一位执行者仍会误以为 settings 外层宽度和截图基线停留在旧状态。
+本次修订把 `S3` 第二批 settings 页面替换正式写回计划。当前 `agent / model / tools / webui` 中的 `Drawer / Modal / Popconfirm / Select / Switch / Tag / Input` 已全部迁到 shadcn 默认 API 组合，且对 `src/features/settings/**/*` 的全文搜索确认不再直接导入 `@arco-design/web-react`。执行过程中出现的新阻塞是 WebView2 + WDIO 对 shadcn `Sheet` footer 按钮的点击时机非常敏感，`agent-assistant-cancel` 会反复报 `element not interactable`；当前已通过给 Agent 编辑器补稳定 `data-testid`，并把 `settings-flow.mjs` 的 `clickElement` 收口到“原生 click 失败就走 DOM click fallback”的统一策略修复该问题，随后重新串行通过 `cargo check`、`npm run e2e:debug:desktop` 与 `npm run e2e:debug:responsive`。之所以必须立即修订，是因为用户要求阶段完成后先更新计划再进入下一阶段；只有先把 settings 已全部切出 Arco、以及新的 smoke 兼容策略写清楚，`S4` 才能在合规状态下开始。
+
+变更说明（2026-03-21 03:12 +08:00）：
+
+本次修订把 `S4` 的业务页切换和 `S5` 的待删入口预检写回计划。当前 `chat / guide / cron` 中涉及的 `Tabs / Badge / Button / Alert / ToggleGroup / Select / Textarea / Card / Switch` 已全部回到 shadcn 默认 API 组合，且重新串行通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`。与此同时，对 `src/**/*.ts(x)` 的全文搜索确认运行时代码中的 Arco import 已归零，剩余旧体系已经收敛到 `package.json`、`src/main.tsx`、`src/styles/global.css`、`src/styles/arco-override.css`、`src/styles/app-shell.css`、`src/styles/themes/base.css` 和 `src/theme/theme.ts` 这些依赖/样式/兼容标记入口。之所以必须先修订，是因为用户要求阶段完成后先更新计划再进入下一阶段；只有把 `S4` 闭环状态和 `S5` 的明确删除面写清楚，后续删除依赖和样式入口才符合执行约束。
+
+变更说明（2026-03-21 03:15 +08:00）：
+
+本次修订把 `S5` 的最终清理与验证结果写回计划。当前已经用 `npm uninstall` 删除 `@arco-design/web-react`、`@arco-design/color`、`@unocss/preset-attributify`、`@unocss/preset-uno`、`@unocss/vite`、`unocss`，并同步更新 `package-lock.json`；同时，`src/main.tsx`、`src/styles/global.css`、`vite.config.ts`、`src/styles/themes/base.css`、`src/theme/theme.ts` 中的旧入口已经全部移除，`src/styles/arco-override.css` 与 `uno.config.ts` 维持删除状态。随后重新确认旧关键词全文搜索归零，并再次串行通过 `npm run build`、`cargo check`、`npm run e2e:debug:desktop`、`npm run e2e:debug:responsive`。之所以必须立即修订，是因为用户要求计划必须及时更新且完成所有阶段后才能停止；只有把 `S5` 的完成证据和最终残留风险写清楚，这份执行计划才算真正闭环。

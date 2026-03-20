@@ -1,4 +1,3 @@
-import { Message } from '@arco-design/web-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DetectedAgent } from '@/bindings';
 import {
@@ -13,6 +12,7 @@ import {
   toCustomAssistantEntry,
   updateCustomAssistant,
 } from '@/features/settings/api/agent';
+import { notify } from '@/shared/lib';
 import type { AssistantEditorValues, AssistantEntry } from '../types';
 import { createAgentOptions } from '../types';
 
@@ -49,7 +49,7 @@ export function useAgentAssistants() {
         return nextAssistants[0]?.id ?? null;
       });
     } catch (error) {
-      Message.error(`加载助手配置失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`加载助手配置失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ export function useAgentAssistants() {
       try {
         if (!editingAssistant) {
           const created = await createCustomAssistant(values);
-          Message.success('自定义助手已创建');
+          notify.success('自定义助手已创建');
           await loadAssistants(`custom-${created.id}`);
           return;
         }
@@ -82,7 +82,7 @@ export function useAgentAssistants() {
             mainAgent: values.mainAgent,
             enabled: values.enabled,
           });
-          Message.success('内置助手配置已更新');
+          notify.success('内置助手配置已更新');
           await loadAssistants(editingAssistant.id);
           return;
         }
@@ -92,10 +92,10 @@ export function useAgentAssistants() {
         }
 
         await updateCustomAssistant(editingAssistant.pluginId, values);
-        Message.success('自定义助手已更新');
+        notify.success('自定义助手已更新');
         await loadAssistants(editingAssistant.id);
       } catch (error) {
-        Message.error(`保存助手失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`保存助手失败: ${error instanceof Error ? error.message : String(error)}`);
         throw error;
       } finally {
         setSaving(false);
@@ -113,11 +113,11 @@ export function useAgentAssistants() {
       setRemovingAssistantId(assistant.id);
       try {
         await removeCustomAssistant(assistant.pluginId);
-        Message.success('自定义助手已删除');
+        notify.success('自定义助手已删除');
         await loadAssistants(null);
         return true;
       } catch (error) {
-        Message.error(`删除助手失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`删除助手失败: ${error instanceof Error ? error.message : String(error)}`);
         return false;
       } finally {
         setRemovingAssistantId(null);
@@ -152,10 +152,10 @@ export function useAgentAssistants() {
           });
         }
 
-        Message.success(enabled ? '助手已启用' : '助手已停用');
+        notify.success(enabled ? '助手已启用' : '助手已停用');
         await loadAssistants(assistant.id);
       } catch (error) {
-        Message.error(`切换助手状态失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`切换助手状态失败: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         setTogglingAssistantId(null);
       }

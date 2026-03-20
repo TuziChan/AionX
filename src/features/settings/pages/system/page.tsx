@@ -1,11 +1,27 @@
-import { Alert } from '@arco-design/web-react';
+import { useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { SettingsPage } from '@/shared/ui';
+import {
+  Alert,
+  AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  SettingsPage,
+} from '@/shared/ui';
 import { RuntimeDirectoriesCard } from './components/RuntimeDirectoriesCard';
 import { SystemBehaviorCard } from './components/SystemBehaviorCard';
 import { useSystemSettings } from './hooks/useSystemSettings';
 
 export function Component() {
+  const [pendingDirectoryChange, setPendingDirectoryChange] = useState<{
+    field: 'cacheDir' | 'workDir';
+    value: string;
+  } | null>(null);
   const {
     currentLanguage,
     error,
@@ -45,15 +61,22 @@ export function Component() {
       return;
     }
 
-    const confirmed = window.confirm('修改系统目录后需要重启应用，是否继续？');
-    if (!confirmed) {
+    setPendingDirectoryChange({
+      field,
+      value: picked,
+    });
+  };
+
+  const confirmDirectoryChange = async () => {
+    if (!settings || !pendingDirectoryChange) {
       return;
     }
 
     await updateRuntimeInfo({
       ...settings.runtimeInfo,
-      [field]: picked,
+      [pendingDirectoryChange.field]: pendingDirectoryChange.value,
     });
+    setPendingDirectoryChange(null);
   };
 
   return (
@@ -84,8 +107,41 @@ export function Component() {
         </div>
       </section>
 
-      {error ? <Alert type="error" content={error} /> : null}
-      {loading ? <Alert type="info" content="正在加载系统设置..." /> : null}
+      {error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+      {loading ? (
+        <Alert>
+          <AlertDescription>正在加载系统设置...</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <AlertDialog
+        open={pendingDirectoryChange !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDirectoryChange(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认修改系统目录</AlertDialogTitle>
+            <AlertDialogDescription>
+              修改系统目录后需要重启应用才能完全生效。
+              {pendingDirectoryChange ? ` 新路径：${pendingDirectoryChange.value}` : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={savingRuntimeInfo}>取消</AlertDialogCancel>
+            <AlertDialogAction disabled={savingRuntimeInfo} onClick={() => void confirmDirectoryChange()}>
+              继续修改
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SettingsPage>
   );
 }

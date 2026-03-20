@@ -1,6 +1,6 @@
-import { Button, Slider } from '@arco-design/web-react';
-import { IconMoon, IconMoonFill, IconSun, IconSunFill } from '@arco-design/web-react/icon';
+import { Moon, Sun } from 'lucide-react';
 import { PreferenceRow } from '@/features/settings/components/PreferenceRow';
+import { Button, Slider, ToggleGroup, ToggleGroupItem } from '@/shared/ui';
 import {
   clampDisplayZoom,
   DISPLAY_ZOOM_DEFAULT,
@@ -25,14 +25,12 @@ const THEME_OPTIONS = [
   {
     value: 'light' as const,
     label: '浅色',
-    icon: IconSun,
-    activeIcon: IconSunFill,
+    icon: Sun,
   },
   {
     value: 'dark' as const,
     label: '深色',
-    icon: IconMoon,
-    activeIcon: IconMoonFill,
+    icon: Moon,
   },
 ];
 
@@ -49,39 +47,41 @@ export function ThemeCard({
     <section className="settings-group-card" data-testid="display-theme-card">
       <div className="settings-group-card__body settings-group-card__body--padded">
         <PreferenceRow label="界面主题">
-          <div className="settings-display-page__theme-switcher" role="radiogroup" aria-label="界面主题">
+          <ToggleGroup
+            type="single"
+            value={theme}
+            className="settings-display-page__theme-switcher"
+            aria-label="界面主题"
+            onValueChange={(value) => {
+              if (value) {
+                onThemeChange(value as DisplayThemeMode);
+              }
+            }}
+            disabled={savingTheme}
+          >
             <span
               aria-hidden="true"
               className={`settings-display-page__theme-indicator settings-display-page__theme-indicator--${theme}`}
             />
             {THEME_OPTIONS.map((option) => {
               const isActive = option.value === theme;
-              const Icon = isActive ? option.activeIcon : option.icon;
+              const Icon = option.icon;
 
               return (
-                <button
+                <ToggleGroupItem
                   key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={isActive}
+                  value={option.value}
                   data-testid={`display-theme-${option.value}`}
                   className={`settings-display-page__theme-option ${isActive ? 'settings-display-page__theme-option--active' : ''}`}
-                  onClick={() => onThemeChange(option.value)}
-                  disabled={savingTheme}
                 >
                   <span className="settings-display-page__theme-option-icon">
-                    <option.icon
-                      className={`settings-display-page__theme-icon ${isActive ? 'settings-display-page__theme-icon--inactive' : ''}`}
-                    />
-                    <Icon
-                      className={`settings-display-page__theme-icon settings-display-page__theme-icon--active ${isActive ? 'settings-display-page__theme-icon--visible' : ''}`}
-                    />
+                    <Icon className="settings-display-page__theme-icon settings-display-page__theme-icon--visible" />
                   </span>
                   <span>{option.label}</span>
-                </button>
+                </ToggleGroupItem>
               );
             })}
-          </div>
+          </ToggleGroup>
         </PreferenceRow>
 
         <PreferenceRow
@@ -95,9 +95,9 @@ export function ThemeCard({
           <div className="settings-display-page__zoom-control">
             <Button
               id="display-zoom-decrease"
-              size="mini"
-              type="secondary"
-              shape="circle"
+              type="button"
+              size="icon"
+              variant="outline"
               className="settings-display-page__zoom-step"
               disabled={savingZoom || zoomFactor <= DISPLAY_ZOOM_MIN}
               onClick={() => onZoomChange(clampDisplayZoom(zoomFactor - DISPLAY_ZOOM_STEP))}
@@ -108,18 +108,17 @@ export function ThemeCard({
               min={DISPLAY_ZOOM_MIN}
               max={DISPLAY_ZOOM_MAX}
               step={DISPLAY_ZOOM_STEP}
-              value={zoomFactor}
+              value={[zoomFactor]}
               disabled={savingZoom}
               className="settings-display-page__zoom-slider"
-              showTicks
-              onChange={(value) => onZoomChange(clampDisplayZoom(Number(value)))}
+              onValueChange={(value) => onZoomChange(clampDisplayZoom(value[0] ?? DISPLAY_ZOOM_DEFAULT))}
             />
             <div className="settings-display-page__zoom-meta">
               <Button
                 id="display-zoom-increase"
-                size="mini"
-                type="secondary"
-                shape="circle"
+                type="button"
+                size="icon"
+                variant="outline"
                 className="settings-display-page__zoom-step"
                 disabled={savingZoom || zoomFactor >= DISPLAY_ZOOM_MAX}
                 onClick={() => onZoomChange(clampDisplayZoom(zoomFactor + DISPLAY_ZOOM_STEP))}
@@ -128,8 +127,9 @@ export function ThemeCard({
               </Button>
               <Button
                 id="display-zoom-reset"
-                size="small"
-                type="text"
+                type="button"
+                variant="link"
+                size="sm"
                 className="settings-display-page__zoom-reset"
                 disabled={savingZoom || zoomFactor === DISPLAY_ZOOM_DEFAULT}
                 onClick={onZoomReset}

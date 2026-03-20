@@ -1,4 +1,4 @@
-import { Button, Input, Message, Switch, Tag } from '@arco-design/web-react';
+import { LoaderCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { ChannelPlugin } from '@/bindings';
 import {
@@ -8,6 +8,8 @@ import {
   getPresetLabel,
   parseChannelPluginForm,
 } from '@/features/settings/api/webui';
+import { notify } from '@/shared/lib';
+import { Badge, Button, Input, Switch, Textarea } from '@/shared/ui';
 import type { ChannelPluginFormValues, ChannelPluginType } from '../types';
 
 interface ChannelsTabProps {
@@ -139,7 +141,7 @@ export function ChannelsTab({
   const handleToggle = async (type: ChannelPluginType, enabled: boolean) => {
     const plugin = pluginMap[type];
     if (!plugin) {
-      Message.warning('请先保存该通道的基础配置，再启用通道');
+      notify.warning('请先保存该通道的基础配置，再启用通道');
       return;
     }
 
@@ -209,16 +211,16 @@ export function ChannelsTab({
                 </div>
 
                 <div className="settings-webui-page__channel-status">
-                  <Tag color={plugin?.enabled ? 'green' : plugin ? 'gray' : 'arcoblue'}>
+                  <Badge variant={plugin?.enabled ? 'default' : plugin ? 'outline' : 'info'}>
                     {plugin?.enabled ? '已启用' : plugin ? '已保存' : '待配置'}
-                  </Tag>
-                  <Switch
-                    checked={Boolean(plugin?.enabled)}
-                    disabled={!plugin}
-                    loading={togglingPluginId === plugin?.id}
-                    onClick={(event) => event.stopPropagation()}
-                    onChange={(value) => void handleToggle(preset.type, value)}
-                  />
+                  </Badge>
+                  <div onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+                    <Switch
+                      checked={Boolean(plugin?.enabled)}
+                      disabled={!plugin || togglingPluginId === plugin?.id}
+                      onCheckedChange={(value) => void handleToggle(preset.type, value)}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -236,26 +238,27 @@ export function ChannelsTab({
                         <label key={field.key} className="settings-webui-page__channel-field">
                           <span className="settings-webui-page__channel-field-label">{field.label}</span>
                           {field.kind === 'textarea' ? (
-                            <Input.TextArea
+                            <Textarea
                               id={inputId}
+                              className="min-h-24"
                               value={String(value ?? '')}
-                              autoSize={{ minRows: 3, maxRows: 6 }}
                               placeholder={field.placeholder}
-                              onChange={(nextValue) => updateDraft(preset.type, field.key, nextValue)}
+                              onChange={(event) => updateDraft(preset.type, field.key, event.target.value)}
                             />
                           ) : field.kind === 'password' ? (
-                            <Input.Password
+                            <Input
                               id={inputId}
+                              type="password"
                               value={String(value ?? '')}
                               placeholder={field.placeholder}
-                              onChange={(nextValue) => updateDraft(preset.type, field.key, nextValue)}
+                              onChange={(event) => updateDraft(preset.type, field.key, event.target.value)}
                             />
                           ) : (
                             <Input
                               id={inputId}
                               value={String(value ?? '')}
                               placeholder={field.placeholder}
-                              onChange={(nextValue) => updateDraft(preset.type, field.key, nextValue)}
+                              onChange={(event) => updateDraft(preset.type, field.key, event.target.value)}
                             />
                           )}
                         </label>
@@ -268,14 +271,15 @@ export function ChannelsTab({
                       {plugin ? '保存后会更新当前通道配置，启停状态保持不变。' : '首次保存会创建该通道实例，随后才可以启用。'}
                     </div>
                     <Button
-                      type="primary"
-                      loading={savingPlugin}
+                      type="button"
+                      disabled={savingPlugin}
                       data-testid={`webui-channel-save-${preset.type}`}
                       onClick={(event) => {
                         event.stopPropagation();
                         void handleSave(preset.type);
                       }}
                     >
+                      {savingPlugin ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : null}
                       {plugin ? '保存通道配置' : '保存并创建通道'}
                     </Button>
                   </div>

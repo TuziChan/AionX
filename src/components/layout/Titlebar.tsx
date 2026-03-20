@@ -1,9 +1,9 @@
-import { Tooltip } from '@arco-design/web-react';
 import { HamburgerButton, MenuFold, SettingTwo } from '@icon-park/react';
 import classNames from 'classnames';
 import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLayoutContext } from '../../contexts/LayoutContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/ui';
 
 interface TitlebarProps {
   onDebugClick?: () => void;
@@ -35,46 +35,51 @@ export function Titlebar({ onDebugClick, onToggleSidebar }: TitlebarProps) {
   }, [isSettings, location.pathname]);
 
   return (
-    <div
-      className={classNames('app-titlebar border-b border-b-base bg-1', {
-        'app-titlebar--desktop': !isMobile,
-        'app-titlebar--mobile': isMobile,
-        'app-titlebar--mobile-conversation': isMobile && location.pathname.startsWith('/conversation/'),
-      })}
-      style={{ WebkitAppRegion: 'drag' } as any}
-      data-tauri-drag-region
-    >
-      <div className="app-titlebar__menu">
-        <button
-          type="button"
-          className={classNames('app-titlebar__button', isMobile && 'app-titlebar__button--mobile')}
-          style={{ WebkitAppRegion: 'no-drag' } as any}
-          onClick={onToggleSidebar}
-          aria-label="Toggle sidebar"
-        >
-          {isMobile ? <HamburgerButton theme="outline" size="22" /> : <MenuFold theme="outline" size="18" />}
-        </button>
-      </div>
-
-      <div className="app-titlebar__brand" onClick={onDebugClick}>
-        <span className="app-titlebar__brand-mobile">
-          <AppMark compact={isMobile} />
-          <span className="app-titlebar__brand-text">{isMobile ? pageTitle : 'AionX'}</span>
-        </span>
-      </div>
-
-      <div className="app-titlebar__toolbar" style={{ WebkitAppRegion: 'no-drag' } as any}>
-        <Tooltip content={isSettings ? 'Back to Guide' : 'Open Settings'} position="bottom">
+    <TooltipProvider delayDuration={120}>
+      <div
+        className={classNames('app-titlebar border-b border-b-base bg-1', {
+          'app-titlebar--desktop': !isMobile,
+          'app-titlebar--mobile': isMobile,
+          'app-titlebar--mobile-conversation': isMobile && location.pathname.startsWith('/conversation/'),
+        })}
+        style={{ WebkitAppRegion: 'drag' } as any}
+        data-tauri-drag-region
+      >
+        <div className="app-titlebar__menu">
           <button
             type="button"
             className={classNames('app-titlebar__button', isMobile && 'app-titlebar__button--mobile')}
-            onClick={() => navigate(isSettings ? '/guid' : '/settings/gemini')}
-            aria-label={isSettings ? 'Back to Guide' : 'Open Settings'}
+            style={{ WebkitAppRegion: 'no-drag' } as any}
+            onClick={onToggleSidebar}
+            aria-label="Toggle sidebar"
           >
-            <SettingTwo theme="outline" size={isMobile ? '22' : '18'} />
+            {isMobile ? <HamburgerButton theme="outline" size="22" /> : <MenuFold theme="outline" size="18" />}
           </button>
-        </Tooltip>
+        </div>
+
+        <div className="app-titlebar__brand" onClick={onDebugClick}>
+          <span className="app-titlebar__brand-mobile">
+            <AppMark compact={isMobile} />
+            <span className="app-titlebar__brand-text">{isMobile ? pageTitle : 'AionX'}</span>
+          </span>
+        </div>
+
+        <div className="app-titlebar__toolbar" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className={classNames('app-titlebar__button', isMobile && 'app-titlebar__button--mobile')}
+                onClick={() => navigate(isSettings ? '/guid' : '/settings/gemini')}
+                aria-label={isSettings ? 'Back to Guide' : 'Open Settings'}
+              >
+                <SettingTwo theme="outline" size={isMobile ? '22' : '18'} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{isSettings ? 'Back to Guide' : 'Open Settings'}</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }

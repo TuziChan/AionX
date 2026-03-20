@@ -1,4 +1,3 @@
-import { Message } from '@arco-design/web-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   DEFAULT_GEMINI_SETTINGS,
@@ -8,6 +7,7 @@ import {
   saveGeminiSettings,
   startGoogleAuth,
 } from '@/features/settings/api/gemini';
+import { notify } from '@/shared/lib';
 import type { GeminiAuthStatus, GeminiSettingsDraft } from '../types';
 
 const DEFAULT_AUTH_STATUS: GeminiAuthStatus = {
@@ -40,7 +40,7 @@ export function useGeminiSettings() {
       setDraft(nextDraft);
       setAuthStatus(nextAuthStatus);
     } catch (error) {
-      Message.error(`加载 Gemini 配置失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`加载 Gemini 配置失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export function useGeminiSettings() {
       queuedDraftRef.current = savedDraft;
       setDraft(savedDraft);
     } catch (error) {
-      Message.error(`保存 Gemini 配置失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`保存 Gemini 配置失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setSaving(false);
     }
@@ -95,9 +95,9 @@ export function useGeminiSettings() {
         queuedDraftRef.current = nextDraft;
         setDraft(nextDraft);
         setAuthStatus(nextAuthStatus);
-        Message.success('Google 账号已连接');
+        notify.success('Google 账号已连接');
       } catch (error) {
-        Message.error(`Google 登录失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`Google 登录失败: ${error instanceof Error ? error.message : String(error)}`);
         throw error;
       } finally {
         setAuthPending(false);
@@ -111,9 +111,9 @@ export function useGeminiSettings() {
     try {
       const nextAuthStatus = await logoutGoogleAuth();
       setAuthStatus(nextAuthStatus);
-      Message.success('Google 账号已退出');
+      notify.success('Google 账号已退出');
     } catch (error) {
-      Message.error(`退出 Google 账号失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`退出 Google 账号失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setAuthPending(false);
     }

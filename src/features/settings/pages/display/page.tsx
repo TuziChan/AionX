@@ -1,5 +1,4 @@
-import { Alert } from '@arco-design/web-react';
-import { SettingsPage } from '@/shared/ui';
+import { Alert, AlertDescription, SettingsPage } from '@/shared/ui';
 import { CustomCssCard } from './components/CustomCssCard';
 import { ThemeCard } from './components/ThemeCard';
 import { useDisplaySettings } from './hooks/useDisplaySettings';
@@ -39,8 +38,16 @@ export function Component() {
         onSave={() => void saveCustomCssDraft()}
       />
 
-      {error ? <Alert type="error" content={error} /> : null}
-      {loading ? <Alert type="info" content="正在加载显示设置..." /> : null}
+      {error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+      {loading ? (
+        <Alert>
+          <AlertDescription>正在加载显示设置...</AlertDescription>
+        </Alert>
+      ) : null}
     </SettingsPage>
   );
 }

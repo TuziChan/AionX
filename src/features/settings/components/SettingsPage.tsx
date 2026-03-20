@@ -1,4 +1,4 @@
-import { Card } from '@arco-design/web-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui';
 import { SettingsField, type SettingsFieldDefinition } from './SettingsField';
 
 export interface SettingsSectionDefinition {
@@ -15,15 +15,15 @@ export function SettingsPage({ sections }: SettingsPageProps) {
   return (
     <div className="settings-page-shell">
       {sections.map((section) => (
-        <Card key={section.key} className="settings-card" bordered={false}>
-          <div className="settings-card__header">
-            <h2>{section.title}</h2>
-          </div>
-          <div className="settings-card__body">
+        <Card key={section.key} className="settings-card">
+          <CardHeader className="settings-card__header">
+            <CardTitle>{section.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="settings-card__body">
             {section.fields.map((field) => (
               <SettingsField key={field.key} field={field} />
             ))}
-          </div>
+          </CardContent>
         </Card>
       ))}
     </div>

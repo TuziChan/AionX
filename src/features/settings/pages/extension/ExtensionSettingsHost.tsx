@@ -1,5 +1,5 @@
-import { Button } from '@arco-design/web-react';
 import { useMemo } from 'react';
+import { Badge, Button } from '@/shared/ui';
 import type { ExtensionHostContext } from './types';
 
 interface ExtensionSettingsHostProps {
@@ -34,12 +34,22 @@ export function ExtensionSettingsHost({
 
         <div className="settings-extension-page__host-actions">
           <div className="settings-extension-page__host-badges">
-            <span className="settings-extension-page__pill">v{version}</span>
-            <span className="settings-extension-page__pill">{host.mode}</span>
-            <span className="settings-extension-page__pill">{enabled ? '已启用' : '已停用'}</span>
+            <Badge className="settings-extension-page__pill" variant="outline">
+              v{version}
+            </Badge>
+            <Badge className="settings-extension-page__pill" variant="outline">
+              {host.mode}
+            </Badge>
+            <Badge className="settings-extension-page__pill" variant="outline">
+              {enabled ? '已启用' : '已停用'}
+            </Badge>
           </div>
 
-          <Button type="outline" onClick={() => window.open(hostUrl, '_blank', 'noopener,noreferrer')}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => window.open(hostUrl, '_blank', 'noopener,noreferrer')}
+          >
             新窗口打开
           </Button>
         </div>

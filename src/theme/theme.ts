@@ -28,7 +28,5 @@ export function applyTheme(theme: Theme) {
   root.classList.toggle('light', theme.mode === 'light');
   root.style.colorScheme = theme.mode;
 
-  // 设置 Arco Design 主题
-  document.body.setAttribute('arco-theme', theme.mode);
 }
 

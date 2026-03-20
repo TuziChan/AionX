@@ -1,5 +1,14 @@
-import { Input, Select, Switch } from '@arco-design/web-react';
 import { PreferenceRow } from '@/features/settings/components/PreferenceRow';
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+} from '@/shared/ui';
 import { LANGUAGE_OPTIONS } from '../types';
 
 interface SystemBehaviorCardProps {
@@ -39,17 +48,29 @@ export function SystemBehaviorCard({
         <PreferenceRow label="语言">
           <div data-testid="system-language-select">
             <Select
-              disabled={savingLanguage}
-              options={LANGUAGE_OPTIONS}
               value={currentLanguage}
-              onChange={(value) => onLanguageChange(String(value))}
-            />
+              disabled={savingLanguage}
+              onValueChange={onLanguageChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="选择语言" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {LANGUAGE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
         </PreferenceRow>
 
         <PreferenceRow label="关闭窗口时最小化到托盘">
           <div data-testid="system-close-to-tray">
-            <Switch checked={closeToTray} disabled={savingCloseToTray} onChange={onCloseToTrayChange} />
+            <Switch checked={closeToTray} disabled={savingCloseToTray} onCheckedChange={onCloseToTrayChange} />
           </div>
         </PreferenceRow>
 
@@ -59,7 +80,11 @@ export function SystemBehaviorCard({
             description="统一控制桌面通知与任务完成提醒。"
           >
             <div data-testid="system-notification-enabled">
-              <Switch checked={notificationEnabled} disabled={savingNotification} onChange={onNotificationChange} />
+              <Switch
+                checked={notificationEnabled}
+                disabled={savingNotification}
+                onCheckedChange={onNotificationChange}
+              />
             </div>
           </PreferenceRow>
 
@@ -70,7 +95,7 @@ export function SystemBehaviorCard({
                   <Switch
                     checked={cronNotificationEnabled}
                     disabled={savingCronNotification}
-                    onChange={onCronNotificationChange}
+                    onCheckedChange={onCronNotificationChange}
                   />
                 </div>
               </PreferenceRow>

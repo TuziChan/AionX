@@ -1,7 +1,7 @@
-import { Button, Input } from '@arco-design/web-react';
-import { Plus } from '@icon-park/react';
-import classNames from 'classnames';
+import { Plus } from 'lucide-react';
 import { getProviderToggleState } from '@/features/settings/api/model';
+import { cn } from '@/shared/lib';
+import { Button, Input } from '@/shared/ui';
 import type { ModelProviderSummary } from '../types';
 
 interface ProviderListPaneProps {
@@ -28,13 +28,18 @@ export function ProviderListPane({
           <div className="settings-group-card__title">模型平台</div>
           <div className="settings-model-page__pane-subtitle">按平台查看模型、协议和健康状态。</div>
         </div>
-        <Button data-testid="model-add-provider" type="outline" icon={<Plus size="16" />} onClick={onAddProvider}>
+        <Button data-testid="model-add-provider" type="button" variant="outline" onClick={onAddProvider}>
+          <Plus data-icon="inline-start" />
           添加平台
         </Button>
       </div>
 
       <div className="settings-model-page__toolbar">
-        <Input value={searchValue} onChange={onSearchChange} placeholder="搜索平台、Base URL 或模型" allowClear />
+        <Input
+          value={searchValue}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="搜索平台、Base URL 或模型"
+        />
       </div>
 
       <div className="settings-model-page__list-body">
@@ -52,7 +57,7 @@ export function ProviderListPane({
                   key={provider.id}
                   type="button"
                   data-testid={`model-provider-item-${provider.id}`}
-                  className={classNames('settings-model-page__provider-item', {
+                  className={cn('settings-model-page__provider-item', {
                     'settings-model-page__provider-item--active': provider.id === selectedProviderId,
                   })}
                   onClick={() => onSelectProvider(provider.id)}
@@ -67,7 +72,7 @@ export function ProviderListPane({
                   </div>
                   <div className="settings-model-page__provider-side">
                     <span
-                      className={classNames('settings-model-page__provider-badge', {
+                      className={cn('settings-model-page__provider-badge', {
                         'settings-model-page__provider-badge--muted': !providerState.checked,
                       })}
                     >

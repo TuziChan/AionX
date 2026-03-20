@@ -1,5 +1,4 @@
-import { Input } from '@arco-design/web-react';
-import { SettingsCardBody, SettingsPage } from '@/shared/ui';
+import { Input, SettingsCardBody, SettingsPage } from '@/shared/ui';
 import { PreferenceRow } from '../../components/PreferenceRow';
 import { AccountStatusCard } from './components/AccountStatusCard';
 import { ProjectBindingCard } from './components/ProjectBindingCard';
@@ -31,7 +30,7 @@ export function Component() {
           <PreferenceRow label="代理配置" description="可选的 HTTP/HTTPS 代理，用于需要经过本地代理访问 Gemini 的场景。">
             <Input
               value={draft.proxy}
-              onChange={(value) => queueDraftUpdate((current) => ({ ...current, proxy: value }))}
+              onChange={(event) => queueDraftUpdate((current) => ({ ...current, proxy: event.target.value }))}
               placeholder="http://127.0.0.1:7890"
             />
           </PreferenceRow>

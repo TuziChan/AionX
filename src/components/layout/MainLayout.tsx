@@ -1,4 +1,3 @@
-import { Layout as ArcoLayout } from '@arco-design/web-react';
 import classNames from 'classnames';
 import { cloneElement, isValidElement, useState } from 'react';
 import { Outlet } from 'react-router-dom';
@@ -42,16 +41,11 @@ export function MainLayout({ sider }: MainLayoutProps) {
           aria-hidden="true"
         />
       )}
-      <ArcoLayout className="layout flex-1 min-h-0">
-        <ArcoLayout.Sider
+      <div className="layout flex flex-1 min-h-0">
+        <aside
           className={classNames('!bg-2 layout-sider', {
             collapsed: siderCollapsed,
           })}
-          collapsed={siderCollapsed}
-          collapsible
-          trigger={null}
-          width={siderWidth}
-          collapsedWidth={isMobile ? 0 : 64}
           style={{
             position: isMobile ? 'fixed' : 'relative',
             left: 0,
@@ -59,9 +53,10 @@ export function MainLayout({ sider }: MainLayoutProps) {
             transform: isMobile && siderCollapsed ? 'translateX(-100%)' : 'translateX(0)',
             transition: 'none',
             pointerEvents: isMobile && siderCollapsed ? 'none' : 'auto',
+            width: `${siderCollapsed ? (isMobile ? 0 : 64) : siderWidth}px`,
           }}
         >
-          <ArcoLayout.Content className="layout-sider-content bg-2">
+          <div className="layout-sider-content bg-2">
             {isValidElement(sider)
               ? cloneElement(sider, {
                   onSessionClick: () => {
@@ -70,9 +65,9 @@ export function MainLayout({ sider }: MainLayoutProps) {
                   collapsed: siderCollapsed,
                 } as any)
               : sider}
-          </ArcoLayout.Content>
-        </ArcoLayout.Sider>
-        <ArcoLayout.Content
+          </div>
+        </aside>
+        <div
           className="layout-content bg-1 flex flex-col min-h-0"
           onClick={() => {
             if (isMobile && !siderCollapsed) setSiderCollapsed(true);
@@ -86,8 +81,8 @@ export function MainLayout({ sider }: MainLayoutProps) {
           }
         >
           <Outlet />
-        </ArcoLayout.Content>
-      </ArcoLayout>
+        </div>
+      </div>
     </div>
   );
 }

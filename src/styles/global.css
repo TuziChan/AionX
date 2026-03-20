@@ -1,5 +1,3 @@
 @import '../shared/styles/globals.css';
-@import '@arco-design/web-react/dist/css/arco.css';
 @import './themes/index.css';
-@import './arco-override.css';
 @import './app-shell.css';

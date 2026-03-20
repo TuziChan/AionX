@@ -1,6 +1,17 @@
-import { Button, Card, Switch, Tag } from '@arco-design/web-react';
+import { useState } from 'react';
 import { ContentPageFrame } from '@/app/layouts';
-import { PageHeader } from '@/shared/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  PageHeader,
+  Switch,
+} from '@/shared/ui';
 
 const cronJobs = [
   {
@@ -27,6 +38,10 @@ const cronJobs = [
 ];
 
 export function Component() {
+  const [enabledJobs, setEnabledJobs] = useState<Record<string, boolean>>(
+    Object.fromEntries(cronJobs.map((job) => [job.id, job.status === 'ACTIVE']))
+  );
+
   return (
     <ContentPageFrame pageClassName="cron-page" width="wide">
       <PageHeader
@@ -36,8 +51,10 @@ export function Component() {
         description="对齐计划中的可见页面要求，提供稳定的任务列表、状态标识和快速操作区。"
         actions={
           <div className="cron-page__toolbar">
-            <Button type="primary">新建任务</Button>
-            <Button type="outline">导入任务</Button>
+            <Button type="button">新建任务</Button>
+            <Button type="button" variant="outline">
+              导入任务
+            </Button>
           </div>
         }
         eyebrowClassName="cron-page__eyebrow"
@@ -47,24 +64,43 @@ export function Component() {
 
       <div className="cron-page__grid">
         {cronJobs.map((job) => (
-          <Card key={job.id} className="cron-card" bordered={false}>
-            <div className="cron-card__header">
+          <Card key={job.id} className="cron-card">
+            <CardHeader className="cron-card__header">
               <div>
-                <h2>{job.title}</h2>
-                <p>{job.schedule}</p>
+                <CardTitle>{job.title}</CardTitle>
+                <CardDescription>{job.schedule}</CardDescription>
               </div>
-              <Tag color={job.status === 'ACTIVE' ? 'green' : 'gray'}>{job.status}</Tag>
-            </div>
-            <p className="cron-card__description">{job.description}</p>
-            <div className="cron-card__footer">
+              <Badge
+                variant="outline"
+                className={
+                  enabledJobs[job.id]
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-200'
+                    : 'border-border bg-muted text-muted-foreground'
+                }
+              >
+                {enabledJobs[job.id] ? 'ACTIVE' : 'PAUSED'}
+              </Badge>
+            </CardHeader>
+            <CardContent className="pb-0 pt-0">
+              <p className="cron-card__description">{job.description}</p>
+            </CardContent>
+            <CardFooter className="cron-card__footer">
               <div className="cron-card__toggle">
                 <span>启用</span>
-                <Switch checked={job.status === 'ACTIVE'} />
+                <Switch
+                  checked={enabledJobs[job.id]}
+                  onCheckedChange={(checked) =>
+                    setEnabledJobs((current) => ({
+                      ...current,
+                      [job.id]: checked,
+                    }))
+                  }
+                />
               </div>
-              <Button size="small" type="outline">
+              <Button type="button" size="sm" variant="outline">
                 编辑
               </Button>
-            </div>
+            </CardFooter>
           </Card>
         ))}
       </div>

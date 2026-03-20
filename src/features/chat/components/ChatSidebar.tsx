@@ -1,5 +1,6 @@
-import { FolderOpen, History } from '@icon-park/react';
 import classNames from 'classnames';
+import { FolderOpen, History } from 'lucide-react';
+import { Button, Input } from '@/shared/ui';
 
 const workspaceItems = [
   { name: 'src', type: 'dir' },
@@ -16,16 +17,16 @@ export function ChatSidebar() {
       <div className="workspace-toolbar-row">
         <div className="workspace-title-label">Workspace</div>
         <div className="workspace-toolbar-actions">
-          <button type="button" className="workspace-toolbar-icon-btn">
-            <FolderOpen theme="outline" size="16" />
-          </button>
-          <button type="button" className="workspace-toolbar-icon-btn">
-            <History theme="outline" size="16" />
-          </button>
+          <Button type="button" variant="ghost" size="icon" className="workspace-toolbar-icon-btn">
+            <FolderOpen />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className="workspace-toolbar-icon-btn">
+            <History />
+          </Button>
         </div>
       </div>
       <div className="workspace-toolbar-search">
-        <input className="workspace-search-input" placeholder="Search files" />
+        <Input className="workspace-search-input" placeholder="Search files" />
       </div>
       <div className="workspace-tree">
         {workspaceItems.map((item) => (

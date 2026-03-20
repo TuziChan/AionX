@@ -1,7 +1,7 @@
-import { Message } from '@arco-design/web-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { changeAppLanguage, getSystemInfo, getSystemSettings, saveSystemSettings } from '@/features/settings/api/system';
+import { notify } from '@/shared/lib';
 import { buildSystemInfoLabel, type RuntimeDirectoryDraft, type SystemSettingsSnapshot } from '../types';
 
 export function useSystemSettings() {
@@ -55,10 +55,10 @@ export function useSystemSettings() {
       try {
         const saved = await saveSystemSettings(nextSettings);
         setSettings(saved);
-        Message.success('系统行为已保存');
+        notify.success('系统行为已保存');
       } catch (caughtError) {
         setSettings(previous);
-        Message.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
+        notify.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
       } finally {
         setSavingCloseToTray(false);
       }
@@ -81,10 +81,10 @@ export function useSystemSettings() {
       try {
         const saved = await saveSystemSettings(nextSettings);
         setSettings(saved);
-        Message.success('目录配置已保存，重启后生效');
+        notify.success('目录配置已保存，重启后生效');
         return saved;
       } catch (caughtError) {
-        Message.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
+        notify.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
         throw caughtError;
       } finally {
         setSavingRuntimeInfo(false);
@@ -111,10 +111,10 @@ export function useSystemSettings() {
       try {
         const saved = await saveSystemSettings(nextSettings);
         setSettings(saved);
-        Message.success('通知设置已保存');
+        notify.success('通知设置已保存');
       } catch (caughtError) {
         setSettings(previous);
-        Message.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
+        notify.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
       } finally {
         setSavingNotification(false);
       }
@@ -140,10 +140,10 @@ export function useSystemSettings() {
       try {
         const saved = await saveSystemSettings(nextSettings);
         setSettings(saved);
-        Message.success('任务通知设置已保存');
+        notify.success('任务通知设置已保存');
       } catch (caughtError) {
         setSettings(previous);
-        Message.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
+        notify.error(`保存失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
       } finally {
         setSavingCronNotification(false);
       }
@@ -157,9 +157,9 @@ export function useSystemSettings() {
       try {
         await changeAppLanguage(language);
         await i18n.changeLanguage(language);
-        Message.success('语言已切换');
+        notify.success('语言已切换');
       } catch (caughtError) {
-        Message.error(`语言切换失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
+        notify.error(`语言切换失败: ${caughtError instanceof Error ? caughtError.message : String(caughtError)}`);
       } finally {
         setSavingLanguage(false);
       }

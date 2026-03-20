@@ -1,6 +1,19 @@
-import { Button, Popconfirm, Switch, Tag } from '@arco-design/web-react';
-import { DeleteFour, Heartbeat, Write } from '@icon-park/react';
+import { Activity, PencilLine, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import type { McpServer } from '@/bindings';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+  Switch,
+} from '@/shared/ui';
 
 interface McpServerDetailPaneProps {
   server: McpServer | null;
@@ -42,6 +55,8 @@ export function McpServerDetailPane({
   onTestServer,
   onToggleServer,
 }: McpServerDetailPaneProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
   if (!server) {
     return (
       <div className="settings-empty-state settings-tools-page__detail-empty" data-testid="tools-server-detail">
@@ -63,31 +78,53 @@ export function McpServerDetailPane({
             <span>{server.url?.trim() || server.command?.trim() || '未配置地址/命令'}</span>
           </div>
           <div className="settings-tools-page__detail-statuses">
-            <Tag color={connectionState.color}>{connectionState.label}</Tag>
-            <Tag color={server.enabled ? 'green' : 'gray'}>{server.enabled ? '运行中' : '已停用'}</Tag>
-            <Tag color={server.oauth_config && server.oauth_config !== '{}' ? 'arcoblue' : 'gray'}>
+            <Badge variant={connectionState.label === '已连通' ? 'default' : connectionState.label === '测试中' ? 'info' : 'outline'}>
+              {connectionState.label}
+            </Badge>
+            <Badge variant={server.enabled ? 'default' : 'outline'}>{server.enabled ? '运行中' : '已停用'}</Badge>
+            <Badge variant={server.oauth_config && server.oauth_config !== '{}' ? 'info' : 'outline'}>
               {server.oauth_config && server.oauth_config !== '{}' ? 'OAuth 已配置' : 'OAuth 未配置'}
-            </Tag>
+            </Badge>
           </div>
         </div>
         <div className="settings-tools-page__detail-actions">
-          <Switch checked={server.enabled} onChange={(value) => onToggleServer(server, value)} />
+          <Switch checked={server.enabled} onCheckedChange={(value) => onToggleServer(server, value)} />
           <Button
             data-testid="tools-test-server"
-            loading={testingServerId === server.id}
-            icon={<Heartbeat size="16" />}
+            type="button"
+            disabled={testingServerId === server.id}
             onClick={() => onTestServer(server.id)}
           >
+            <Activity data-icon="inline-start" />
             测试连接
           </Button>
-          <Button icon={<Write size="16" />} onClick={() => onEditServer(server)}>
+          <Button type="button" variant="outline" onClick={() => onEditServer(server)}>
+            <PencilLine data-icon="inline-start" />
             编辑
           </Button>
-          <Popconfirm title="确认删除该 MCP Server？" onOk={() => onDeleteServer(server.id)}>
-            <Button status="danger" icon={<DeleteFour size="16" />}>
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <Button type="button" variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+              <Trash2 data-icon="inline-start" />
               删除
             </Button>
-          </Popconfirm>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认删除该 MCP Server？</AlertDialogTitle>
+                <AlertDialogDescription>删除后将移除该工具节点配置，并清空最近一次连接诊断结果。</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setDeleteDialogOpen(false);
+                    onDeleteServer(server.id);
+                  }}
+                >
+                  确认删除
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 

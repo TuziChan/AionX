@@ -1,6 +1,17 @@
-import { Button, Form, Input, Modal } from '@arco-design/web-react';
+import { LoaderCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PreferenceRow } from '@/features/settings/components/PreferenceRow';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+} from '@/shared/ui';
 import type { GeminiAuthStatus } from '../types';
 
 interface AccountStatusCardProps {
@@ -43,46 +54,60 @@ export function AccountStatusCard({
         {authStatus.connected ? (
           <div className="settings-inline-actions settings-inline-actions--compact settings-gemini-page__auth-row">
             <Input id="gemini-account-email" data-testid="gemini-account-email" value={authStatus.email ?? ''} readOnly />
-            <Button loading={authPending} onClick={() => setModalVisible(true)}>
+            <Button type="button" disabled={authPending} onClick={() => setModalVisible(true)}>
+              {authPending ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : null}
               切换账号
             </Button>
-            <Button loading={authPending} status="danger" onClick={() => void onDisconnectAccount()}>
+            <Button type="button" variant="destructive" disabled={authPending} onClick={() => void onDisconnectAccount()}>
+              {authPending ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : null}
               退出
             </Button>
           </div>
         ) : (
           <Button
             data-testid="gemini-login-button"
-            type="primary"
-            loading={authPending}
+            type="button"
+            disabled={authPending}
             onClick={() => setModalVisible(true)}
           >
+            {authPending ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : null}
             Google 登录
           </Button>
         )}
       </PreferenceRow>
 
-      <Modal
-        visible={modalVisible}
-        className="settings-gemini-page__auth-modal"
-        title={authStatus.connected ? '切换 Google 账号' : '连接 Google 账号'}
-        onCancel={() => setModalVisible(false)}
-        onOk={() => void handleConfirm()}
-        okButtonProps={{ loading: authPending }}
-        unmountOnExit
-      >
-        <Form layout="vertical">
-          <Form.Item label="Google 账号邮箱">
+      <Dialog open={modalVisible} onOpenChange={setModalVisible}>
+        <DialogContent className="settings-gemini-page__auth-modal sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{authStatus.connected ? '切换 Google 账号' : '连接 Google 账号'}</DialogTitle>
+            <DialogDescription>输入要绑定的 Google 账号邮箱，保存后会刷新当前 Gemini 认证状态。</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <Label htmlFor="gemini-login-email">Google 账号邮箱</Label>
             <Input
               id="gemini-login-email"
               placeholder="you@example.com"
               value={email}
-              onChange={setEmail}
+              onChange={(event) => setEmail(event.target.value)}
               autoFocus
             />
-          </Form.Item>
-        </Form>
-      </Modal>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={authPending} onClick={() => setModalVisible(false)}>
+              取消
+            </Button>
+            <Button
+              data-testid="gemini-login-confirm"
+              type="button"
+              disabled={authPending}
+              onClick={() => void handleConfirm()}
+            >
+              {authPending ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : null}
+              确认
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

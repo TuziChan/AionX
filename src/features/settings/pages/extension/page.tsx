@@ -1,5 +1,4 @@
-import { Alert, Button, Input, Switch, Tag } from '@arco-design/web-react';
-import { SettingsPage } from '@/shared/ui';
+import { Alert, AlertDescription, Badge, Button, Input, SettingsPage, Switch, Textarea } from '@/shared/ui';
 import { PreferenceRow } from '../../components/PreferenceRow';
 import { ExtensionSettingsHost } from './ExtensionSettingsHost';
 import { useExtensionTab } from './hooks/useExtensionTab';
@@ -10,11 +9,11 @@ export function Component() {
   if (!tab) {
     return (
       <SettingsPage className="settings-extension-page">
-        <Alert
-          type="warning"
-          content={loading ? '正在加载扩展设置...' : '未找到对应的扩展设置页，请确认扩展仍然存在。'}
-          data-testid="extension-missing-state"
-        />
+        <Alert data-testid="extension-missing-state">
+          <AlertDescription>
+            {loading ? '正在加载扩展设置...' : '未找到对应的扩展设置页，请确认扩展仍然存在。'}
+          </AlertDescription>
+        </Alert>
       </SettingsPage>
     );
   }
@@ -46,12 +45,23 @@ export function Component() {
 
           <div className="settings-extension-page__section-actions">
             <div className="settings-extension-page__section-badges">
-              <Tag color="arcoblue">v{tab.version}</Tag>
-              <Tag color={tab.host ? 'green' : 'orangered'}>{tab.host ? '宿主已接入' : '元信息回退'}</Tag>
-              <Tag color={tab.enabled ? 'green' : 'gray'}>{tab.enabled ? '已启用' : '已停用'}</Tag>
+              <Badge className="settings-extension-page__pill" variant="outline">
+                v{tab.version}
+              </Badge>
+              <Badge className="settings-extension-page__pill" variant="outline">
+                {tab.host ? '宿主已接入' : '元信息回退'}
+              </Badge>
+              <Badge className="settings-extension-page__pill" variant="outline">
+                {tab.enabled ? '已启用' : '已停用'}
+              </Badge>
             </div>
 
-            <Button type="outline" loading={loading} onClick={() => window.navigator.clipboard.writeText(tab.path)}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading}
+              onClick={() => void window.navigator.clipboard.writeText(tab.path)}
+            >
               复制扩展路径
             </Button>
           </div>
@@ -59,7 +69,7 @@ export function Component() {
 
         <div className="settings-group-card__body settings-extension-page__meta-body">
           <PreferenceRow label="启用状态" description="禁用后，扩展设置页仍可查看，但不会参与运行时能力注入。">
-            <Switch checked={tab.enabled} loading={saving} onChange={(value) => void toggleEnabled(value)} />
+            <Switch checked={tab.enabled} disabled={saving} onCheckedChange={(value) => void toggleEnabled(value)} />
           </PreferenceRow>
 
           <PreferenceRow label="扩展名称">
@@ -75,11 +85,11 @@ export function Component() {
           </PreferenceRow>
 
           <PreferenceRow label="说明">
-            <Input.TextArea value={tab.description ?? ''} autoSize={{ minRows: 3, maxRows: 6 }} readOnly />
+            <Textarea className="min-h-24" value={tab.description ?? ''} readOnly />
           </PreferenceRow>
 
           <PreferenceRow label="配置(JSON)" description="保留原始配置文本，便于核对扩展注册时写入的 metadata。">
-            <Input.TextArea value={tab.config ?? '{}'} autoSize={{ minRows: 6, maxRows: 12 }} readOnly />
+            <Textarea className="min-h-32" value={tab.config ?? '{}'} readOnly />
           </PreferenceRow>
         </div>
       </section>

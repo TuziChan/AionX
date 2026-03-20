@@ -1,5 +1,24 @@
 import assert from 'node:assert/strict';
 
+async function clickElement(target) {
+  const element = typeof target === 'string' ? await $(target) : target;
+  await element.waitForDisplayed({ timeout: 20000 });
+
+  try {
+    await element.click();
+    return;
+  } catch (error) {
+    await browser.execute((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'center' });
+      node.click();
+    }, element).catch(() => {
+      throw error;
+    });
+
+    return;
+  }
+}
+
 async function replaceInputValue(selector, value) {
   const input = await $(selector);
   await input.waitForDisplayed({ timeout: 20000 });
@@ -48,13 +67,21 @@ async function hasAgentAssistantRowByText(label) {
 }
 
 async function closeAgentDrawerIfOpen() {
-  const cancelButton = await $('.settings-agent-page__editor-modal .arco-drawer-footer .arco-btn:not(.arco-btn-primary)');
-  if (await cancelButton.isExisting()) {
-    await cancelButton.click();
-    await browser.waitUntil(async () => !(await $('[data-testid="agent-assistant-detail"]').isDisplayed()), {
-      timeout: 20000,
-      timeoutMsg: 'expected agent drawer to close before continuing',
-    }).catch(() => {});
+  const editor = await $('[data-testid="agent-assistant-editor"]');
+  const editorVisible = await editor.isExisting().then(async (exists) => (exists ? editor.isDisplayed().catch(() => false) : false));
+  if (editorVisible) {
+    const cancelButton = await $('[data-testid="agent-assistant-cancel"]');
+    await clickElement(cancelButton);
+    await browser.waitUntil(
+      async () =>
+        !(await $('[data-testid="agent-assistant-editor"]')
+          .isDisplayed()
+          .catch(() => false)),
+      {
+        timeout: 20000,
+        timeoutMsg: 'expected agent drawer to close before continuing',
+      },
+    );
   }
 }
 
@@ -104,9 +131,7 @@ export async function openSettingsPage(hash, expectedTitle) {
   await browser.execute(() => {
     window.scrollTo(0, 0);
 
-    const scrollContainers = Array.from(
-      document.querySelectorAll('.settings-layout__body, .settings-layout__main, .arco-modal-body, .arco-drawer-body')
-    );
+    const scrollContainers = Array.from(document.querySelectorAll('.settings-layout__body, .settings-layout__main'));
 
     for (const element of scrollContainers) {
       if (element instanceof HTMLElement) {
@@ -145,8 +170,8 @@ export async function connectGeminiAccountAndBindProject() {
   await emailInput.waitForDisplayed({ timeout: 20000 });
   await emailInput.setValue('codex@gmail.example');
 
-  const confirmButton = await $('.settings-gemini-page__auth-modal .arco-modal-footer .arco-btn-primary');
-  await confirmButton.click();
+  const confirmButton = await $('[data-testid="gemini-login-confirm"]');
+  await clickElement(confirmButton);
 
   const accountEmailInput = await $('#gemini-account-email');
   await accountEmailInput.waitForDisplayed({ timeout: 20000 });
@@ -284,34 +309,25 @@ export async function createProviderAndModel() {
   assert.equal(await modelEmptyTitle.getText(), '选择或新建一个模型平台');
 
   const addProviderButton = await $('[data-testid="model-add-provider"]');
-  await addProviderButton.click();
+  await clickElement(addProviderButton);
 
-  const providerNameInput = await $('#model-provider-name');
-  await providerNameInput.waitForDisplayed({ timeout: 20000 });
-  await providerNameInput.setValue('OpenAI Test');
+  await replaceInputValue('#model-provider-name', 'OpenAI Test');
+  await replaceInputValue('#model-provider-base-url', 'https://api.openai.example');
+  await replaceInputValue('#model-provider-api-key', 'sk-test-123');
 
-  const providerBaseUrlInput = await $('#model-provider-base-url');
-  await providerBaseUrlInput.setValue('https://api.openai.example');
-
-  const providerApiKeyInput = await $('#model-provider-api-key');
-  await providerApiKeyInput.setValue('sk-test-123');
-
-  const providerSubmitButton = await $('.settings-model-page__provider-modal .arco-modal-footer .arco-btn-primary');
-  await providerSubmitButton.click();
+  const providerSubmitButton = await $('[data-testid="model-provider-save"]');
+  await clickElement(providerSubmitButton);
 
   const providerCard = await $('button*=OpenAI Test');
   await providerCard.waitForDisplayed({ timeout: 20000 });
 
   const addModelButton = await $('[data-testid="model-add-model"]');
-  await addModelButton.waitForDisplayed({ timeout: 20000 });
-  await addModelButton.click();
+  await clickElement(addModelButton);
 
-  const modelNameInput = await $('#model-name-input');
-  await modelNameInput.waitForDisplayed({ timeout: 20000 });
-  await modelNameInput.setValue('gpt-5-codex');
+  await replaceInputValue('#model-name-input', 'gpt-5-codex');
 
-  const modelSubmitButton = await $('.settings-model-page__model-modal .arco-modal-footer .arco-btn-primary');
-  await modelSubmitButton.click();
+  const modelSubmitButton = await $('[data-testid="model-save"]');
+  await clickElement(modelSubmitButton);
 
   const modelRow = await $('div=gpt-5-codex');
   await modelRow.waitForDisplayed({ timeout: 20000 });
@@ -336,23 +352,15 @@ export async function createAndTestToolServer() {
   await imageCard.waitForDisplayed({ timeout: 20000 });
 
   const addServerButton = await $('[data-testid="tools-add-server"]');
-  await addServerButton.click();
+  await clickElement(addServerButton);
 
-  const serverNameInput = await $('#tools-server-name');
-  await serverNameInput.waitForDisplayed({ timeout: 20000 });
-  await serverNameInput.setValue('Sleep MCP');
+  await replaceInputValue('#tools-server-name', 'Sleep MCP');
+  await replaceInputValue('#tools-server-command', 'powershell.exe');
+  await replaceInputValue('#tools-server-args', '["-NoProfile","-Command","Start-Sleep -Seconds 5"]');
+  await replaceInputValue('#tools-server-env', '{}');
 
-  const serverCommandInput = await $('#tools-server-command');
-  await serverCommandInput.setValue('powershell.exe');
-
-  const serverArgsInput = await $('#tools-server-args');
-  await serverArgsInput.setValue('["-NoProfile","-Command","Start-Sleep -Seconds 5"]');
-
-  const serverEnvInput = await $('#tools-server-env');
-  await serverEnvInput.setValue('{}');
-
-  const submitButton = await $('.settings-tools-page__editor-modal .arco-modal-footer .arco-btn-primary');
-  await submitButton.click();
+  const submitButton = await $('[data-testid="tools-server-save"]');
+  await clickElement(submitButton);
 
   const serverItem = await $('button*=Sleep MCP');
   await serverItem.waitForDisplayed({ timeout: 20000 });
@@ -403,15 +411,16 @@ export async function configureAgentAssistants() {
 
   if (!(await hasAgentAssistantRowByText('Smoke Assistant'))) {
     const addAssistantButton = await $('[data-testid="agent-add-assistant"]');
-    await addAssistantButton.click();
+    await addAssistantButton.waitForDisplayed({ timeout: 20000 });
+    await clickElement(addAssistantButton);
 
     await replaceInputValue('#agent-assistant-name', 'Smoke Assistant');
     await replaceInputValue('#agent-assistant-description', 'WDIO smoke custom assistant');
     await replaceInputValue('#agent-assistant-avatar', '🧪');
     await replaceInputValue('#agent-assistant-prompt', 'Always summarize the next action.');
 
-    const submitButton = await $('.settings-agent-page__editor-modal .arco-drawer-footer .arco-btn-primary');
-    await submitButton.click();
+    const submitButton = await $('[data-testid="agent-assistant-save"]');
+    await clickElement(submitButton);
   }
 
   const customItem = await findAgentAssistantRowByText('Smoke Assistant');

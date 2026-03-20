@@ -114,6 +114,35 @@ function getEdgeDriverVersion() {
   return match?.[1] ?? null;
 }
 
+function extractArchive(archivePath, destinationPath) {
+  const result = spawnSync(
+    'powershell.exe',
+    [
+      '-NoProfile',
+      '-Command',
+      `Expand-Archive -Path '${archivePath}' -DestinationPath '${destinationPath}' -Force`,
+    ],
+    {
+      stdio: 'inherit',
+    },
+  );
+
+  return result.status === 0;
+}
+
+function downloadEdgeDriver(version, archivePath) {
+  const downloadUrl = `https://msedgedriver.microsoft.com/${version}/edgedriver_win64.zip`;
+  const result = spawnSync(
+    'curl.exe',
+    ['-L', '--fail', '--silent', '--show-error', downloadUrl, '-o', archivePath],
+    {
+      stdio: 'inherit',
+    },
+  );
+
+  return result.status === 0;
+}
+
 function ensureMatchingEdgeDriver() {
   if (process.platform !== 'win32') {
     return;
@@ -121,28 +150,51 @@ function ensureMatchingEdgeDriver() {
 
   const edgeVersion = getEdgeVersion();
   const webView2Version = getWebView2RuntimeVersion();
-  const targetVersion = webView2Version ?? edgeVersion;
   const edgeDriverVersion = getEdgeDriverVersion();
+  const candidateVersions = [...new Set([webView2Version, edgeVersion].filter(Boolean))];
 
-  if (targetVersion && edgeDriverVersion === targetVersion) {
+  if (candidateVersions.some((version) => edgeDriverVersion === version)) {
     return;
   }
 
   const archivePath = path.join(repoRoot, 'msedgedriver.zip');
-  const downloadUrl = `https://msedgedriver.microsoft.com/${targetVersion}/edgedriver_win64.zip`;
-  const script = `
-    $ProgressPreference = 'SilentlyContinue'
-    Invoke-WebRequest -Uri '${downloadUrl}' -OutFile '${archivePath}'
-    Expand-Archive -Path '${archivePath}' -DestinationPath '${repoRoot}' -Force
-    Remove-Item '${archivePath}' -Force
-  `;
+  for (const version of candidateVersions) {
+    if (fs.existsSync(archivePath)) {
+      fs.rmSync(archivePath, { force: true });
+    }
 
-  const result = spawnSync('powershell.exe', ['-NoProfile', '-Command', script], {
-    stdio: 'inherit',
-  });
+    if (!downloadEdgeDriver(version, archivePath)) {
+      continue;
+    }
 
-  if (result.status !== 0 || !fs.existsSync(edgeDriverPath)) {
-    throw new Error(`Failed to download a matching msedgedriver.exe for WebView2/Edge ${targetVersion}.`);
+    if (!extractArchive(archivePath, repoRoot)) {
+      continue;
+    }
+
+    if (fs.existsSync(archivePath)) {
+      fs.rmSync(archivePath, { force: true });
+    }
+
+    const downloadedVersion = getEdgeDriverVersion();
+    if (downloadedVersion === version) {
+      return;
+    }
+  }
+
+  throw new Error(
+    `Failed to download a matching msedgedriver.exe. Tried versions: ${candidateVersions.join(', ') || 'none'}.`,
+  );
+}
+
+function ensureTauriDriver() {
+  if (fs.existsSync(tauriDriverCommand)) {
+    return;
+  }
+
+  runCommand('cargo', ['install', 'tauri-driver', '--locked']);
+
+  if (!fs.existsSync(tauriDriverCommand)) {
+    throw new Error(`Expected tauri-driver at ${tauriDriverCommand} after installation.`);
   }
 }
 
@@ -248,6 +300,7 @@ export const config = {
     killExistingApp();
     clearAppData();
     ensureMatchingEdgeDriver();
+    ensureTauriDriver();
     buildTauriApp();
 
     tauriDriverProcess = spawn(

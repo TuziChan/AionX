@@ -1,14 +1,23 @@
 import { useEffect, useState } from 'react';
-import { Select, Tag } from '@arco-design/web-react';
 import { useAgentStore } from '../stores/agentStore';
 import type { DetectedAgent } from '@/services/agent';
+import { cn } from '@/shared/lib';
+import {
+  Badge,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui';
 
-const AGENT_LABELS: Record<string, { label: string; color: string }> = {
-  acp: { label: 'Claude Code', color: 'purple' },
-  gemini: { label: 'Gemini', color: 'blue' },
-  codex: { label: 'Codex', color: 'green' },
-  nanobot: { label: 'Nanobot', color: 'orange' },
-  openclaw: { label: 'OpenClaw', color: 'red' },
+const AGENT_LABELS: Record<string, { label: string; className: string }> = {
+  acp: { label: 'Claude Code', className: 'border-sky-200 bg-sky-50 text-sky-700' },
+  gemini: { label: 'Gemini', className: 'border-indigo-200 bg-indigo-50 text-indigo-700' },
+  codex: { label: 'Codex', className: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+  nanobot: { label: 'Nanobot', className: 'border-amber-200 bg-amber-50 text-amber-700' },
+  openclaw: { label: 'OpenClaw', className: 'border-rose-200 bg-rose-50 text-rose-700' },
 };
 
 interface Props {
@@ -35,45 +44,44 @@ export function AgentSelector({ value, onChange, disabled }: Props) {
     }
     return acc;
   }, []);
+  const selectedAgent = AGENT_LABELS[value];
 
   return (
-    <Select
-      value={value}
-      onChange={onChange}
-      disabled={disabled}
-      style={{ width: 180 }}
-      placeholder="Select Agent"
-      renderFormat={(_option, val) => {
-        const info = AGENT_LABELS[val as string];
-        return info ? (
-          <Tag color={info.color} size="small">{info.label}</Tag>
-        ) : (
-          <span>{String(val)}</span>
-        );
-      }}
-    >
-      {uniqueAgents.map((agent) => {
-        const info = AGENT_LABELS[agent.agent_type] ?? {
-          label: agent.name,
-          color: 'gray',
-        };
-        return (
-          <Select.Option
-            key={agent.agent_type}
-            value={agent.agent_type}
-            disabled={!agent.available}
-          >
-            <div className="flex items-center justify-between w-full">
-              <span>{info.label}</span>
-              {agent.available ? (
-                <Tag color={info.color} size="small">Available</Tag>
-              ) : (
-                <Tag color="gray" size="small">Not Found</Tag>
-              )}
-            </div>
-          </Select.Option>
-        );
-      })}
-    </Select>
+    <div className="flex items-center gap-2">
+      <Select value={value} onValueChange={onChange} disabled={disabled}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Select Agent" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {uniqueAgents.map((agent) => {
+              const info = AGENT_LABELS[agent.agent_type] ?? {
+                label: agent.name,
+                className: 'border-muted bg-muted text-muted-foreground',
+              };
+
+              return (
+                <SelectItem key={agent.agent_type} value={agent.agent_type}>
+                  <div className="flex w-full items-center justify-between gap-3">
+                    <span>{info.label}</span>
+                    <Badge
+                      variant={agent.available ? 'outline' : 'outline'}
+                      className={cn('shrink-0', agent.available ? info.className : 'border-muted bg-muted text-muted-foreground')}
+                    >
+                      {agent.available ? 'Available' : 'Not Found'}
+                    </Badge>
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      {selectedAgent ? (
+        <Badge variant="outline" className={cn('whitespace-nowrap', selectedAgent.className)}>
+          {selectedAgent.label}
+        </Badge>
+      ) : null}
+    </div>
   );
 }

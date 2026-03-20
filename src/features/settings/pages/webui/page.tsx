@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { SettingsPage, SettingsPageStack } from '@/shared/ui';
+import { SettingsPage, SettingsPageStack, Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui';
 import { ChannelsTab } from './components/ChannelsTab';
 import { WebuiServiceTab } from './components/WebuiServiceTab';
 import { useWebuiSettings } from './hooks/useWebuiSettings';
@@ -13,7 +12,6 @@ const WEBUI_TABS: Array<{ key: WebuiInnerTab; label: string }> = [
 export function Component() {
   const {
     changingPassword,
-    deletingPluginId,
     loading,
     plugins,
     resettingPassword,
@@ -26,7 +24,6 @@ export function Component() {
     togglingPluginId,
     load,
     persistSettings,
-    removePlugin,
     resetPassword,
     savePlugin,
     setPluginEnabled,
@@ -34,60 +31,60 @@ export function Component() {
     toggleServer,
     updateSettingsDraft,
   } = useWebuiSettings();
-  const [activeTab, setActiveTab] = useState<WebuiInnerTab>('webui');
 
   return (
     <SettingsPage className="settings-webui-page">
-      <section className="settings-group-card settings-webui-page__toolbar-card">
-        <div className="settings-webui-page__toolbar">
-          <div className="settings-webui-page__tab-list" role="tablist" aria-label="WebUI 设置分区">
-            {WEBUI_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                role="tab"
-                data-testid={`webui-tab-${tab.key}`}
-                aria-selected={activeTab === tab.key}
-                className={`settings-webui-page__tab${activeTab === tab.key ? ' settings-webui-page__tab--active' : ''}`}
-                onClick={() => setActiveTab(tab.key)}
-              >
-                {tab.label}
-              </button>
-            ))}
+      <Tabs defaultValue="webui" className="w-full">
+        <section className="settings-group-card settings-webui-page__toolbar-card">
+          <div className="settings-webui-page__toolbar">
+            <TabsList className="settings-webui-page__tab-list" aria-label="WebUI 设置分区">
+              {WEBUI_TABS.map((tab) => (
+                <TabsTrigger
+                  key={tab.key}
+                  value={tab.key}
+                  data-testid={`webui-tab-${tab.key}`}
+                  className="settings-webui-page__tab"
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <SettingsPageStack>
-        {activeTab === 'webui' ? (
-          <WebuiServiceTab
-            changingPassword={changingPassword}
-            loading={loading}
-            resettingPassword={resettingPassword}
-            savingSettings={savingSettings}
-            settings={settings}
-            starting={starting}
-            status={status}
-            stopping={stopping}
-            onChangePassword={submitPasswordChange}
-            onReload={load}
-            onResetPassword={resetPassword}
-            onSaveSettings={async (nextSettings) => {
-              await persistSettings(nextSettings);
-            }}
-            onSettingsChange={updateSettingsDraft}
-            onToggleRunning={toggleServer}
-          />
-        ) : (
-          <ChannelsTab
-            plugins={plugins}
-            savingPlugin={savingPlugin}
-            togglingPluginId={togglingPluginId}
-            onSavePlugin={savePlugin}
-            onTogglePlugin={setPluginEnabled}
-          />
-        )}
-      </SettingsPageStack>
+        <SettingsPageStack>
+          <TabsContent value="webui" className="mt-0">
+            <WebuiServiceTab
+              changingPassword={changingPassword}
+              loading={loading}
+              resettingPassword={resettingPassword}
+              savingSettings={savingSettings}
+              settings={settings}
+              starting={starting}
+              status={status}
+              stopping={stopping}
+              onChangePassword={submitPasswordChange}
+              onReload={load}
+              onResetPassword={resetPassword}
+              onSaveSettings={async (nextSettings) => {
+                await persistSettings(nextSettings);
+              }}
+              onSettingsChange={updateSettingsDraft}
+              onToggleRunning={toggleServer}
+            />
+          </TabsContent>
+
+          <TabsContent value="channels" className="mt-0">
+            <ChannelsTab
+              plugins={plugins}
+              savingPlugin={savingPlugin}
+              togglingPluginId={togglingPluginId}
+              onSavePlugin={savePlugin}
+              onTogglePlugin={setPluginEnabled}
+            />
+          </TabsContent>
+        </SettingsPageStack>
+      </Tabs>
 
       {loading ? <div className="settings-status-inline">正在加载 WebUI 配置...</div> : null}
     </SettingsPage>

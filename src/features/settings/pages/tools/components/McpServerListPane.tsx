@@ -1,7 +1,21 @@
-import { Button, Input, Popconfirm, Switch, Tag } from '@arco-design/web-react';
-import { CheckOne, CloseOne, DeleteFour, Heartbeat, LoadingOne, Plus, Write } from '@icon-park/react';
+import { CheckCircle2, LoaderCircle, Activity, PencilLine, Plus, Trash2, XCircle } from 'lucide-react';
 import type { McpServer } from '@/bindings';
-import classNames from 'classnames';
+import { useState } from 'react';
+import { cn } from '@/shared/lib';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+  Input,
+  Switch,
+} from '@/shared/ui';
 import { McpServerDetailPane } from './McpServerDetailPane';
 import type { McpServerSummary } from '../types';
 
@@ -44,27 +58,27 @@ function getConnectionMeta(state: ConnectionState) {
   switch (state) {
     case 'testing':
       return {
-        icon: <LoadingOne size="14" className="settings-tools-page__connection-icon settings-tools-page__connection-icon--spin" />,
+        icon: <LoaderCircle className="settings-tools-page__connection-icon settings-tools-page__connection-icon--spin" />,
         label: '测试中',
-        tone: 'arcoblue' as const,
+        variant: 'info' as const,
       };
     case 'success':
       return {
-        icon: <CheckOne size="14" className="settings-tools-page__connection-icon settings-tools-page__connection-icon--success" />,
+        icon: <CheckCircle2 className="settings-tools-page__connection-icon settings-tools-page__connection-icon--success" />,
         label: '已连通',
-        tone: 'green' as const,
+        variant: 'default' as const,
       };
     case 'error':
       return {
-        icon: <CloseOne size="14" className="settings-tools-page__connection-icon settings-tools-page__connection-icon--error" />,
+        icon: <XCircle className="settings-tools-page__connection-icon settings-tools-page__connection-icon--error" />,
         label: '连接异常',
-        tone: 'red' as const,
+        variant: 'destructive' as const,
       };
     default:
       return {
         icon: <span className="settings-tools-page__connection-dot" aria-hidden="true" />,
         label: '未测试',
-        tone: 'gray' as const,
+        variant: 'outline' as const,
       };
   }
 }
@@ -84,6 +98,8 @@ export function McpServerListPane({
   onTestServer,
   onToggleServer,
 }: McpServerListPaneProps) {
+  const [deletingServerId, setDeletingServerId] = useState<string | null>(null);
+
   return (
     <section className="settings-group-card settings-tools-page__management-card" data-testid="tools-server-list">
       <div className="settings-tools-page__pane-header">
@@ -91,13 +107,18 @@ export function McpServerListPane({
           <div className="settings-group-card__title">MCP Server</div>
           <div className="settings-tools-page__pane-subtitle">集中管理可用工具节点、连接状态和接入方式，整体节奏对齐 AionUi 的单列管理卡。</div>
         </div>
-        <Button data-testid="tools-add-server" type="outline" icon={<Plus size="16" />} onClick={onAddServer}>
+        <Button data-testid="tools-add-server" type="button" variant="outline" onClick={onAddServer}>
+          <Plus data-icon="inline-start" />
           添加 Server
         </Button>
       </div>
 
       <div className="settings-tools-page__toolbar">
-        <Input value={searchValue} onChange={onSearchChange} placeholder="搜索名称、类型、地址或命令" allowClear />
+        <Input
+          value={searchValue}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="搜索名称、类型、地址或命令"
+        />
       </div>
 
       <div className="settings-tools-page__list-body">
@@ -117,7 +138,7 @@ export function McpServerListPane({
                 return (
                   <div
                     key={server.id}
-                    className={classNames('settings-tools-page__server-card', {
+                    className={cn('settings-tools-page__server-card', {
                       'settings-tools-page__server-card--active': isActive,
                     })}
                   >
@@ -125,7 +146,7 @@ export function McpServerListPane({
                       <button
                         type="button"
                         data-testid={`tools-server-item-${server.id}`}
-                        className={classNames('settings-tools-page__server-item', {
+                        className={cn('settings-tools-page__server-item', {
                           'settings-tools-page__server-item--active': isActive,
                         })}
                         onClick={() => onSelectServer(server.id)}
@@ -143,25 +164,64 @@ export function McpServerListPane({
                           </div>
                         </div>
                         <div className="settings-tools-page__server-side">
-                          <Tag color={connectionMeta.tone}>{connectionMeta.label}</Tag>
-                          <Tag color={server.enabled ? 'green' : 'gray'}>{server.enabled ? '已启用' : '已停用'}</Tag>
-                          {server.oauthReady ? <Tag color="arcoblue">OAuth</Tag> : null}
+                          <Badge variant={connectionMeta.variant}>{connectionMeta.label}</Badge>
+                          <Badge variant={server.enabled ? 'default' : 'outline'}>{server.enabled ? '已启用' : '已停用'}</Badge>
+                          {server.oauthReady ? <Badge variant="info">OAuth</Badge> : null}
                         </div>
                       </button>
 
                       <div className="settings-tools-page__server-actions" onClick={(event) => event.stopPropagation()}>
                         <Button
-                          size="mini"
-                          type="text"
-                          loading={testingServerId === server.id}
-                          icon={<Heartbeat size="14" />}
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 rounded-full"
+                          disabled={testingServerId === server.id}
                           onClick={() => onTestServer(server.id)}
-                        />
-                        <Button size="mini" type="text" icon={<Write size="14" />} onClick={() => onEditServer(server)} />
-                        <Popconfirm title="确认删除该 MCP Server？" onOk={() => onDeleteServer(server.id)}>
-                          <Button size="mini" type="text" status="danger" icon={<DeleteFour size="14" />} />
-                        </Popconfirm>
-                        <Switch checked={server.enabled} size="small" onChange={(value) => onToggleServer(server, value)} />
+                        >
+                          {testingServerId === server.id ? <LoaderCircle className="animate-spin" /> : <Activity />}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 rounded-full"
+                          onClick={() => onEditServer(server)}
+                        >
+                          <PencilLine />
+                        </Button>
+                        <AlertDialog
+                          open={deletingServerId === server.id}
+                          onOpenChange={(open) => setDeletingServerId(open ? server.id : null)}
+                        >
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-7 rounded-full"
+                            onClick={() => setDeletingServerId(server.id)}
+                          >
+                            <Trash2 />
+                          </Button>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>确认删除该 MCP Server？</AlertDialogTitle>
+                              <AlertDialogDescription>删除后将移除当前工具节点配置，并清空最近一次连接测试结果。</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>取消</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => {
+                                  setDeletingServerId(null);
+                                  onDeleteServer(server.id);
+                                }}
+                              >
+                                确认删除
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                        <Switch checked={server.enabled} onCheckedChange={(value) => onToggleServer(server, value)} />
                       </div>
                     </div>
 

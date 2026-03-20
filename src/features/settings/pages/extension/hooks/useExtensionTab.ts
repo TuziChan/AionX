@@ -1,7 +1,7 @@
-import { Message } from '@arco-design/web-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getExtensionSettingsTab, setExtensionEnabled } from '@/features/settings/api/extension';
+import { notify } from '@/shared/lib';
 import type { ExtensionSettingsTab } from '../types';
 
 export function useExtensionTab() {
@@ -23,7 +23,7 @@ export function useExtensionTab() {
       setTab(nextTab);
     } catch (error) {
       setTab(null);
-      Message.error(`加载扩展设置失败: ${error instanceof Error ? error.message : String(error)}`);
+      notify.error(`加载扩展设置失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setLoading(false);
     }
@@ -43,9 +43,9 @@ export function useExtensionTab() {
       try {
         await setExtensionEnabled(tab.extensionId, enabled);
         setTab((current) => (current ? { ...current, enabled } : current));
-        Message.success(enabled ? '扩展已启用' : '扩展已停用');
+        notify.success(enabled ? '扩展已启用' : '扩展已停用');
       } catch (error) {
-        Message.error(`更新扩展状态失败: ${error instanceof Error ? error.message : String(error)}`);
+        notify.error(`更新扩展状态失败: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         setSaving(false);
       }

@@ -1,5 +1,15 @@
-import { Input, Select, Slider, Switch } from '@arco-design/web-react';
 import type { ReactNode } from 'react';
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Slider,
+  Switch,
+} from '@/shared/ui';
 
 export interface SettingsOption {
   label: string;
@@ -16,6 +26,8 @@ export interface SettingsFieldDefinition {
 }
 
 export function SettingsField({ field }: { field: SettingsFieldDefinition }) {
+  const sliderValue = Number(field.value ?? 0);
+
   return (
     <div className="settings-field">
       <div className="settings-field__meta">
@@ -24,17 +36,23 @@ export function SettingsField({ field }: { field: SettingsFieldDefinition }) {
       <div className="settings-field__control">
         {field.type === 'input' ? <Input value={String(field.value ?? '')} readOnly /> : null}
         {field.type === 'select' ? (
-          <Select
-            disabled
-            value={String(field.value ?? '')}
-            options={(field.options ?? []).map((option) => ({
-              label: option.label,
-              value: option.value,
-            }))}
-          />
+          <Select disabled value={String(field.value ?? '')}>
+            <SelectTrigger>
+              <SelectValue placeholder="请选择" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {(field.options ?? []).map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         ) : null}
-        {field.type === 'switch' ? <Switch checked={Boolean(field.value)} disabled /> : null}
-        {field.type === 'slider' ? <Slider value={Number(field.value ?? 0)} disabled /> : null}
+        {field.type === 'switch' ? <Switch checked={Boolean(field.value)} disabled aria-label={field.label} /> : null}
+        {field.type === 'slider' ? <Slider value={[sliderValue]} max={100} step={1} disabled aria-label={field.label} /> : null}
         {field.type === 'custom' ? field.render?.() ?? null : null}
       </div>
     </div>

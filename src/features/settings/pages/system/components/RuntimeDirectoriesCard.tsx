@@ -1,6 +1,6 @@
-import { Button, Input } from '@arco-design/web-react';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { PreferenceRow } from '@/features/settings/components/PreferenceRow';
+import { Button, Input } from '@/shared/ui';
 import type { RuntimeDirectoryDraft } from '../types';
 
 interface RuntimeDirectoriesCardProps {
@@ -32,7 +32,14 @@ function DirectoryRow({
     <PreferenceRow label={label} description={description}>
       <div className="settings-system-page__directory-control">
         <Input id={inputId} readOnly value={value} />
-        <Button data-testid={actionTestId} disabled={disabled} onClick={onAction}>
+        <Button
+          type="button"
+          variant="outline"
+          className="settings-system-page__directory-action"
+          data-testid={actionTestId}
+          disabled={disabled}
+          onClick={onAction}
+        >
           {actionLabel}
         </Button>
       </div>
